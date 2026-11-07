@@ -878,5 +878,7 @@ public static partial class Loc
         ["[模组] {0} 不是 {1} 的 Fabric 实例,跳过伴随模组"] = "[Mod] {0} is not a Fabric {1} instance; skipping the companion mod",
         ["[模组] 已就绪 {0}"] = "[Mod] Ready: {0}",
         ["[模组] Fabric API 安装失败:"] = "[Mod] Installing Fabric API failed: ",
+
+        ["· 联机:房间码开房、联机大厅与游戏内房间信息"] = "· Multiplayer: room codes, a self-hosted lobby and in-game room info",
     };
 }
