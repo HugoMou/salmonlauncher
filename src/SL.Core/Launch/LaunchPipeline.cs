@@ -82,7 +82,8 @@ public static class LaunchPipeline
         LaunchIdentity? identity = null,
         string jvmExtraArgs = "",
         int gameWidth = 0,
-        int gameHeight = 0)
+        int gameHeight = 0,
+        string joinServer = "")
     {
         var instanceDir = Path.Combine(Boot.Runtime.InstancesDir, instanceId);
         var metaFile = Path.Combine(instanceDir, "meta", instanceId + ".json");
@@ -223,7 +224,7 @@ public static class LaunchPipeline
         var classpath = BuildClasspath(detail, clientJar);
         Logging.AppLog.Info("Launch",
             $"mainClass={detail.MainClass} · 库 {detail.Libraries.Count} 项 · classpath {classpath.Split(';').Length} 段");
-        var args = BuildArgs(root, detail, classpath, instanceId, instanceDir, nativesDir, accountName, memoryMb, identity);
+        var args = BuildArgs(root, detail, classpath, instanceId, instanceDir, nativesDir, accountName, memoryMb, identity, joinServer);
         args.Insert(0, $"-Xmx{memoryMb}M");
         foreach (var extra in jvmExtraArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             args.Insert(1, extra);
@@ -434,7 +435,8 @@ public static class LaunchPipeline
         string nativesDir,
         string account,
         int memoryMb,
-        LaunchIdentity? identity)
+        LaunchIdentity? identity,
+        string joinServer = "")
     {
         var map = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -511,6 +513,15 @@ public static class LaunchPipeline
             args.Add("-cp");
             args.Add(classpath);
             args.Add(detail.MainClass);
+        }
+
+        // ============================== Join a room directly ==============================
+        // quickPlayMultiplayer is understood by 1.20 and newer; older versions ignore the unknown argument,
+        // so the player can still paste the address into the direct-connect box.
+        if (!string.IsNullOrWhiteSpace(joinServer))
+        {
+            args.Add("--quickPlayMultiplayer");
+            args.Add(joinServer);
         }
 
         return args;

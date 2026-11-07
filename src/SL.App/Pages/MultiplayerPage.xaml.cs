@@ -14,346 +14,595 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 using System.Collections.ObjectModel;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
+using System.Diagnostics;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using SL.Core.Logging;
-using SL.App.Localization;
-using SL.Core.Net;
+using SL.App.Dialogs;
 using SL.App.Infrastructure;
+using SL.App.Localization;
 using SL.App.Notify;
+using SL.Core.Account;
+using SL.Core.Boot;
+using SL.Core.Launch;
+using SL.Core.Link;
+using SL.Core.Link.Room;
+using SL.Core.Logging;
 using Windows.ApplicationModel.DataTransfer;
 
 namespace SL.App.Pages;
 
-/// <summary>Row for an open world discovered on the LAN.</summary>
-public sealed class McLanRow
+/// <summary>One world this machine currently has open to LAN.</summary>
+public sealed class LanWorldRow
 {
-    public McLanRow(McLanWorld world, Action<McLanWorld> copy)
+    public LanWorldRow(LanWorld world)
     {
+        World = world;
         Motd = world.Motd;
         Address = $"{world.Address}:{world.Port}";
-        CopyCommand = new RelayCommand(() => copy(world));
     }
 
+    public LanWorld World { get; }
     public string Motd { get; }
     public string Address { get; }
-    public RelayCommand CopyCommand { get; }
+
+    public override string ToString() => $"{Motd} · {Address}";
 }
 
-/// <summary>Row for a favorite relay server.</summary>
-public sealed class SavedRelayRow
+/// <summary>One member of a room, drawn the same way for host and guest.</summary>
+public sealed class LinkPlayerRow
 {
-    public SavedRelayRow(RelayEndpoint endpoint, Action<RelayEndpoint> connect, Action<RelayEndpoint> remove)
+    public LinkPlayerRow(PlayerProfile player, Action<PlayerProfile>? kick)
     {
-        Endpoint = endpoint;
-        Display = endpoint.Display;
-        ConnectCommand = new RelayCommand(() => connect(endpoint));
-        RemoveCommand = new RelayCommand(() => remove(endpoint));
+        Name = player.Name;
+        Tag = player.IsHost
+            ? Loc.T("房主")
+            : player.Account == AccountKind.Microsoft ? Loc.T("正版") : Loc.T("离线");
+        Glyph = player.IsHost ? "\uE7FC" : "\uE77B";
+        CanKick = kick is not null && !player.IsHost ? Visibility.Visible : Visibility.Collapsed;
+        KickCommand = new RelayCommand(() => kick?.Invoke(player));
     }
 
-    public RelayEndpoint Endpoint { get; }
-    public string Display { get; }
-    public RelayCommand ConnectCommand { get; }
-    public RelayCommand RemoveCommand { get; }
+    public string Name { get; }
+    public string Tag { get; }
+    public string Glyph { get; }
+    public Visibility CanKick { get; }
+    public RelayCommand KickCommand { get; }
 }
 
 /// <summary>
-/// Multiplayer page: all three connection modes are based on real TCP port forwarding.
-/// - Self-hosted relay: forward the local server port (25565) to an external port so friends can connect directly;
-/// - LAN: listen for Minecraft native multicast announcements and list open worlds on the same subnet;
-/// - Add relay server: connect to a relay hosted by someone else and open a local port on this machine for the game to join.
+/// Multiplayer: one player opens a room, everybody else joins it with a room code. The room runs on a
+/// temporary virtual network built by EasyTier, so it works across the internet without port forwarding
+/// while the host stays the only game server.
 /// </summary>
 public sealed partial class MultiplayerPage : Page
 {
     private readonly DispatcherQueue _ui = DispatcherQueue.GetForCurrentThread();
     private readonly ObservableCollection<string> _messages = [];
-    private readonly ObservableCollection<McLanRow> _worlds = [];
-    private readonly ObservableCollection<SavedRelayRow> _saved = [];
+    private readonly ObservableCollection<LanWorldRow> _worlds = [];
+    private readonly ObservableCollection<LinkPlayerRow> _players = [];
+    private readonly LanWorldFinder _finder = new();
 
-    private TcpForwarder? _hostForwarder;
-    private TcpForwarder? _manualForwarder;
-    private McLanScanner? _scanner;
+    private LinkSession? _session;
+    private bool _busy;
+    private bool _modsProbed;
 
     public MultiplayerPage()
     {
         InitializeComponent();
         LogList.ItemsSource = _messages;
-        LanList.ItemsSource = _worlds;
-        SavedList.ItemsSource = _saved;
-        ModeHost.IsChecked = true;
-        HintText.Text = Loc.T("中继只转发 TCP 流量;跨网联机需要把对外端口在路由器上做端口映射,或让双方都接入同一个中继。");
-        LocalPortBox.Header = Loc.T("本机服务器端口");
-        HostPortBox.Header = Loc.T("对外端口(0 = 自动分配)");
-        ManualPortBox.Header = Loc.T("中继端口");
-        ManualLocalPortBox.Header = Loc.T("本地端口");
+        LanWorldList.ItemsSource = _worlds;
+        HostPlayersList.ItemsSource = _players;
+        JoinPlayersList.ItemsSource = _players;
+        ModeCreate.IsChecked = true;
+
+        _finder.Found += world => _ui.TryEnqueue(() => AddWorld(world));
+        _finder.Failed += reason => _ui.TryEnqueue(() => AddLog("[局域网] " + reason));
+
+        // the page has to follow the window: text wraps instead of running off the right edge
+        SizeChanged += (_, _) => FitToViewport();
+        Loaded += (_, _) => FitToViewport();
+    }
+
+    /// <summary>Keeps the content exactly as wide as the scroll viewport so every line wraps.</summary>
+    private void FitToViewport()
+    {
+        // the page itself is exactly the frame content area, which is the space this page may use
+        double width = ActualWidth - 72;
+        if (width > 320)
+            ContentRoot.Width = width;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        StatusText.Text = Loc.T("选择一种联机方式:自建中继、局域网发现或添加中继服务器");
-        RefreshSaved();
-        AddLog(Loc.T("联机模块就绪 · 玩家名 ") + AppServices.Settings.Current.AccountName);
+        GamePortBox.Header = Loc.T("游戏端口");
+        RoomNameBox.Header = Loc.T("房间名");
+        NoticeBox.Header = Loc.T("公告(可选)");
+        MaxPlayersBox.Header = Loc.T("人数上限");
+        CodeBox.Header = Loc.T("房间码");
+
+        UpdateEnvironment();
+        StartLanScan();
+        Attach(LinkSession.Current);
+        Refresh();
+        AddLog(Loc.T("联机模块就绪"));
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        StopHost();
-        StopManualForward();
-        StopScanner();
+        // the room keeps running while the player visits other pages; only the scanner is tied to this page
+        StopLanScan();
     }
 
-    // ------------------------------------------------------------ Mode switching
-
-    private void OnModeChecked(object sender, RoutedEventArgs e)
+    /// <summary>Shows the administrator requirement once, and offers the restart that satisfies it.</summary>
+    private void UpdateEnvironment()
     {
-        if (HostPanel is null)
-            return;
-        var host = ReferenceEquals(sender, ModeHost);
-        var lan = ReferenceEquals(sender, ModeLan);
-        HostPanel.Visibility = host ? Visibility.Visible : Visibility.Collapsed;
-        LanPanel.Visibility = lan ? Visibility.Visible : Visibility.Collapsed;
-        ManualPanel.Visibility = host || lan ? Visibility.Collapsed : Visibility.Visible;
-
-        if (lan)
-            StartScanner();
-        else
-            StopScanner();
+        bool ok = LinkSession.CanRun(out string reason);
+        AdminNotice.Visibility = ok ? Visibility.Collapsed : Visibility.Visible;
+        AdminNoticeText.Text = reason;
+        ElevateButton.Visibility = ok || !OperatingSystem.IsWindows() ? Visibility.Collapsed : Visibility.Visible;
+        HostButton.IsEnabled = ok;
+        JoinButton.IsEnabled = ok;
     }
 
-    // ------------------------------------------------------------ Mode 1: self-hosted relay
-
-    private void OnStartHost(object sender, RoutedEventArgs e)
-    {
-        if (_hostForwarder is not null)
-        {
-            StopHost();
-            return;
-        }
-
-        var localPort = ReadPort(LocalPortBox, 25565);
-        var listenPort = ReadPort(HostPortBox, 0);
-        var forwarder = new TcpForwarder();
-        forwarder.Log += text => _ui.TryEnqueue(() => AddLog(Loc.T("[中继] ") + text));
-        forwarder.StatsChanged += () => _ui.TryEnqueue(UpdateHostInfo);
-
-        if (!forwarder.Start(listenPort, "127.0.0.1", localPort, out var error))
-        {
-            forwarder.Dispose();
-            StatusText.Text = Loc.T("中继启动失败:") + error;
-            AppLog.Warn("Multiplayer", $"自建中继启动失败(本地 {localPort} → 对外 {listenPort}):{error}");
-            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("中继启动失败:") + error);
-            return;
-        }
-
-        _hostForwarder = forwarder;
-        HostStartButton.Content = Loc.T("停止中继");
-        HostInfoPanel.Visibility = Visibility.Visible;
-        UpdateHostInfo();
-        StatusText.Text = string.Format(Loc.T("中继运行中 · {0}:{1} → 本机 {2}"), LocalAddress(), forwarder.ListenPort, localPort);
-        AppLog.Info("Multiplayer", $"自建中继已启动:{forwarder.ListenPort} → 127.0.0.1:{localPort}");
-        AppServices.Notify.Publish(NotifyKind.Success, Loc.T("中继已启动,把地址发给好友即可"));
-    }
-
-    private void UpdateHostInfo()
-    {
-        if (_hostForwarder is not { Active: true } forwarder)
-            return;
-        HostEndpointText.Text = $"{LocalAddress()}:{forwarder.ListenPort}";
-        HostMemberText.Text =
-            string.Format(Loc.T("在线 {0} 人 · 上行 {1} · 下行 {2} · 转发到 {3}"), forwarder.ConnectionCount, FormatBytes(forwarder.UpBytes), FormatBytes(forwarder.DownBytes), forwarder.Target);
-    }
-
-    private void OnCopyEndpoint(object sender, RoutedEventArgs e)
-    {
-        if (HostEndpointText.Text.Length == 0)
-            return;
-        Copy(HostEndpointText.Text);
-        AppServices.Notify.Publish(NotifyKind.Success, Loc.T("地址已复制:") + HostEndpointText.Text);
-    }
-
-    private void StopHost()
-    {
-        if (_hostForwarder is null)
-            return;
-        _hostForwarder.Dispose();
-        _hostForwarder = null;
-        HostStartButton.Content = Loc.T("启动中继");
-        HostInfoPanel.Visibility = Visibility.Collapsed;
-        HostEndpointText.Text = "";
-        StatusText.Text = Loc.T("中继已停止");
-    }
-
-    /// <summary>LAN IPv4 address of this machine (prefers non-loopback, non-virtual adapters).</summary>
-    private static string LocalAddress()
+    private async void OnElevate(object sender, RoutedEventArgs e)
     {
         try
         {
-            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                if (nic.OperationalStatus != OperationalStatus.Up
-                    || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
-                    continue;
-                foreach (var addr in nic.GetIPProperties().UnicastAddresses)
-                {
-                    if (addr.Address.AddressFamily == AddressFamily.InterNetwork
-                        && !IPAddress.IsLoopback(addr.Address))
-                        return addr.Address.ToString();
-                }
-            }
+            string? exe = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(exe))
+                return;
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, Verb = "runas" });
+            Application.Current.Exit();
         }
-        catch (Exception) { }
-        return "127.0.0.1";
-    }
-
-    // ------------------------------------------------------------ Mode 2: LAN
-
-    private void StartScanner()
-    {
-        if (_scanner is not null)
-            return;
-        var scanner = new McLanScanner();
-        scanner.Found += world => _ui.TryEnqueue(() => UpsertWorld(world));
-        scanner.Failed += reason => _ui.TryEnqueue(() =>
+        catch (Exception ex)
         {
-            AddLog(Loc.T("[局域网] ") + reason);
-            StatusText.Text = reason;
-        });
-        scanner.Start();
-        _scanner = scanner;
-        AddLog(Loc.T("[局域网] 正在监听 224.0.2.60:4445 的开放世界公告…"));
+            await AppServices.Dialogs.AlertAsync(Loc.T("无法以管理员身份重启"), ex.Message, MsgMark.Warning);
+        }
     }
 
-    private void StopScanner()
+    private void OnModeChecked(object sender, RoutedEventArgs e)
     {
-        _scanner?.Dispose();
-        _scanner = null;
-    }
-
-    private void UpsertWorld(McLanWorld world)
-    {
-        if (_worlds.Any(r => r.Address == $"{world.Address}:{world.Port}"))
+        if (CreatePanel is null)
             return;
-        _worlds.Add(new McLanRow(world, CopyWorld));
-        StatusText.Text = string.Format(Loc.T("局域网发现 {0} 个开放世界"), _worlds.Count);
+        bool create = ReferenceEquals(sender, ModeCreate);
+        CreatePanel.Visibility = create ? Visibility.Visible : Visibility.Collapsed;
+        JoinPanel.Visibility = create ? Visibility.Collapsed : Visibility.Visible;
+        if (!create)
+            StopLanScan();
+    }
+
+    // ------------------------------------------------------------ LAN worlds
+
+    private void StartLanScan()
+    {
+        if (_finder.Running)
+            return;
+        _finder.Start();
+        if (_finder.Running)
+            AddLog(Loc.T("正在监听 224.0.2.60:4445 的开放世界公告…"));
+    }
+
+    private void StopLanScan()
+    {
+        if (_finder.Running)
+            _finder.Dispose();
+    }
+
+    private void AddWorld(LanWorld world)
+    {
+        if (_worlds.Any(w => w.World.Key == world.Key))
+            return;
+        _worlds.Add(new LanWorldRow(world));
+        LanWorldList.Visibility = Visibility.Visible;
+        LanEmptyText.Visibility = Visibility.Collapsed;
         AddLog(string.Format(Loc.T("[局域网] 发现 {0} · {1}:{2}"), world.Motd, world.Address, world.Port));
     }
 
-    private void CopyWorld(McLanWorld world)
+    private void OnLanWorldClick(object sender, ItemClickEventArgs e)
     {
-        Copy($"{world.Address}:{world.Port}");
-        AppServices.Notify.Publish(NotifyKind.Success, string.Format(Loc.T("地址已复制:{0}:{1}"), world.Address, world.Port));
-        AddLog(string.Format(Loc.T("[复制] {0}:{1} · 在游戏「多人游戏 → 直接连接」里粘贴即可"), world.Address, world.Port));
+        if (e.ClickedItem is not LanWorldRow row)
+            return;
+        GamePortBox.Value = row.World.Port;
+        if (RoomNameBox.Text.Trim().Length == 0)
+            RoomNameBox.Text = row.Motd;
+        AddLog(string.Format(Loc.T("[局域网] 已选择 {0} · 端口 {1}"), row.Motd, row.World.Port));
     }
 
     private void OnRescanLan(object sender, RoutedEventArgs e)
     {
         _worlds.Clear();
-        StopScanner();
-        StartScanner();
-        StatusText.Text = Loc.T("正在重新扫描局域网…");
+        LanWorldList.Visibility = Visibility.Collapsed;
+        LanEmptyText.Visibility = Visibility.Visible;
+        StopLanScan();
+        StartLanScan();
     }
 
-    // ------------------------------------------------------------ Mode 3: add relay server
+    // ------------------------------------------------------------ Create room
 
-    private void OnConnectManual(object sender, RoutedEventArgs e)
+    private async void OnHost(object sender, RoutedEventArgs e)
     {
-        var host = ManualHostBox.Text.Trim();
-        if (host.Length == 0)
+        if (_busy)
+            return;
+        if (!LinkSession.CanRun(out string reason))
         {
-            _ = AppServices.Dialogs.AlertAsync(Loc.T("地址不能为空"),
-                Loc.T("请填写中继服务器的 IP 或域名。"), Dialogs.MsgMark.Warning);
+            await AppServices.Dialogs.AlertAsync(Loc.T("无法创建房间"), reason, MsgMark.Warning);
+            return;
+        }
+        if (!TryReadPort(GamePortBox, out int gamePort))
+        {
+            await AppServices.Dialogs.AlertAsync(Loc.T("端口无效"),
+                Loc.T("游戏端口需要在 1 到 65535 之间。请先在游戏里「对局域网开放」。"), MsgMark.Warning);
             return;
         }
 
-        var port = ReadPort(ManualPortBox, 25565);
-        var name = ManualNameBox.Text.Trim();
-        RelayBook.Add(new RelayEndpoint(name.Length > 0 ? name : host, host, port));
-        RefreshSaved();
-        StartManualForward(host, port, ReadPort(ManualLocalPortBox, 25565));
-    }
+        _busy = true;
+        HostButton.IsEnabled = false;
+        HostProgress.Visibility = Visibility.Visible;
+        HostProgress.IsIndeterminate = false;
+        HostProgress.Value = 0;
+        StatusText.Text = Loc.T("正在准备虚拟局域网…");
 
-    private void StartManualForward(string host, int port, int localPort)
-    {
-        StopManualForward();
-
-        var forwarder = new TcpForwarder();
-        forwarder.Log += text => _ui.TryEnqueue(() => AddLog(Loc.T("[远端] ") + text));
-        forwarder.StatsChanged += () => _ui.TryEnqueue(UpdateManualStatus);
-        if (!forwarder.Start(localPort, host, port, out var error))
+        try
         {
-            forwarder.Dispose();
-            StatusText.Text = Loc.T("接入失败:") + error;
-            AppLog.Warn("Multiplayer", $"接入中继失败({host}:{port} → 本地 {localPort}):{error}");
-            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("接入失败:") + error);
-            return;
+            var me = BuildProfile();
+            string instanceId = LaunchPipeline.LatestInstanceId() ?? "";
+            var progress = new Progress<double>(value => HostProgress.Value = value * 100);
+            var request = new HostRequest(
+                gamePort,
+                RoomNameBox.Text.Trim(),
+                NoticeBox.Text.Trim(),
+                ReadMaxPlayers(),
+                BuildModShare(instanceId));
+
+            var session = await LinkSession.HostAsync(request, me, progress, CancellationToken.None);
+            Attach(session);
+            Refresh();
+            AppServices.Notify.Publish(NotifyKind.Success, Loc.T("房间已创建,把房间码发给好友即可"));
         }
-
-        _manualForwarder = forwarder;
-        UpdateManualStatus();
-        AppLog.Info("Multiplayer", $"接入中继 {host}:{port} → 本地 {forwarder.ListenPort}");
-        AppServices.Notify.Publish(NotifyKind.Success, string.Format(Loc.T("已接入,游戏里连接 127.0.0.1:{0}"), forwarder.ListenPort));
-    }
-
-    private void UpdateManualStatus()
-    {
-        if (_manualForwarder is not { Active: true } forwarder)
-            return;
-        StatusText.Text =
-            string.Format(Loc.T("已接入 {0} · 游戏里连接 127.0.0.1:{1} · 在线 {2}"), forwarder.Target, forwarder.ListenPort, forwarder.ConnectionCount);
-    }
-
-    private void StopManualForward()
-    {
-        _manualForwarder?.Dispose();
-        _manualForwarder = null;
-    }
-
-    private void RefreshSaved()
-    {
-        _saved.Clear();
-        foreach (var endpoint in RelayBook.List())
+        catch (Exception ex)
         {
-            _saved.Add(new SavedRelayRow(endpoint,
-                e => StartManualForward(e.Host, e.Port, ReadPort(ManualLocalPortBox, 25565)),
-                RemoveSaved));
+            AppLog.Warn("Multiplayer", "创建房间失败:" + ex.Message);
+            StatusText.Text = Loc.T("创建房间失败:") + ex.Message;
+            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("创建房间失败:") + ex.Message);
+            AddLog("[错误] " + ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+            HostButton.IsEnabled = true;
+            HostProgress.Visibility = Visibility.Collapsed;
         }
     }
 
-    private void RemoveSaved(RelayEndpoint endpoint)
+    private ModShare? BuildModShare(string instanceId)
     {
-        RelayBook.Remove(endpoint.Key);
-        RefreshSaved();
-        AddLog(Loc.T("[收藏] 已移除 ") + endpoint.Display);
+        var settings = LinkSettings.Current;
+        if (!settings.ShareMods || !settings.ServeMods || instanceId.Length == 0)
+            return null;
+
+        string modsDir = Path.Combine(Runtime.InstancesDir, instanceId, "mods");
+        var share = ModShare.FromDirectory(modsDir, instanceId, "");
+        return share.HasMods ? share : null;
     }
 
-    // ------------------------------------------------------------ Disconnect
+    // ------------------------------------------------------------ Join room
 
-    private void OnDisconnect(object sender, RoutedEventArgs e)
+    private async void OnJoin(object sender, RoutedEventArgs e)
     {
-        StopHost();
-        StopManualForward();
-        _worlds.Clear();
-        AddLog(Loc.T("[系统] 已断开全部联机通道"));
-        StatusText.Text = Loc.T("已断开全部联机通道");
+        if (_busy)
+            return;
+        if (!LinkSession.CanRun(out string reason))
+        {
+            await AppServices.Dialogs.AlertAsync(Loc.T("无法加入房间"), reason, MsgMark.Warning);
+            return;
+        }
+
+        var code = RoomCode.Find(CodeBox.Text);
+        if (code is null)
+        {
+            await AppServices.Dialogs.AlertAsync(Loc.T("房间码无效"),
+                Loc.T("房间码形如 U/XXXX-XXXX-XXXX-XXXX,请向房主确认后重新粘贴。"), MsgMark.Warning);
+            return;
+        }
+
+        _busy = true;
+        JoinButton.IsEnabled = false;
+        JoinProgress.Visibility = Visibility.Visible;
+        JoinProgress.IsIndeterminate = false;
+        JoinProgress.Value = 0;
+        StatusText.Text = Loc.T("正在加入虚拟局域网…");
+
+        try
+        {
+            var progress = new Progress<double>(value => JoinProgress.Value = value * 100);
+            var session = await LinkSession.JoinAsync(code, BuildProfile(), progress, CancellationToken.None);
+            Attach(session);
+            Refresh();
+            AppServices.Notify.Publish(NotifyKind.Success, Loc.T("已加入房间"));
+        }
+        catch (RoomRejectedException rejected)
+        {
+            string message = rejected.Full ? Loc.T("房间人数已满") : Loc.T("房主已屏蔽你或把你移出了房间");
+            StatusText.Text = message;
+            AppServices.Notify.Publish(NotifyKind.Error, message);
+            AddLog("[错误] " + message);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Multiplayer", "加入房间失败:" + ex.Message);
+            StatusText.Text = Loc.T("加入失败:") + ex.Message;
+            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("加入失败:") + ex.Message);
+            AddLog("[错误] " + ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+            JoinButton.IsEnabled = true;
+            JoinProgress.Visibility = Visibility.Collapsed;
+        }
     }
 
-    // ------------------------------------------------------------ Infrastructure
+    // ------------------------------------------------------------ Session plumbing
 
-    private static int ReadPort(NumberBox box, int fallback)
+    private void Attach(LinkSession? session)
     {
-        // The user may have just typed a value without leaving the input box (Value not committed yet), so read the input text first
-        if (double.TryParse(box.Text, out var typed))
-            return (int)Math.Clamp(typed, box.Minimum, box.Maximum);
-        if (!double.IsNaN(box.Value))
-            return (int)Math.Clamp(box.Value, box.Minimum, box.Maximum);
-        return fallback;
+        if (ReferenceEquals(_session, session))
+            return;
+
+        if (_session is not null)
+        {
+            _session.Changed -= OnSessionChanged;
+            _session.Log -= OnSessionLog;
+        }
+
+        _session = session;
+        _modsProbed = false;
+
+        if (_session is not null)
+        {
+            _session.Changed += OnSessionChanged;
+            _session.Log += OnSessionLog;
+            if (_session.Code is { } code)
+                CodeBox.Text = code.Code;
+        }
+    }
+
+    private void OnSessionChanged() => _ui.TryEnqueue(Refresh);
+
+    private void OnSessionLog(string line) => _ui.TryEnqueue(() => AddLog(line));
+
+    /// <summary>Redraws everything that depends on the room in progress.</summary>
+    private void Refresh()
+    {
+        var session = _session;
+        bool host = session?.Role == LinkRole.Host;
+        bool guest = session?.Role == LinkRole.Guest;
+
+        RoomCard.Visibility = host && session?.Code is not null ? Visibility.Visible : Visibility.Collapsed;
+        StopHostButton.Visibility = host ? Visibility.Visible : Visibility.Collapsed;
+        HostButton.Visibility = host ? Visibility.Collapsed : Visibility.Visible;
+        JoinCard.Visibility = guest ? Visibility.Visible : Visibility.Collapsed;
+        LeaveButton.Visibility = guest ? Visibility.Visible : Visibility.Collapsed;
+        JoinButton.Visibility = guest ? Visibility.Collapsed : Visibility.Visible;
+
+        if (session is null)
+        {
+            StatusText.Text = Loc.T("创建一个房间,或用房间码加入好友的房间");
+            _players.Clear();
+            return;
+        }
+
+        if (host)
+        {
+            HostCodeText.Text = session.Code?.Code ?? "";
+            HostAddressText.Text = session.JoinAddress;
+            StatusText.Text = string.Format(Loc.T("房间进行中 · 游戏端口 {0} · 成员 {1} 人"), session.GamePort, session.Players.Count);
+        }
+        else
+        {
+            JoinRoomNameText.Text = session.Room.Name.Length > 0
+                ? session.Room.Name
+                : Loc.T("未命名房间");
+            JoinNoticeText.Text = session.Room.Notice.Length > 0 ? session.Room.Notice : Loc.T("房主没有留言");
+            JoinAddressText.Text = session.JoinAddress;
+            StatusText.Text = string.Format(Loc.T("已加入房间 · 游戏端口 {0} · 成员 {1} 人"), session.GamePort, session.Players.Count);
+            // asking once per session is enough: the mod list cannot change while the room lasts
+            if (!_modsProbed)
+                _ = RefreshModsButtonAsync(session);
+        }
+
+        string? myId = session.MyId;
+        _players.Clear();
+        foreach (var player in session.Players)
+            _players.Add(new LinkPlayerRow(player, host ? Kick : null));
+
+        if (_players.Count == 0)
+            AddLog(Loc.T("房间成员暂时没有更新"));
+
+        // keep the host's own row first even when the server has not reported it yet
+        if (host && _players.Count == 1 && myId is not null)
+            StatusText.Text += Loc.T(" · 等待好友加入");
+    }
+
+    /// <summary>Shows the mod sync button only when the host actually offers mods.</summary>
+    private async Task RefreshModsButtonAsync(LinkSession session)
+    {
+        _modsProbed = true;
+        try
+        {
+            var mods = await session.FetchModsAsync().ConfigureAwait(true);
+            ModsButton.Visibility = mods.Mods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (mods.Mods.Count > 0)
+                ModsButton.Content = string.Format(Loc.T("同步房主模组({0})"), mods.Mods.Count);
+        }
+        catch (Exception)
+        {
+            ModsButton.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void Kick(PlayerProfile player)
+    {
+        _session?.Kick(player.Id);
+        AddLog(string.Format(Loc.T("[房间] 已移出 {0}"), player.Name));
+    }
+
+    private async void OnStopHost(object sender, RoutedEventArgs e)
+    {
+        var session = _session;
+        if (session is null)
+            return;
+
+        Attach(null);
+        await session.StopAsync();
+        _players.Clear();
+        Refresh();
+        StatusText.Text = Loc.T("联机已停止");
+        AppServices.Notify.Publish(NotifyKind.Info, Loc.T("联机已停止"));
+    }
+
+    // ------------------------------------------------------------ Copy / launch / mods
+
+    private void OnCopyCode(object sender, RoutedEventArgs e)
+    {
+        if (_session?.Code is not { } code)
+            return;
+        Copy(code.Code);
+        AppServices.Notify.Publish(NotifyKind.Success, Loc.T("房间码已复制:") + code.Code);
+    }
+
+    private void OnCopyAddress(object sender, RoutedEventArgs e)
+    {
+        if (_session is not { } session)
+            return;
+        Copy(session.JoinAddress);
+        AppServices.Notify.Publish(NotifyKind.Success, Loc.T("地址已复制:") + session.JoinAddress);
+    }
+
+    private async void OnLaunchGame(object sender, RoutedEventArgs e)
+    {
+        var session = _session;
+        if (session is null || session.Role != LinkRole.Guest)
+            return;
+
+        string? instanceId = LaunchPipeline.LatestInstanceId();
+        if (string.IsNullOrEmpty(instanceId))
+        {
+            await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装任何版本"),
+                Loc.T("请先到「下载 → 游戏版本」安装一个实例,再回来进入房间。"), MsgMark.Info);
+            return;
+        }
+
+        try
+        {
+            var repo = AccountStore.Load();
+            var active = repo.Accounts.FirstOrDefault(a => a.Id == repo.ActiveId);
+            string accountName = active?.Name ?? AppServices.Settings.Current.AccountName;
+            LaunchPipeline.LaunchIdentity? identity = null;
+
+            if (active?.Kind == "msa")
+            {
+                if (active.Session is not { } msSession)
+                {
+                    AppServices.Notify.Publish(NotifyKind.Warning,
+                        string.Format(Loc.T("账户 {0} 缺少完整会话,请到「外观与设置」重新登录。"), active.Name));
+                    return;
+                }
+                msSession = await MsAuth.EnsureFreshAsync(msSession, null).ConfigureAwait(true);
+                AccountStore.UpsertMsa(msSession);
+                identity = new LaunchPipeline.LaunchIdentity(msSession.Name, msSession.Uuid, msSession.MinecraftAccessToken, "msa");
+                accountName = msSession.Name;
+            }
+
+            var cfg = AppServices.Settings.Current;
+            StatusText.Text = string.Format(Loc.T("正在启动 {0} 并进入房间…"), instanceId);
+            var result = await LaunchPipeline.StartAsync(instanceId, accountName, cfg.MemoryMb,
+                CancellationToken.None, identity, cfg.JvmExtraArgs, cfg.GameWidth, cfg.GameHeight,
+                joinServer: session.JoinAddress).ConfigureAwait(true);
+
+            if (result.Success)
+            {
+                AppServices.Notify.Publish(NotifyKind.Success, Loc.T("游戏已启动,正在进入房间"));
+                StatusText.Text = string.Format(Loc.T("游戏运行中(PID {0})"), result.ProcessId);
+            }
+            else
+            {
+                StatusText.Text = Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因"));
+                AppServices.Notify.Publish(NotifyKind.Error, StatusText.Text);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Multiplayer", ex);
+            StatusText.Text = Loc.T("启动失败:") + ex.Message;
+            AppServices.Notify.Publish(NotifyKind.Error, StatusText.Text);
+        }
+    }
+
+    private async void OnSyncMods(object sender, RoutedEventArgs e)
+    {
+        var session = _session;
+        if (session is null || session.Role != LinkRole.Guest)
+            return;
+
+        string? instanceId = LaunchPipeline.LatestInstanceId();
+        if (string.IsNullOrEmpty(instanceId))
+        {
+            await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装任何版本"),
+                Loc.T("请先安装一个实例,模组会同步到该实例的 mods 目录。"), MsgMark.Info);
+            return;
+        }
+
+        try
+        {
+            string target = Path.Combine(Runtime.InstancesDir, instanceId, "mods");
+            ModsButton.IsEnabled = false;
+            var progress = new Progress<double>(value => StatusText.Text = string.Format(Loc.T("正在同步房主模组…{0}%"), (int)(value * 100)));
+            int written = await session.DownloadModsAsync(target, progress, CancellationToken.None);
+            StatusText.Text = string.Format(Loc.T("已同步 {0} 个模组"), written);
+            AppServices.Notify.Publish(NotifyKind.Success, StatusText.Text);
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = Loc.T("同步失败:") + ex.Message;
+            AppServices.Notify.Publish(NotifyKind.Error, StatusText.Text);
+        }
+        finally
+        {
+            ModsButton.IsEnabled = true;
+        }
+    }
+
+    // ------------------------------------------------------------ Helpers
+
+    private PlayerProfile BuildProfile()
+    {
+        var repo = AccountStore.Load();
+        var active = repo.Accounts.FirstOrDefault(a => a.Id == repo.ActiveId);
+        string accountName = active?.Name ?? AppServices.Settings.Current.AccountName;
+        string name = LinkSettings.EffectivePlayerName(accountName);
+        var profile = new PlayerProfile(LinkSettings.MachineId, name);
+        return profile.WithAccount(active?.Kind == "msa" ? AccountKind.Microsoft : AccountKind.Offline);
+    }
+
+    private int ReadMaxPlayers()
+    {
+        double value = double.IsNaN(MaxPlayersBox.Value) ? 0 : MaxPlayersBox.Value;
+        return (int)Math.Clamp(value, 0, 100);
+    }
+
+    private static bool TryReadPort(NumberBox box, out int port)
+    {
+        port = 0;
+        if (double.TryParse(box.Text, out double typed))
+            port = (int)Math.Clamp(typed, 1, 65535);
+        else if (!double.IsNaN(box.Value))
+            port = (int)Math.Clamp(box.Value, 1, 65535);
+        return port is >= 1 and <= 65535;
     }
 
     private static void Copy(string text)
@@ -363,14 +612,6 @@ public sealed partial class MultiplayerPage : Page
         Clipboard.SetContent(package);
         Clipboard.Flush();
     }
-
-    private static string FormatBytes(long bytes) => bytes switch
-    {
-        >= 1L << 30 => $"{bytes / (double)(1L << 30):F2} GB",
-        >= 1L << 20 => $"{bytes / (double)(1L << 20):F1} MB",
-        >= 1L << 10 => $"{bytes / 1024.0:F0} KB",
-        _ => bytes + " B",
-    };
 
     private void AddLog(string text)
     {
@@ -382,3 +623,4 @@ public sealed partial class MultiplayerPage : Page
         LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
     }
 }
+

@@ -257,7 +257,7 @@ public sealed partial class SettingsPage : Page
         var panel = new StackPanel { Spacing = 12 };
         panel.Children.Add(new TextBlock
         {
-            Text = Loc.T("启动器自身的数据一定会清除:设置、账户与令牌、日志、主题、中继收藏。下面这些是可自由勾选的顺带清除项,不勾选的会保留下来:"),
+            Text = Loc.T("启动器自身的数据一定会清除:设置、账户与令牌、日志、主题、联机设置。下面这些是可自由勾选的顺带清除项,不勾选的会保留下来:"),
             TextWrapping = TextWrapping.Wrap,
             FontSize = 12.5,
             Opacity = 0.85,
@@ -313,7 +313,7 @@ public sealed partial class SettingsPage : Page
         var panel = new StackPanel { Spacing = 10 };
         panel.Children.Add(new TextBlock
         {
-            Text = Loc.T("将删除:启动器自身的设置、账户与令牌、日志、主题、中继收藏")
+            Text = Loc.T("将删除:启动器自身的设置、账户与令牌、日志、主题、联机设置")
                    + (removed.Count > 0 ? Loc.T("、") + string.Join(Loc.T("、"), removed) : "") + Loc.T("。"),
             TextWrapping = TextWrapping.Wrap,
             FontSize = 12.5,

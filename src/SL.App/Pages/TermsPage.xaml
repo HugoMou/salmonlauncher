@@ -147,7 +147,7 @@
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
                                    Text="2. 不得利用本软件绕过正版验证、发布破解内容、传播恶意文件,或从事任何违反当地法律法规的行为。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 联机功能依赖你自己的网络环境与自建中继,请勿用于未经授权的入侵或流量攻击。" />
+                                   Text="3. 联机功能通过第三方虚拟局域网组件建立连接,请勿用于未经授权的入侵或流量攻击。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
                                    Text="4. 通过本软件下载的模组、光影与资源包来自第三方,其内容与安全性由你自行判断;作者不对第三方内容造成的损失负责。" />
                     </StackPanel>
