@@ -1,5 +1,6 @@
 package com.salmonlauncher.slcompanion;
 
+import net.minecraft.network.packet.s2c.play.PlayerListHeaderS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.text.Text;
 
@@ -10,8 +11,10 @@ import java.nio.file.Path;
 /**
  * Polls the optional room file and mirrors its content into the tab list header/footer.
  *
- * <p>When the file (or the {@code -Dsl.link.room} property) is missing, nothing happens at all -
- * the vanilla header/footer is left untouched.</p>
+ * <p>Vanilla has no server side "set header/footer" call, so the text is delivered with the same
+ * {@link PlayerListHeaderS2CPacket} vanilla clients understand. When the file (or the
+ * {@code -Dsl.link.room} property) is missing, nothing happens at all - the tab list is left
+ * untouched.</p>
  */
 public final class RoomBroadcast {
 
@@ -78,7 +81,7 @@ public final class RoomBroadcast {
         try {
             server.execute(() -> {
                 try {
-                    server.getPlayerManager().setHeaderFooter(header, footer);
+                    server.getPlayerManager().sendToAll(new PlayerListHeaderS2CPacket(header, footer));
                 } catch (Throwable t) {
                     SLCompanion.LOGGER.warn("[SLCompanion] could not update tab list header/footer: {}", t.toString());
                 }

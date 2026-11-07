@@ -874,5 +874,9 @@ public static partial class Loc
         ["大厅返回的房间码无效"] = "The lobby returned an unusable room code",
 
         ["[模组] 已为 {0} 安装 {1}"] = "[Mod] Installed {1} into {0}",
+
+        ["[模组] {0} 不是 {1} 的 Fabric 实例,跳过伴随模组"] = "[Mod] {0} is not a Fabric {1} instance; skipping the companion mod",
+        ["[模组] 已就绪 {0}"] = "[Mod] Ready: {0}",
+        ["[模组] Fabric API 安装失败:"] = "[Mod] Installing Fabric API failed: ",
     };
 }

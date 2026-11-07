@@ -1,13 +1,12 @@
 package com.salmonlauncher.slcompanion;
 
-import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.server.MinecraftServer;
 
 /**
  * Owns the "open to LAN" state of the singleplayer server and keeps the status file up to date.
  *
- * <p>All methods that touch the file are synchronized; the client tick thread is the only caller
- * of {@link #tick()}, player join/leave events may call in from the server thread.</p>
+ * <p>All methods that touch the file are synchronized; the client tick thread drives
+ * {@link #tick()}, player join/leave events may call in from the server thread.</p>
  */
 public final class LanBridge {
 
@@ -29,7 +28,7 @@ public final class LanBridge {
     private LanBridge() {
     }
 
-    /** Called from the mixin when {@code IntegratedServer#loadWorld} returns. */
+    /** Called from the mixin when {@code MinecraftServer#loadWorld} returns. */
     public static void markWorldLoaded() {
         worldLoaded = true;
     }
@@ -97,7 +96,8 @@ public final class LanBridge {
             }
             return;
         }
-        if (!(server instanceof IntegratedServer integrated)) {
+        // isRemote() is true for the client-side integrated server, false for a dedicated one.
+        if (!server.isRemote()) {
             return;
         }
         if (now - lastLanAttempt < LAN_RETRY_MS) {
@@ -112,7 +112,7 @@ public final class LanBridge {
             fallbackIndex = (fallbackIndex + 1) % FALLBACK_PORTS.length;
         }
         try {
-            integrated.openToLan(integrated.getDefaultGameMode(), integrated.getPlayerManager().areCheatsAllowed(), requested);
+            server.openToLan(server.getDefaultGameMode(), server.getPlayerManager().areCheatsAllowed(), requested);
         } catch (Throwable t) {
             SLCompanion.LOGGER.warn("[SLCompanion] openToLan attempt {} failed: {}", attempts, t.toString());
         }
@@ -134,7 +134,8 @@ public final class LanBridge {
         }
         try {
             StatusFile.writeReady(server.getServerPort(), worldName(server),
-                    server.getCurrentPlayerCount(), server.getMaxPlayerCount());
+                    server.getPlayerManager().getCurrentPlayerCount(),
+                    server.getPlayerManager().getMaxPlayerCount());
         } catch (Throwable t) {
             SLCompanion.LOGGER.warn("[SLCompanion] could not publish status: {}", t.toString());
         }
@@ -149,7 +150,7 @@ public final class LanBridge {
     }
 
     public static void onPlayerCountChanged(MinecraftServer server) {
-        if (server == null || server.isRemote()) {
+        if (server == null || !server.isRemote()) {
             return;
         }
         pushStatus(server);

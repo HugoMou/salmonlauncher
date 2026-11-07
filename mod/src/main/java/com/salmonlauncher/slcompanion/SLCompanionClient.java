@@ -3,7 +3,7 @@ package com.salmonlauncher.slcompanion;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.server.MinecraftServer;
 
 /**
  * Client entry point: drives {@link LanBridge} every client tick.
@@ -17,7 +17,7 @@ public final class SLCompanionClient implements ClientModInitializer {
 
     private static void onEndClientTick(MinecraftClient client) {
         try {
-            IntegratedServer server = client.getServer();
+            MinecraftServer server = client.getServer();
             if (server == null) {
                 LanBridge.detach();
                 return;

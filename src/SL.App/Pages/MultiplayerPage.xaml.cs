@@ -423,7 +423,7 @@ public sealed partial class MultiplayerPage : Page
             Attach(session);
             SetDetail(null);
             Refresh();
-            InstallCompanion();
+            await InstallCompanionAsync().ConfigureAwait(true);
             await PublishLobbyAsync().ConfigureAwait(true);
             AppServices.Notify.Publish(NotifyKind.Success, Loc.T("房间已创建,把房间码发给好友即可"));
         }
@@ -851,7 +851,7 @@ public sealed partial class MultiplayerPage : Page
             }
 
             var cfg = AppServices.Settings.Current;
-            InstallCompanion();
+            await InstallCompanionAsync().ConfigureAwait(true);
             string jvm = (cfg.JvmExtraArgs + " " + CompanionBridge.JvmArguments()).Trim();
             SetDetail(string.Format(Loc.T("正在启动 {0} 并进入房间…"), instanceId));
             var result = await LaunchPipeline.StartAsync(instanceId, accountName, cfg.MemoryMb,
@@ -912,15 +912,35 @@ public sealed partial class MultiplayerPage : Page
         }
     }
 
-    /// <summary>Puts the companion mod into the instance the room will run, when this build ships one.</summary>
-    private void InstallCompanion()
+    /// <summary>Puts the companion mod and Fabric API into the instance the room will run.</summary>
+    private async Task InstallCompanionAsync()
     {
         string instanceId = SelectedInstance;
         if (instanceId.Length == 0)
             return;
+
+        if (!CompanionBridge.Supports(instanceId))
+        {
+            // the mod declares minecraft ~1.21.1 + fabricloader; anything else would just be a dead file
+            AddLog(string.Format(Loc.T("[模组] {0} 不是 {1} 的 Fabric 实例,跳过伴随模组"),
+                instanceId, CompanionBridge.TargetMinecraft));
+            return;
+        }
+
         string installed = CompanionBridge.EnsureInstalled(instanceId);
         if (installed.Length > 0)
             AddLog(string.Format(Loc.T("[模组] 已为 {0} 安装 {1}"), instanceId, installed));
+
+        try
+        {
+            string api = await CompanionBridge.EnsureFabricApiAsync(instanceId, CancellationToken.None).ConfigureAwait(true);
+            if (api.Length > 0)
+                AddLog(string.Format(Loc.T("[模组] 已就绪 {0}"), api));
+        }
+        catch (Exception ex)
+        {
+            AddLog(Loc.T("[模组] Fabric API 安装失败:") + ex.Message);
+        }
     }
 
     /// <summary>Picks up the port the companion mod reported, so a room binds even without the multicast.</summary>
