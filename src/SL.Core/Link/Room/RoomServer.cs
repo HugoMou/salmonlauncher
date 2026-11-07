@@ -109,7 +109,14 @@ public sealed class RoomServer : IAsyncDisposable
             return;
 
         var listener = new TcpListener(IPAddress.Any, _requestedPort);
-        listener.Start();
+        try
+        {
+            listener.Start();
+        }
+        catch (SocketException ex)
+        {
+            throw new LinkException($"联机服务端口 {_requestedPort} 被占用,请关闭占用该端口的程序后重试", ex);
+        }
         _listener = listener;
         Port = ((IPEndPoint)listener.LocalEndpoint).Port;
         _acceptLoop = Task.Run(() => AcceptLoopAsync(_cts.Token));

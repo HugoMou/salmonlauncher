@@ -166,6 +166,14 @@
                             <Button Grid.Column="2" Content="复制邀请" Click="OnCopyInvite" VerticalAlignment="Center" />
                         </Grid>
 
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button x:Name="HostLaunchButton" Content="启动游戏" Click="OnLaunchHost"
+                                    Style="{StaticResource AccentButtonStyle}" />
+                            <TextBlock Text="点这里启动游戏;进世界后房间会自动绑定端口"
+                                       FontSize="11.5" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource Brush.FgFaint}" />
+                        </StackPanel>
+
                         <StackPanel x:Name="HostAddressPanel" Spacing="4">
                             <TextBlock Text="游戏内连接地址" FontSize="12" Foreground="{ThemeResource Brush.FgDim}" />
                             <TextBlock x:Name="HostAddressText" FontFamily="Consolas" FontSize="14"

@@ -247,9 +247,14 @@ public sealed partial class MultiplayerPage : Page
         CreatePanel.Visibility = create ? Visibility.Visible : Visibility.Collapsed;
         JoinPanel.Visibility = create ? Visibility.Collapsed : Visibility.Visible;
         if (create)
+        {
             StartLanScan();   // the host side keeps watching for worlds
-        else
+        }
+        else if (_session is not { Role: LinkRole.Host })
+        {
+            // a host stays on the scanner even while looking at the join tab: its world may still change
             StopLanScan();
+        }
     }
 
     // ------------------------------------------------------------ LAN worlds
@@ -710,12 +715,13 @@ public sealed partial class MultiplayerPage : Page
         SetDetail(Loc.T("邀请已复制,直接发给好友即可"));
     }
 
-    private async void OnLaunchGame(object sender, RoutedEventArgs e)
-    {
-        var session = _session;
-        if (session is null || session.Role != LinkRole.Guest)
-            return;
+    private async void OnLaunchGame(object sender, RoutedEventArgs e) => await LaunchGameAsync(_session?.JoinAddress);
 
+    private async void OnLaunchHost(object sender, RoutedEventArgs e) => await LaunchGameAsync(null);
+
+    /// <summary>Starts the picked instance, optionally walking straight into a room once the game is up.</summary>
+    private async Task LaunchGameAsync(string? joinServer)
+    {
         string instanceId = SelectedInstance;
         if (instanceId.Length == 0)
         {
@@ -749,7 +755,7 @@ public sealed partial class MultiplayerPage : Page
             SetDetail(string.Format(Loc.T("正在启动 {0} 并进入房间…"), instanceId));
             var result = await LaunchPipeline.StartAsync(instanceId, accountName, cfg.MemoryMb,
                 CancellationToken.None, identity, cfg.JvmExtraArgs, cfg.GameWidth, cfg.GameHeight,
-                joinServer: session.JoinAddress).ConfigureAwait(true);
+                joinServer: joinServer ?? "").ConfigureAwait(true);
 
             if (result.Success)
             {

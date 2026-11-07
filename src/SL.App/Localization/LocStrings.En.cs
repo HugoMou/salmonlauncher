@@ -837,5 +837,7 @@ public static partial class Loc
         ["关闭公共节点后,只有你和好友能直接互通(同网段或已有公网端点)时才能联机;节点只负责打洞与必要时中转,游戏数据在双方之间传输。"] = "With public nodes off, you can only play when you and your friends can reach each other directly (same subnet, or one side has a public endpoint). Nodes only punch through NAT and relay when needed; game data travels between the two of you.",
 
         ["房间码开房与加入,进世界后自动绑定端口,自动建立虚拟局域网。"] = "Open or join a room with a code; the launcher binds the world port by itself once you enter a world.",
+
+        ["点这里启动游戏;进世界后房间会自动绑定端口"] = "Start the game here; the room binds its port as soon as you enter a world",
     };
 }
