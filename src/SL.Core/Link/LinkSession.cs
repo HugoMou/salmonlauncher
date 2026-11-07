@@ -27,9 +27,30 @@ public enum LinkRole
     Guest,
 }
 
+/// <summary>Where a session stands, so the window never has to guess from a stray flag.</summary>
+public enum LinkStatus
+{
+    /// <summary>Nothing is running.</summary>
+    Idle,
+
+    /// <summary>Fetching the runtime, starting the virtual network or connecting.</summary>
+    Preparing,
+
+    /// <summary>The room exists, but the host has not entered a world yet.</summary>
+    WaitingForWorld,
+
+    /// <summary>The room is up and guests may connect.</summary>
+    Hosting,
+
+    /// <summary>The guest is in the room.</summary>
+    Online,
+
+    /// <summary>The room ended underneath us: kernel exit, host gone, network lost.</summary>
+    Disconnected,
+}
+
 /// <summary>What the host wants its room to be.</summary>
 public sealed record HostRequest(
-    int GamePort,
     string RoomName,
     string Notice,
     int MaxPlayers,
@@ -37,17 +58,19 @@ public sealed record HostRequest(
 
 /// <summary>
 /// One live room session: starts the virtual network, runs the host service or the guest connection, and
-/// keeps the player list and the room code in one place for the window to show.
+/// keeps the player list, the room code and the world port in one place for the window to show.
 /// </summary>
 public sealed class LinkSession : IAsyncDisposable
 {
     private readonly PlayerProfile _me;
+    private readonly HashSet<string> _blocked = new(StringComparer.OrdinalIgnoreCase);
 
     private RoomServer? _server;
     private RoomClient? _client;
     private EasyTierRunner? _runner;
     private RoomCode? _code;
     private RoomInfo _room = new("", "", 0);
+    private LinkStatus _status = LinkStatus.Idle;
     private int _gamePort;
     private bool _stopped;
 
@@ -62,17 +85,26 @@ public sealed class LinkSession : IAsyncDisposable
 
     public LinkRole Role { get; }
 
+    /// <summary>Lifecycle state of the session.</summary>
+    public LinkStatus Status => _status;
+
+    /// <summary>Why the session stopped or failed, when it did.</summary>
+    public string? Error { get; private set; }
+
     /// <summary>The invite code of the room; <c>null</c> before the session comes up.</summary>
     public RoomCode? Code => _code;
 
     /// <summary>Name, announcement and limit of the room.</summary>
     public RoomInfo Room => _room;
 
-    /// <summary>Port the game listens on inside the room network.</summary>
+    /// <summary>Port of the game inside the room network; 0 while the host has not entered a world.</summary>
     public int GamePort => _gamePort;
 
     /// <summary>The player list as of the last update, host first when this launcher is the host.</summary>
     public IReadOnlyList<PlayerProfile> Players => _server?.Players ?? _client?.Players ?? [];
+
+    /// <summary>Whether the room has a world and a port, so a guest may actually play.</summary>
+    public bool WorldReady => _gamePort is >= 1 and <= 65535;
 
     /// <summary>Raised on the thread pool whenever the session changes in a way the window should redraw.</summary>
     public event Action? Changed;
@@ -103,7 +135,10 @@ public sealed class LinkSession : IAsyncDisposable
         return true;
     }
 
-    /// <summary>Creates a room: draws a code, starts the virtual network, then serves the game port.</summary>
+    /// <summary>
+    /// Opens a room straight away: the code exists before the world does, so the host can share it first and
+    /// enter the world afterwards. The world port is bound later through <see cref="BindGamePort"/>.
+    /// </summary>
     public static async Task<LinkSession> HostAsync(
         HostRequest request,
         PlayerProfile me,
@@ -111,32 +146,33 @@ public sealed class LinkSession : IAsyncDisposable
         CancellationToken token)
     {
         var session = new LinkSession(LinkRole.Host, me);
-        var code = RoomCode.Create();
-        session._code = code;
+        session._code = RoomCode.Create();
         session._room = new RoomInfo(request.RoomName, request.Notice, request.MaxPlayers);
-        session._gamePort = request.GamePort;
+        session.SetStatus(LinkStatus.Preparing);
 
         try
         {
             string core = await EasyTierRuntime.EnsureAsync(downloadProgress, token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
             session._runner = EasyTierRunner.Start(core,
-                EasyTierArguments.Host(code, RoomServer.ServicePort, LinkSettings.GetNodes()));
+                EasyTierArguments.Host(session._code, RoomServer.ServicePort, LinkSettings.GetNodes()));
             session.HookRunner();
 
             session._server = new RoomServer(
                 session._room,
                 me,
-                request.GamePort,
+                gamePort: 0,
                 request.Mods is null ? null : request.Mods.PathFor,
-                RoomServer.ServicePort);
+                RoomServer.ServicePort,
+                session.IsBlocked);
             if (request.Mods is { HasMods: true } mods)
                 session._server.Mods = mods.List;
             session._server.PlayersChanged += session.RaiseChanged;
             session._server.Start();
 
             Current = session;
-            session.Log?.Invoke($"房间已开:{code.Code} · 游戏端口 {request.GamePort} · 联机服务 {RoomServer.ServicePort}");
-            session.RaiseChanged();
+            session.SetStatus(LinkStatus.WaitingForWorld);
+            session.Log?.Invoke($"房间已开:{session._code.Code} · 等待你在游戏里进入世界");
             return session;
         }
         catch
@@ -146,7 +182,10 @@ public sealed class LinkSession : IAsyncDisposable
         }
     }
 
-    /// <summary>Joins a room: starts the virtual network, waits for the host, then completes the handshake.</summary>
+    /// <summary>
+    /// Joins a room. The virtual network comes up first and the room service is retried until the host has
+    /// entered a world, so a guest may paste the code before the host opens anything.
+    /// </summary>
     public static async Task<LinkSession> JoinAsync(
         RoomCode code,
         PlayerProfile me,
@@ -155,10 +194,12 @@ public sealed class LinkSession : IAsyncDisposable
     {
         var session = new LinkSession(LinkRole.Guest, me);
         session._code = code;
+        session.SetStatus(LinkStatus.Preparing);
 
         try
         {
             string core = await EasyTierRuntime.EnsureAsync(downloadProgress, token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
             session.Log?.Invoke("正在加入虚拟局域网…");
             session._runner = EasyTierRunner.Start(core, EasyTierArguments.Guest(code, LinkSettings.GetNodes()));
             session.HookRunner();
@@ -199,8 +240,8 @@ public sealed class LinkSession : IAsyncDisposable
             client.Closed += session.OnRoomClosed;
 
             Current = session;
+            session.SetStatus(LinkStatus.Online);
             session.Log?.Invoke($"已加入房间「{session._room.Name}」· 游戏端口 {session._gamePort}");
-            session.RaiseChanged();
             return session;
         }
         catch
@@ -209,6 +250,34 @@ public sealed class LinkSession : IAsyncDisposable
             throw;
         }
     }
+
+    /// <summary>
+    /// Host only: points the room at the world the host just opened. Called whenever the launcher sees a
+    /// Minecraft LAN announcement, so the host never has to type a port.
+    /// </summary>
+    public void BindGamePort(int port, string worldName)
+    {
+        if (_server is null || port is < 1 or > 65535 || port == _gamePort)
+            return;
+
+        _gamePort = port;
+        _server.GamePort = port;
+        SetStatus(LinkStatus.Hosting);
+        Log?.Invoke($"已绑定世界「{worldName}」· 端口 {port}");
+        RaiseChanged();
+    }
+
+    /// <summary>Takes a player out of the room and remembers it, so the same code cannot walk back in.</summary>
+    public void BlockAndKick(string playerId, string playerName)
+    {
+        if (playerId.Length == 0)
+            return;
+        _blocked.Add(playerId);
+        _server?.Kick(playerId);
+        Log?.Invoke($"已移出 {playerName},并禁止其再次加入");
+    }
+
+    private bool IsBlocked(string playerId) => _blocked.Contains(playerId);
 
     private void HookRunner()
     {
@@ -220,7 +289,7 @@ public sealed class LinkSession : IAsyncDisposable
             if (_stopped)
                 return;
             Log?.Invoke($"[内核] 联机内核已退出({code})");
-            RaiseChanged();
+            SetStatus(LinkStatus.Disconnected, $"联机内核已退出({code})");
         };
     }
 
@@ -229,6 +298,13 @@ public sealed class LinkSession : IAsyncDisposable
         if (_stopped)
             return;
         Log?.Invoke(reason);
+        SetStatus(LinkStatus.Disconnected, reason);
+    }
+
+    private void SetStatus(LinkStatus status, string? error = null)
+    {
+        _status = status;
+        Error = error;
         RaiseChanged();
     }
 
@@ -242,8 +318,9 @@ public sealed class LinkSession : IAsyncDisposable
         => _client is null ? Task.FromResult(ModList.Empty) : _client.GetModsAsync(token);
 
     /// <summary>
-    /// Copies the host's mods into <paramref name="targetDirectory"/>, skipping files that are already there
-    /// with the right size. Reports 0..1 through <paramref name="progress"/>.
+    /// Copies the host's mods into <paramref name="targetDirectory"/>. A file is skipped only when the local
+    /// copy has the same size <em>and</em> the same SHA-1, so a truncated or swapped jar is replaced.
+    /// Reports 0..1 through <paramref name="progress"/>.
     /// </summary>
     public async Task<int> DownloadModsAsync(string targetDirectory, IProgress<double>? progress, CancellationToken token)
     {
@@ -263,8 +340,7 @@ public sealed class LinkSession : IAsyncDisposable
         {
             token.ThrowIfCancellationRequested();
             string target = Path.Combine(targetDirectory, Path.GetFileName(mod.Name));
-            var existing = new FileInfo(target);
-            if (existing.Exists && existing.Length == mod.Size)
+            if (Matches(target, mod))
             {
                 copied += mod.Size;
                 progress?.Report(totalBytes == 0 ? 1 : (double)copied / totalBytes);
@@ -287,12 +363,36 @@ public sealed class LinkSession : IAsyncDisposable
                 }
             }
 
+            // a truncated or tampered download must never reach the mods folder
+            if (!Matches(temporary, mod))
+            {
+                try { File.Delete(temporary); } catch { }
+                throw new LinkException($"模组 {mod.Name} 校验失败,已丢弃");
+            }
+
             File.Move(temporary, target, overwrite: true);
             written++;
         }
 
         Log?.Invoke($"已同步 {written} 个模组到 {targetDirectory}");
         return written;
+    }
+
+    /// <summary>Whether a local file is already exactly the file the host offers.</summary>
+    private static bool Matches(string path, ModEntry mod)
+    {
+        var info = new FileInfo(path);
+        if (!info.Exists || info.Length != mod.Size)
+            return false;
+        try
+        {
+            using var stream = File.OpenRead(path);
+            return Convert.ToHexStringLower(System.Security.Cryptography.SHA1.HashData(stream)) == mod.Sha1.ToLowerInvariant();
+        }
+        catch (IOException)
+        {
+            return false;
+        }
     }
 
     /// <summary>Ends the session: drops the guests, closes the room service and stops the virtual network.</summary>
@@ -329,12 +429,11 @@ public sealed class LinkSession : IAsyncDisposable
 
         _runner?.Dispose();
         _runner = null;
+        _status = LinkStatus.Idle;
+        Error = null;
         Log?.Invoke("联机已停止");
         RaiseChanged();
     }
-
-    /// <summary>Removes a guest from the room (host only).</summary>
-    public void Kick(string playerId) => _server?.Kick(playerId);
 
     public async ValueTask DisposeAsync() => await StopAsync().ConfigureAwait(false);
 

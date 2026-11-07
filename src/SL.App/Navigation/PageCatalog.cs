@@ -35,7 +35,7 @@ public static class PageCatalog
         ["st.theme"] = new("st.theme", "主题工坊", "从 Minecraft 方块纹理取色,生成并应用整套界面配色。", typeof(SL.App.Pages.ThemeWorkshopPage)),
         ["st.terms"] = new("st.terms", "用户协议", "使用条款、隐私说明与免责声明。", typeof(SL.App.Pages.TermsPage)),
         ["st.about"] = new("st.about", "关于", "版本信息、运行环境、能力概览与致谢。", typeof(SL.App.Pages.AboutPage)),
-        ["tools.online"] = new("tools.online", "联机", "房间码开房与加入,自动建立虚拟局域网,免端口映射与公网 IP。", typeof(SL.App.Pages.MultiplayerPage)),
+        ["tools.online"] = new("tools.online", "联机", "房间码开房与加入,进世界后自动绑定端口,自动建立虚拟局域网。", typeof(SL.App.Pages.MultiplayerPage)),
         ["tools.skins"] = new("tools.skins", "皮肤站", "按用户分栏查看已保存皮肤,并提供可旋转的 3D 方块模型预览。", typeof(SL.App.Pages.SkinStationPage)),
         ["tools.diag"] = new("tools.diag", "崩溃诊断", "崩溃报告解析、特征匹配与修复建议。", typeof(SL.App.Pages.CrashDiagPage)),
         ["tools.log"] = new("tools.log", "应用日志", "尾部读取、关键词过滤与日志目录直达。", typeof(SL.App.Pages.AppLogPage)),

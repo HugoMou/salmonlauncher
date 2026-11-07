@@ -41,6 +41,7 @@ public sealed class RoomServer : IAsyncDisposable
     private readonly PlayerProfile _host;
     private readonly int _requestedPort;
     private readonly Func<string, string?>? _modPath;
+    private readonly Func<string, bool>? _isBlocked;
     private readonly CancellationTokenSource _cts = new();
     private readonly object _gate = new();
     private readonly List<PlayerProfile> _players = [];
@@ -55,12 +56,20 @@ public sealed class RoomServer : IAsyncDisposable
     /// <param name="gamePort">Port the host's game listens on inside the room network.</param>
     /// <param name="modPath">Maps a mod's SHA-1 to its file on disk; guests that ask for it get the bytes.</param>
     /// <param name="port">Port to listen on; 0 lets the system pick one (used by tests).</param>
-    public RoomServer(RoomInfo info, PlayerProfile host, int gamePort, Func<string, string?>? modPath = null, int port = ServicePort)
+    /// <param name="isBlocked">Players the host removed and does not want back.</param>
+    public RoomServer(
+        RoomInfo info,
+        PlayerProfile host,
+        int gamePort,
+        Func<string, string?>? modPath = null,
+        int port = ServicePort,
+        Func<string, bool>? isBlocked = null)
     {
         _info = info;
         _host = host.AsHost();
         GamePort = gamePort;
         _modPath = modPath;
+        _isBlocked = isBlocked;
         _requestedPort = port;
         _players.Add(_host);
     }
@@ -239,6 +248,12 @@ public sealed class RoomServer : IAsyncDisposable
         if (profile is null)
             return new Admission(null, RoomMessages.Rejection.Removed);
 
+        if (_isBlocked?.Invoke(profile.Id) == true)
+        {
+            LinkLog.Info($"拒绝已被移出的玩家 {profile.Name}({remote})");
+            return new Admission(null, RoomMessages.Rejection.Blocked);
+        }
+
         bool known = _sessions.ContainsKey(profile.Id)
                      || string.Equals(profile.Id, _host.Id, StringComparison.OrdinalIgnoreCase);
         if (!known && IsFull())
@@ -294,7 +309,10 @@ public sealed class RoomServer : IAsyncDisposable
                 return (RoomFraming.StatusOk, RoomMessages.ProtocolList(SupportedKinds()));
 
             case RoomProtocol.ServerPort:
-                return (RoomFraming.StatusOk, RoomMessages.ServerPort(GamePort));
+                // the code may be shared before the host has entered a world: say "not yet" instead of failing
+                return GamePort > 0
+                    ? (RoomFraming.StatusOk, RoomMessages.ServerPort(GamePort))
+                    : (RoomFraming.StatusNotReady, Array.Empty<byte>());
 
             case RoomProtocol.PlayerList:
                 return (RoomFraming.StatusOk, RoomMessages.PlayerList(Players));

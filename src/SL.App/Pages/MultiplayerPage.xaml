@@ -44,6 +44,11 @@
                                FontSize="12"
                                TextWrapping="Wrap"
                                Foreground="{ThemeResource Brush.FgDim}" />
+                    <TextBlock x:Name="DetailText"
+                               FontSize="11.5"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"
+                               Foreground="{ThemeResource Brush.FgFaint}" />
                 </StackPanel>
                 <Button x:Name="ElevateButton"
                         Grid.Column="1"
@@ -98,11 +103,9 @@
             <!-- ===================== Create a room ===================== -->
             <StackPanel x:Name="CreatePanel" Spacing="14">
 
-                <Border Background="{ThemeResource Brush.Card}"
+                <Border x:Name="HostForm" Background="{ThemeResource Brush.Card}"
                         BorderBrush="{ThemeResource Brush.Border}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="20">
+                        BorderThickness="1" CornerRadius="10" Padding="20">
                     <StackPanel Spacing="14">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
@@ -111,7 +114,7 @@
                             </Grid.ColumnDefinitions>
                             <FontIcon Glyph="&#xE968;" FontSize="18" Foreground="{ThemeResource Brush.Accent}" />
                             <TextBlock Grid.Column="1"
-                                       Text="先在游戏里「对局域网开放」,下面会列出本机开放的世界;选中一个再创建房间,房间码发给好友即可。"
+                                       Text="先点「创建房间」拿到房间码发给好友,再进游戏打开世界:启动器会自动发现这个世界并把房间指向它,不用填端口。"
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        TextWrapping="Wrap"
@@ -121,157 +124,88 @@
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="6">
-                                <TextBlock Text="本机已开放的世界"
-                                           FontSize="12"
-                                           Foreground="{ThemeResource Brush.FgDim}" />
-                                <TextBlock x:Name="LanEmptyText"
-                                           Text="还没有检测到。请在游戏里「对局域网开放」,或手动填写端口。"
-                                           FontSize="11.5"
-                                           TextWrapping="Wrap"
-                                           Foreground="{ThemeResource Brush.FgFaint}" />
-                                <ListView x:Name="LanWorldList"
-                                          SelectionMode="Single"
-                                          MaxHeight="150"
-                                          IsItemClickEnabled="True"
-                                          ItemClick="OnLanWorldClick"
-                                          Visibility="Collapsed">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate x:DataType="pages:LanWorldRow">
-                                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2">
-                                                <TextBlock Text="{x:Bind Motd}"
-                                                           FontSize="12.5"
-                                                           Foreground="{ThemeResource Brush.Fg}" />
-                                                <TextBlock Text="{x:Bind Address}"
-                                                           FontSize="12"
-                                                           Foreground="{ThemeResource Brush.FgFaint}" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </StackPanel>
-                            <Button Grid.Column="1"
-                                    Content="重新扫描"
-                                    Click="OnRescanLan"
-                                    VerticalAlignment="Bottom" />
-                        </Grid>
-
-                        <Grid ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <NumberBox x:Name="GamePortBox"
-                                       Header="游戏端口"
-                                       Minimum="1"
-                                       Maximum="65535"
-                                       SmallChange="1"
-                                       Value="25565"
-                                       SpinButtonPlacementMode="Compact"
-                                       Width="130" />
-                            <TextBox x:Name="RoomNameBox"
-                                     Grid.Column="1"
-                                     Header="房间名"
-                                     PlaceholderText="例如:周末生存"
-                                     MaxLength="48" />
-                            <TextBox x:Name="NoticeBox"
-                                     Grid.Column="2"
-                                     Header="公告(可选)"
-                                     PlaceholderText="例如:禁止破坏建筑"
-                                     MaxLength="200" />
-                            <NumberBox x:Name="MaxPlayersBox"
-                                       Grid.Column="3"
-                                       Header="人数上限"
-                                       Minimum="0"
-                                       Maximum="100"
-                                       SmallChange="1"
-                                       Value="0"
-                                       SpinButtonPlacementMode="Compact"
-                                       Width="130" />
+                            <TextBox x:Name="RoomNameBox" Header="房间名" PlaceholderText="例如:周末生存" MaxLength="48" />
+                            <TextBox x:Name="NoticeBox" Grid.Column="1" Header="公告(可选)" PlaceholderText="例如:禁止破坏建筑" MaxLength="200" />
+                            <NumberBox x:Name="MaxPlayersBox" Grid.Column="2" Header="人数上限" Minimum="0" Maximum="100"
+                                       SmallChange="1" Value="0" SpinButtonPlacementMode="Compact" Width="130" />
                         </Grid>
 
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Button x:Name="HostButton"
-                                    Content="创建房间"
-                                    Click="OnHost"
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button x:Name="HostButton" Content="创建房间" Click="OnHost"
                                     Style="{StaticResource AccentButtonStyle}" />
-                            <Button x:Name="StopHostButton"
-                                    Content="结束房间"
-                                    Click="OnStopHost"
-                                    Visibility="Collapsed" />
-                            <ProgressBar x:Name="HostProgress"
-                                         Width="220"
-                                         VerticalAlignment="Center"
-                                         Visibility="Collapsed" />
+                            <Button x:Name="CancelHostButton" Content="取消" Click="OnCancelHost" Visibility="Collapsed" />
+                            <Button x:Name="StopHostButton" Content="结束房间" Click="OnStopHost" Visibility="Collapsed" />
+                            <ProgressBar x:Name="HostProgress" Width="200" VerticalAlignment="Center" Visibility="Collapsed" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
                 <!-- Room code card -->
-                <Border x:Name="RoomCard"
-                        Background="{ThemeResource Brush.Card}"
+                <Border x:Name="RoomCard" Background="{ThemeResource Brush.Card}"
                         BorderBrush="{ThemeResource Brush.Border}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="20"
-                        Visibility="Collapsed">
+                        BorderThickness="1" CornerRadius="10" Padding="20" Visibility="Collapsed">
                     <StackPanel Spacing="14">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="房间码"
-                                           FontSize="12"
-                                           Foreground="{ThemeResource Brush.FgDim}" />
-                                <TextBlock x:Name="HostCodeText"
-                                           FontFamily="Consolas"
-                                           FontSize="26"
-                                           FontWeight="SemiBold"
-                                           IsTextSelectionEnabled="True"
-                                           Foreground="{ThemeResource Brush.Fg}" />
-                                <TextBlock Text="好友在「加入房间」里粘贴这串码即可;一串码对应一条专属的虚拟局域网,别人猜不到。"
-                                           FontSize="11.5"
-                                           TextWrapping="Wrap"
-                                           Foreground="{ThemeResource Brush.FgFaint}" />
-                            </StackPanel>
-                            <Button Grid.Column="1"
-                                    Content="复制房间码"
-                                    Click="OnCopyCode"
-                                    VerticalAlignment="Center" />
-                        </Grid>
-
-                        <Grid ColumnSpacing="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="游戏内连接地址"
-                                           FontSize="12"
-                                           Foreground="{ThemeResource Brush.FgDim}" />
-                                <TextBlock x:Name="HostAddressText"
-                                           FontFamily="Consolas"
-                                           FontSize="15"
-                                           IsTextSelectionEnabled="True"
+                                <TextBlock Text="房间码" FontSize="12" Foreground="{ThemeResource Brush.FgDim}" />
+                                <TextBlock x:Name="HostCodeText" FontFamily="Consolas" FontSize="24" FontWeight="SemiBold"
+                                           IsTextSelectionEnabled="True" TextWrapping="Wrap"
                                            Foreground="{ThemeResource Brush.Fg}" />
+                                <TextBlock x:Name="HostStateText" FontSize="11.5" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource Brush.FgFaint}" />
                             </StackPanel>
-                            <Button Grid.Column="1"
-                                    Content="复制地址"
-                                    Click="OnCopyAddress"
-                                    VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="复制房间码" Click="OnCopyCode" VerticalAlignment="Center" />
+                            <Button Grid.Column="2" Content="复制邀请" Click="OnCopyInvite" VerticalAlignment="Center" />
                         </Grid>
 
+                        <StackPanel x:Name="HostAddressPanel" Spacing="4">
+                            <TextBlock Text="游戏内连接地址" FontSize="12" Foreground="{ThemeResource Brush.FgDim}" />
+                            <TextBlock x:Name="HostAddressText" FontFamily="Consolas" FontSize="14"
+                                       IsTextSelectionEnabled="True" Foreground="{ThemeResource Brush.Fg}" />
+                        </StackPanel>
+
                         <StackPanel Spacing="6">
-                            <TextBlock Text="房间成员"
-                                       FontSize="12"
-                                       Foreground="{ThemeResource Brush.FgDim}" />
-                            <ListView x:Name="HostPlayersList" MaxHeight="220">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="WorldTitleText" Text="本机已开放的世界"
+                                           FontSize="12" VerticalAlignment="Center"
+                                           Foreground="{ThemeResource Brush.FgDim}" />
+                                <Button Grid.Column="1" Content="重新扫描" FontSize="11" Click="OnRescanLan" />
+                            </Grid>
+                            <TextBlock x:Name="LanEmptyText"
+                                       Text="还没有发现世界。进游戏「对局域网开放」后会自动出现在这里。"
+                                       FontSize="11.5" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgFaint}" />
+                            <ListView x:Name="LanWorldList" SelectionMode="Single" MaxHeight="130"
+                                      IsItemClickEnabled="True" ItemClick="OnLanWorldClick"
+                                      Visibility="Collapsed">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="pages:LanWorldRow">
+                                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2">
+                                            <TextBlock Text="{x:Bind Motd}" FontSize="12.5"
+                                                       Foreground="{ThemeResource Brush.Fg}" />
+                                            <TextBlock Text="{x:Bind Address}" FontSize="12"
+                                                       Foreground="{ThemeResource Brush.FgFaint}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="房间成员" FontSize="12" Foreground="{ThemeResource Brush.FgDim}" />
+                            <ListView x:Name="HostPlayersList" MaxHeight="200">
                                 <ListView.ItemTemplate>
                                     <DataTemplate x:DataType="pages:LinkPlayerRow">
                                         <Grid ColumnSpacing="10" Margin="0,3">
@@ -281,24 +215,14 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <FontIcon Glyph="{x:Bind Glyph}"
-                                                      FontSize="14"
+                                            <FontIcon Glyph="{x:Bind Glyph}" FontSize="14"
                                                       Foreground="{ThemeResource Brush.FgDim}" />
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{x:Bind Name}"
-                                                       FontSize="12.5"
-                                                       VerticalAlignment="Center"
-                                                       Foreground="{ThemeResource Brush.Fg}" />
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{x:Bind Tag}"
-                                                       FontSize="11"
-                                                       VerticalAlignment="Center"
-                                                       Foreground="{ThemeResource Brush.FgFaint}" />
-                                            <Button Grid.Column="3"
-                                                    Content="移出"
-                                                    FontSize="11"
-                                                    Visibility="{x:Bind CanKick}"
-                                                    Command="{x:Bind KickCommand}" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="12.5"
+                                                       VerticalAlignment="Center" Foreground="{ThemeResource Brush.Fg}" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Tag}" FontSize="11"
+                                                       VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgFaint}" />
+                                            <Button Grid.Column="3" Content="移出" FontSize="11"
+                                                    Visibility="{x:Bind CanKick}" Command="{x:Bind KickCommand}" />
                                         </Grid>
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
@@ -311,11 +235,8 @@
             <!-- ===================== Join a room ===================== -->
             <StackPanel x:Name="JoinPanel" Spacing="14" Visibility="Collapsed">
 
-                <Border Background="{ThemeResource Brush.Card}"
-                        BorderBrush="{ThemeResource Brush.Border}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="20">
+                <Border Background="{ThemeResource Brush.Card}" BorderBrush="{ThemeResource Brush.Border}"
+                        BorderThickness="1" CornerRadius="10" Padding="20">
                     <StackPanel Spacing="14">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
@@ -324,94 +245,81 @@
                             </Grid.ColumnDefinitions>
                             <FontIcon Glyph="&#xE8FA;" FontSize="18" Foreground="{ThemeResource Brush.Accent}" />
                             <TextBlock Grid.Column="1"
-                                       Text="粘贴好友发来的房间码,连上后点「启动游戏并进入」即可直接进入对方的局域网世界。"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"
-                                       TextWrapping="Wrap"
+                                       Text="粘贴好友发来的房间码。连上后点「启动游戏并进入」,游戏会直接进入对方的局域网世界。"
+                                       FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"
                                        Foreground="{ThemeResource Brush.FgDim}" />
                         </Grid>
 
-                        <Grid ColumnSpacing="12">
+                        <Grid ColumnSpacing="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="CodeBox"
-                                     Header="房间码"
-                                     FontFamily="Consolas"
+                            <TextBox x:Name="CodeBox" Header="房间码" FontFamily="Consolas"
                                      PlaceholderText="U/XXXX-XXXX-XXXX-XXXX" />
-                            <Button x:Name="JoinButton"
-                                    Grid.Column="1"
-                                    Content="加入"
-                                    Click="OnJoin"
-                                    Style="{StaticResource AccentButtonStyle}"
-                                    VerticalAlignment="Bottom" />
-                            <Button x:Name="LeaveButton"
-                                    Grid.Column="2"
-                                    Content="断开"
-                                    Click="OnStopHost"
-                                    VerticalAlignment="Bottom"
-                                    Visibility="Collapsed" />
+                            <Button Grid.Column="1" Content="粘贴" Click="OnPasteCode" VerticalAlignment="Bottom" />
+                            <Button x:Name="JoinButton" Grid.Column="2" Content="加入" Click="OnJoin"
+                                    Style="{StaticResource AccentButtonStyle}" VerticalAlignment="Bottom" />
+                            <Button x:Name="CancelJoinButton" Grid.Column="3" Content="取消" Click="OnCancelJoin"
+                                    VerticalAlignment="Bottom" Visibility="Collapsed" />
+                            <Button x:Name="LeaveButton" Grid.Column="4" Content="断开" Click="OnStopHost"
+                                    VerticalAlignment="Bottom" Visibility="Collapsed" />
                         </Grid>
 
-                        <ProgressBar x:Name="JoinProgress"
-                                     Width="260"
-                                     HorizontalAlignment="Left"
-                                     Visibility="Collapsed" />
+                        <ProgressBar x:Name="JoinProgress" Width="260" HorizontalAlignment="Left" Visibility="Collapsed" />
                     </StackPanel>
                 </Border>
 
-                <Border x:Name="JoinCard"
-                        Background="{ThemeResource Brush.Card}"
-                        BorderBrush="{ThemeResource Brush.Border}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="20"
-                        Visibility="Collapsed">
+                <Border x:Name="DisconnectedCard" Background="{ThemeResource Brush.Card}"
+                        BorderBrush="{ThemeResource Brush.Border}" BorderThickness="1" CornerRadius="10"
+                        Padding="16,12" Visibility="Collapsed">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="DisconnectedText" FontSize="12" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" Foreground="{ThemeResource Brush.Fg}" />
+                        <Button Grid.Column="1" Content="重新加入" Click="OnRejoin"
+                                Style="{StaticResource AccentButtonStyle}" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="JoinCard" Background="{ThemeResource Brush.Card}"
+                        BorderBrush="{ThemeResource Brush.Border}" BorderThickness="1" CornerRadius="10"
+                        Padding="20" Visibility="Collapsed">
                     <StackPanel Spacing="14">
                         <StackPanel Spacing="4">
-                            <TextBlock x:Name="JoinRoomNameText"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
+                            <TextBlock x:Name="JoinRoomNameText" FontSize="16" FontWeight="SemiBold"
                                        Foreground="{ThemeResource Brush.Fg}" />
-                            <TextBlock x:Name="JoinNoticeText"
-                                       FontSize="12"
-                                       TextWrapping="Wrap"
+                            <TextBlock x:Name="JoinNoticeText" FontSize="12" TextWrapping="Wrap"
                                        Foreground="{ThemeResource Brush.FgDim}" />
+                            <TextBlock x:Name="JoinVersionText" FontSize="11.5" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgFaint}" />
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Button x:Name="LaunchButton"
-                                    Content="启动游戏并进入"
-                                    Click="OnLaunchGame"
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button x:Name="LaunchButton" Content="启动游戏并进入" Click="OnLaunchGame"
                                     Style="{StaticResource AccentButtonStyle}" />
-                            <Button x:Name="ModsButton"
-                                    Content="同步房主模组"
-                                    Click="OnSyncMods"
-                                    Visibility="Collapsed" />
-                            <TextBlock x:Name="JoinAddressText"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"
+                            <Button x:Name="ModsButton" Content="同步房主模组" Click="OnSyncMods" Visibility="Collapsed" />
+                            <TextBlock x:Name="JoinAddressText" FontSize="12" VerticalAlignment="Center"
                                        Foreground="{ThemeResource Brush.FgFaint}" />
                         </StackPanel>
 
                         <StackPanel Spacing="6">
-                            <TextBlock Text="房间成员"
-                                       FontSize="12"
-                                       Foreground="{ThemeResource Brush.FgDim}" />
-                            <ListView x:Name="JoinPlayersList" MaxHeight="220">
+                            <TextBlock Text="房间成员" FontSize="12" Foreground="{ThemeResource Brush.FgDim}" />
+                            <ListView x:Name="JoinPlayersList" MaxHeight="200">
                                 <ListView.ItemTemplate>
                                     <DataTemplate x:DataType="pages:LinkPlayerRow">
                                         <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,3">
-                                            <FontIcon Glyph="{x:Bind Glyph}"
-                                                      FontSize="14"
+                                            <FontIcon Glyph="{x:Bind Glyph}" FontSize="14"
                                                       Foreground="{ThemeResource Brush.FgDim}" />
-                                            <TextBlock Text="{x:Bind Name}"
-                                                       FontSize="12.5"
+                                            <TextBlock Text="{x:Bind Name}" FontSize="12.5"
                                                        Foreground="{ThemeResource Brush.Fg}" />
-                                            <TextBlock Text="{x:Bind Tag}"
-                                                       FontSize="11"
+                                            <TextBlock Text="{x:Bind Tag}" FontSize="11"
                                                        Foreground="{ThemeResource Brush.FgFaint}" />
                                         </StackPanel>
                                     </DataTemplate>
@@ -422,17 +330,57 @@
                 </Border>
             </StackPanel>
 
+            <!-- ===================== Settings ===================== -->
+            <Expander x:Name="SettingsExpander" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                      Header="联机设置">
+                <StackPanel Spacing="12" Padding="4,8,4,4">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="PlayerNameBox" Header="房间内显示的名字"
+                                 PlaceholderText="留空则使用当前账户名" MaxLength="32"
+                                 TextChanged="OnSettingTextChanged" />
+                        <ComboBox x:Name="InstanceCombo" Grid.Column="1" Header="模组所属实例"
+                                  HorizontalAlignment="Stretch" SelectionChanged="OnSettingSelected" />
+                    </Grid>
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="CustomNodesBox" Header="自定义中转节点(可选,空格或换行分隔)"
+                                 PlaceholderText="tcp://host:11010" TextChanged="OnSettingTextChanged" />
+                        <ComboBox x:Name="TimeoutCombo" Grid.Column="1" Header="等待房主" MinWidth="130"
+                                  VerticalAlignment="Bottom" SelectionChanged="OnSettingSelected" />
+                    </Grid>
+
+                    <Grid ColumnSpacing="12" RowSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch x:Name="PublicNodesSwitch" Header="使用公共中转节点"
+                                      OnContent="开启" OffContent="关闭" Toggled="OnSettingToggled" />
+                        <ToggleSwitch x:Name="ShareModsSwitch" Grid.Column="1" Header="向房间分享本实例模组"
+                                      OnContent="开启" OffContent="关闭" Toggled="OnSettingToggled" />
+                    </Grid>
+
+                    <ToggleSwitch x:Name="HideAddressSwitch" Header="隐藏游戏内连接地址"
+                                  OnContent="隐藏" OffContent="显示" Toggled="OnSettingToggled" />
+                    <TextBlock Text="关闭公共节点后,只有你和好友能直接互通(同网段或已有公网端点)时才能联机;节点只负责打洞与必要时中转,游戏数据在双方之间传输。"
+                               FontSize="11.5" TextWrapping="Wrap" Foreground="{ThemeResource Brush.FgFaint}" />
+                </StackPanel>
+            </Expander>
+
             <!-- ===================== Log ===================== -->
-            <Border Background="{ThemeResource Brush.Card}"
-                    BorderBrush="{ThemeResource Brush.Border}"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="16,12">
+            <Border Background="{ThemeResource Brush.Card}" BorderBrush="{ThemeResource Brush.Border}"
+                    BorderThickness="1" CornerRadius="10" Padding="16,12">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="运行日志"
-                               FontSize="12"
-                               Foreground="{ThemeResource Brush.FgDim}" />
-                    <ScrollViewer x:Name="LogScroll" Height="150" VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="运行日志" FontSize="12" Foreground="{ThemeResource Brush.FgDim}" />
+                    <ScrollViewer x:Name="LogScroll" Height="140" VerticalScrollBarVisibility="Auto">
                         <ListView x:Name="LogList" SelectionMode="None" />
                     </ScrollViewer>
                 </StackPanel>

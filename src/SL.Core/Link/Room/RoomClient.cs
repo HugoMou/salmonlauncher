@@ -245,6 +245,10 @@ public sealed class RoomClient : IAsyncDisposable
             if (response.IsOk)
                 return response.Body;
 
+            // "not ready" is the host saying the code is right but no world is open yet; retry, do not fail
+            if (response.Status == RoomFraming.StatusNotReady)
+                throw new LinkException("房主还没有进入世界");
+
             string reason = Encoding.UTF8.GetString(response.Body);
             if (allowRejection)
             {
