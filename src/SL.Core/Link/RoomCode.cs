@@ -32,7 +32,7 @@ public sealed class RoomCode
     /// <summary>Base-34 alphabet with the look-alike letters I and O left out.</summary>
     private const string Alphabet = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
-    private const string NetworkPrefix = "scaffolding-mc-";
+    private const string NetworkPrefix = "salmon-mc-";
     private const int BodyDigits = 16;
     private const int CheckDivisor = 7;
 

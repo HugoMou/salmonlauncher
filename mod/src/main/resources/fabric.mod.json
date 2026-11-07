@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "slcompanion",
+  "version": "${version}",
+  "name": "SLCompanion",
+  "description": "Companion mod for SalmonLauncher: opens singleplayer worlds to LAN and publishes room status for the launcher.",
+  "authors": [
+    "SalmonLauncher"
+  ],
+  "license": "GPL-3.0-or-later",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.salmonlauncher.slcompanion.SLCompanion"
+    ],
+    "client": [
+      "com.salmonlauncher.slcompanion.SLCompanionClient"
+    ]
+  },
+  "mixins": [
+    "slcompanion.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.1",
+    "java": ">=21"
+  }
+}

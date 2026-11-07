@@ -50,6 +50,11 @@ public static class EasyTierRuntime
     /// <summary>A core that is ready to run, without downloading anything; <c>null</c> when none is present.</summary>
     public static string? FindLocal()
     {
+        // an explicitly chosen core wins: it is how a player gets running when every mirror is unreachable
+        string chosen = LinkSettings.Current.CorePath.Trim();
+        if (chosen.Length > 0 && IsUsable(chosen))
+            return chosen;
+
         foreach (string candidate in new[]
                  {
                      Path.Combine(BundledDirectory, CoreFileName),
@@ -115,8 +120,14 @@ public static class EasyTierRuntime
     private static async Task DownloadAsync(string target, IProgress<double>? progress, CancellationToken token)
     {
         string relative = $"EasyTier/EasyTier/releases/download/v{Version}/{AssetName}";
+        var mirrors = new List<string>();
+        string custom = LinkSettings.Current.DownloadMirror.Trim();
+        if (custom.Length > 0)
+            mirrors.Add(custom.EndsWith('/') ? custom : custom + "/");
+        mirrors.AddRange(Mirrors);
+
         Exception? last = null;
-        foreach (string mirror in Mirrors)
+        foreach (string mirror in mirrors)
         {
             token.ThrowIfCancellationRequested();
             try
@@ -132,20 +143,40 @@ public static class EasyTierRuntime
             }
         }
 
-        throw new LinkException("联机内核下载失败,请检查网络后重试", last);
+        throw new LinkException("联机内核下载失败:请检查网络,或在「联机设置」里指定本地内核文件", last);
     }
 
+    /// <summary>
+    /// Downloads one archive, resuming a partial file when the server supports it: the runtime is ~31 MB and
+    /// mirror throughput to mainland China swings between 5 KB/s and 200 KB/s, so an interrupted transfer must
+    /// not start over.
+    /// </summary>
     private static async Task DownloadOneAsync(string url, string target, IProgress<double>? progress, CancellationToken token)
     {
-        using var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+        long already = File.Exists(target) ? new FileInfo(target).Length : 0;
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (already > 0)
+            request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(already, null);
+
+        using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+        if (response.StatusCode is System.Net.HttpStatusCode.RequestedRangeNotSatisfiable)
+        {
+            try { File.Delete(target); } catch { }
+            already = 0;
+        }
+        else if (already > 0 && response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            already = 0;   // the mirror ignored the range and is sending the whole file again
+        }
         response.EnsureSuccessStatusCode();
 
-        long total = response.Content.Headers.ContentLength ?? -1;
+        long total = response.Content.Headers.ContentLength is { } length ? length + already : -1;
         await using var source = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-        await using var destination = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
+        await using var destination = new FileStream(
+            target, already > 0 ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
 
         var buffer = new byte[81920];
-        long copied = 0;
+        long copied = already;
         while (true)
         {
             int read = await source.ReadAsync(buffer, token).ConfigureAwait(false);

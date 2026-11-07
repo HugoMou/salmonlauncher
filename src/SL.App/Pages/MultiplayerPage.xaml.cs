@@ -30,6 +30,7 @@ using SL.Core.Link;
 using SL.Core.Link.Room;
 using SL.Core.Logging;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage.Pickers;
 
 namespace SL.App.Pages;
 
@@ -73,6 +74,26 @@ public sealed class LinkPlayerRow
     public RelayCommand KickCommand { get; }
 }
 
+/// <summary>One room as the lobby lists it.</summary>
+public sealed class LobbyRoomRow
+{
+    public LobbyRoomRow(LobbyRoom room, Action<LobbyRoom> join)
+    {
+        Room = room;
+        Name = room.Name;
+        string tags = room.Tags.Count > 0 ? string.Join(" · ", room.Tags) + " · " : "";
+        string version = room.Version.Length > 0 ? room.Version : "?";
+        Detail = string.Format("{0}{1}/{2} · {3}{4}", tags, room.Players, room.MaxPlayers, version,
+            room.HasPassword ? " · 🔒" : "");
+        JoinCommand = new RelayCommand(() => join(room));
+    }
+
+    public LobbyRoom Room { get; }
+    public string Name { get; }
+    public string Detail { get; }
+    public RelayCommand JoinCommand { get; }
+}
+
 /// <summary>
 /// Multiplayer in the shape players expect from a room-code tool: open the room first and share the code,
 /// then enter a world — the launcher notices the world by itself and points the room at it. A guest pastes
@@ -84,6 +105,7 @@ public sealed partial class MultiplayerPage : Page
     private readonly ObservableCollection<string> _messages = [];
     private readonly ObservableCollection<LanWorldRow> _worlds = [];
     private readonly ObservableCollection<LinkPlayerRow> _players = [];
+    private readonly ObservableCollection<LobbyRoomRow> _lobbyRooms = [];
     private readonly LanWorldFinder _finder = new();
 
     private LinkSession? _session;
@@ -93,6 +115,9 @@ public sealed partial class MultiplayerPage : Page
     private bool _busy;
     private bool _modsProbed;
     private bool _loadingSettings;
+    private string _lobbyId = "";
+    private string _lobbySecret = "";
+    private DispatcherQueueTimer? _lobbyTimer;
 
     public MultiplayerPage()
     {
@@ -101,10 +126,16 @@ public sealed partial class MultiplayerPage : Page
         LanWorldList.ItemsSource = _worlds;
         HostPlayersList.ItemsSource = _players;
         JoinPlayersList.ItemsSource = _players;
+        LobbyList.ItemsSource = _lobbyRooms;
         ModeCreate.IsChecked = true;
 
         _finder.Found += world => _ui.TryEnqueue(() => AddWorld(world));
         _finder.Failed += reason => _ui.TryEnqueue(() => AddLog("[局域网] " + reason));
+
+        _lobbyTimer = DispatcherQueue.CreateTimer();
+        _lobbyTimer.Interval = TimeSpan.FromSeconds(60);
+        _lobbyTimer.IsRepeating = true;
+        _lobbyTimer.Tick += async (_, _) => await LobbyTickAsync();
 
         PageScroll.SizeChanged += (_, _) => FitToViewport();
         Loaded += (_, _) =>
@@ -129,14 +160,16 @@ public sealed partial class MultiplayerPage : Page
         StartLanScan();
         Attach(LinkSession.Current);
         Refresh();
+        _lobbyTimer?.Start();
         AddLog(Loc.T("联机模块就绪"));
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        // the room keeps running while the player visits other pages; only the scanner is tied to this page
+        // the room keeps running while the player visits other pages; only the scanner and the lobby poll stop here
         StopLanScan();
+        _lobbyTimer?.Stop();
     }
 
     // ------------------------------------------------------------ settings
@@ -150,6 +183,12 @@ public sealed partial class MultiplayerPage : Page
         PublicNodesSwitch.IsOn = settings.UsePublicNodes;
         ShareModsSwitch.IsOn = settings.ShareMods;
         HideAddressSwitch.IsOn = settings.HideAddress;
+        UseLobbySwitch.IsOn = settings.UseLobby;
+        LobbyTagsBox.Text = string.Join(", ", settings.LobbyTags);
+        LobbyPasswordBox.Text = settings.LobbyPassword;
+        LobbyUrlBox.Text = settings.LobbyUrl;
+        CorePathBox.Text = settings.CorePath;
+        MirrorBox.Text = settings.DownloadMirror;
 
         TimeoutCombo.Items.Clear();
         foreach (int seconds in LinkSettings.SearchTimeoutChoices)
@@ -185,6 +224,34 @@ public sealed partial class MultiplayerPage : Page
                                        ?? LaunchPipeline.LatestInstanceId()
                                        ?? "";
 
+    /// <summary>Lets a player hand the launcher a core they downloaded themselves.</summary>
+    private async void OnPickCore(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var picker = new FileOpenPicker();
+            WinRT.Interop.InitializeWithWindow.Initialize(picker,
+                WinRT.Interop.WindowNative.GetWindowHandle(App.Window));
+            picker.SuggestedStartLocation = PickerLocationId.Downloads;
+            picker.FileTypeFilter.Add(".exe");
+            var file = await picker.PickSingleFileAsync();
+            if (file is null)
+                return;
+            CorePathBox.Text = file.Path;
+            SetDetail(string.Format(Loc.T("已指定本地内核:{0}"), Path.GetFileName(file.Path)));
+        }
+        catch (Exception ex)
+        {
+            SetDetail(Loc.T("无法选择文件:") + ex.Message);
+        }
+    }
+
+    private void OnClearCore(object sender, RoutedEventArgs e)
+    {
+        CorePathBox.Text = "";
+        SetDetail(Loc.T("将自动下载联机内核"));
+    }
+
     private void OnSettingTextChanged(object sender, TextChangedEventArgs e) => ApplySettings();
 
     private void OnSettingToggled(object sender, RoutedEventArgs e) => ApplySettings();
@@ -204,6 +271,17 @@ public sealed partial class MultiplayerPage : Page
         settings.ShareMods = ShareModsSwitch.IsOn;
         settings.ServeMods = ShareModsSwitch.IsOn;
         settings.HideAddress = HideAddressSwitch.IsOn;
+        settings.UseLobby = UseLobbySwitch.IsOn;
+        settings.LobbyTags = LobbyTagsBox.Text
+            .Split([',', '，', ' ', '、'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(tag => tag.Trim())
+            .Where(tag => tag.Length > 0)
+            .Take(5)
+            .ToList();
+        settings.LobbyPassword = LobbyPasswordBox.Text.Trim();
+        settings.LobbyUrl = LobbyUrlBox.Text.Trim();
+        settings.CorePath = CorePathBox.Text.Trim();
+        settings.DownloadMirror = MirrorBox.Text.Trim();
         if (TimeoutCombo.SelectedIndex >= 0 && TimeoutCombo.SelectedIndex < LinkSettings.SearchTimeoutChoices.Length)
             settings.SearchTimeoutSeconds = LinkSettings.SearchTimeoutChoices[TimeoutCombo.SelectedIndex];
         LinkSettings.Save();
@@ -335,6 +413,7 @@ public sealed partial class MultiplayerPage : Page
             Attach(session);
             SetDetail(null);
             Refresh();
+            await PublishLobbyAsync().ConfigureAwait(true);
             AppServices.Notify.Publish(NotifyKind.Success, Loc.T("房间已创建,把房间码发给好友即可"));
         }
         catch (OperationCanceledException)
@@ -364,6 +443,7 @@ public sealed partial class MultiplayerPage : Page
             return;
 
         Attach(null);
+        await UnpublishLobbyAsync().ConfigureAwait(true);
         await session.StopAsync().ConfigureAwait(true);
         _worlds.Clear();
         Refresh();
@@ -808,6 +888,132 @@ public sealed partial class MultiplayerPage : Page
         finally
         {
             ModsButton.IsEnabled = true;
+        }
+    }
+
+    // ------------------------------------------------------------ lobby
+
+    /// <summary>Publishes or refreshes this machine's room in the lobby, when the player asked for that.</summary>
+    private async Task PublishLobbyAsync()
+    {
+        var session = _session;
+        var settings = LinkSettings.Current;
+        if (session is not { Role: LinkRole.Host } || !settings.UseLobby || session.Code is not { } code)
+            return;
+
+        try
+        {
+            if (_lobbySecret.Length == 0)
+                _lobbySecret = Convert.ToHexStringLower(System.Security.Cryptography.RandomNumberGenerator.GetBytes(16));
+
+            var offer = new LobbyOffer(
+                code.Code,
+                session.Room.Name.Length > 0 ? session.Room.Name : Loc.T("未命名房间"),
+                session.Room.Notice,
+                settings.LobbyTags,
+                session.Players.Count,
+                session.Room.MaxPlayers,
+                SelectedInstance,
+                settings.LobbyPassword,
+                _lobbySecret,
+                600);
+
+            _lobbyId = await LobbyClient.PublishAsync(offer, CancellationToken.None).ConfigureAwait(true);
+            LobbyStatusText.Text = Loc.T("房间已发布到大厅");
+        }
+        catch (Exception ex)
+        {
+            LobbyStatusText.Text = Loc.T("发布到大厅失败:") + ex.Message;
+        }
+    }
+
+    private async Task UnpublishLobbyAsync()
+    {
+        if (_lobbyId.Length == 0 || _lobbySecret.Length == 0)
+            return;
+
+        string id = _lobbyId;
+        _lobbyId = "";
+        try
+        {
+            await LobbyClient.UnpublishAsync(id, _lobbySecret, CancellationToken.None).ConfigureAwait(true);
+            LobbyStatusText.Text = Loc.T("已从大厅移除");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Multiplayer", "取消发布失败:" + ex.Message);
+        }
+    }
+
+    /// <summary>Keeps the listing alive while hosting and refreshes the browsable list when it is open.</summary>
+    private async Task LobbyTickAsync()
+    {
+        if (_session is { Role: LinkRole.Host } && LinkSettings.Current.UseLobby)
+            await PublishLobbyAsync().ConfigureAwait(true);
+
+        if (LobbyExpander.IsExpanded)
+            await RefreshLobbyAsync().ConfigureAwait(true);
+    }
+
+    private async void OnRefreshLobby(object sender, RoutedEventArgs e) => await RefreshLobbyAsync().ConfigureAwait(true);
+
+    private async Task RefreshLobbyAsync()
+    {
+        LobbyStatusText.Text = Loc.T("正在读取大厅…");
+        try
+        {
+            var rooms = await LobbyClient.ListAsync(CancellationToken.None).ConfigureAwait(true);
+            _lobbyRooms.Clear();
+            foreach (var room in rooms)
+                _lobbyRooms.Add(new LobbyRoomRow(room, room2 => JoinFromLobbyAsync(room2)));
+
+            LobbyStatusText.Text = rooms.Count == 0
+                ? Loc.T("大厅里暂时没有房间")
+                : string.Format(Loc.T("大厅共 {0} 个房间"), rooms.Count);
+        }
+        catch (Exception ex)
+        {
+            LobbyStatusText.Text = Loc.T("读取大厅失败:") + ex.Message;
+        }
+    }
+
+    /// <summary>Joins a listed room, asking for its password first when it has one.</summary>
+    private async void JoinFromLobbyAsync(LobbyRoom room)
+    {
+        if (_busy)
+            return;
+
+        try
+        {
+            string codeText = room.Code;
+            if (room.HasPassword)
+            {
+                string? password = await AppServices.Dialogs
+                    .PromptAsync(Loc.T("房间密码"), Loc.T("这个房间设置了密码,请向房主索取"), "")
+                    .ConfigureAwait(true);
+                if (password is null)
+                    return;
+                codeText = await LobbyClient.RevealAsync(room.Id, password, CancellationToken.None).ConfigureAwait(true) ?? "";
+                if (codeText.Length == 0)
+                {
+                    LobbyStatusText.Text = Loc.T("密码不正确");
+                    return;
+                }
+            }
+
+            var code = RoomCode.Find(codeText);
+            if (code is null)
+            {
+                LobbyStatusText.Text = Loc.T("大厅返回的房间码无效");
+                return;
+            }
+
+            CodeBox.Text = code.Code;
+            await JoinAsync(code).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            LobbyStatusText.Text = Loc.T("加入失败:") + ex.Message;
         }
     }
 

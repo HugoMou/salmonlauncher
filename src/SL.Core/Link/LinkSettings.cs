@@ -42,7 +42,12 @@ public sealed class LinkSettingsData
     [JsonPropertyName("maxPlayers")] public int MaxPlayers { get; set; }
     [JsonPropertyName("roomNotice")] public string RoomNotice { get; set; } = "";
     [JsonPropertyName("machineId")] public string MachineId { get; set; } = "";
+    [JsonPropertyName("useLobby")] public bool UseLobby { get; set; }
+    [JsonPropertyName("lobbyUrl")] public string LobbyUrl { get; set; } = "";
+    [JsonPropertyName("lobbyPassword")] public string LobbyPassword { get; set; } = "";
     [JsonPropertyName("lobbyTitle")] public string LobbyTitle { get; set; } = "";
+    [JsonPropertyName("corePath")] public string CorePath { get; set; } = "";
+    [JsonPropertyName("downloadMirror")] public string DownloadMirror { get; set; } = "";
     [JsonPropertyName("lobbyDescription")] public string LobbyDescription { get; set; } = "";
     [JsonPropertyName("lobbyTags")] public List<string> LobbyTags { get; set; } = [];
 }

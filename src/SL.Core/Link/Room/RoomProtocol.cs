@@ -37,22 +37,22 @@ public static class RoomProtocol
     public const string PlayerList = "c:player_profiles_list";
 
     /// <summary>Extended: the game version, loader and mods of the host's game as JSON.</summary>
-    public const string ModList = "campfire:mods";
+    public const string ModList = "sl:mods";
 
     /// <summary>
     /// Extended: one chunk of a host mod. The body is the jar's SHA-1 in hex followed by the byte offset as
     /// eight big-endian bytes; the answer is up to 512 KB of the file, empty once past its end.
     /// </summary>
-    public const string ModFile = "campfire:mod_file";
+    public const string ModFile = "sl:mod_file";
 
     /// <summary>Extended: the host's voice chat as JSON, including the UDP port of its voice server.</summary>
-    public const string Voice = "campfire:voice";
+    public const string Voice = "sl:voice";
 
     /// <summary>Extended: the room's name, announcement and player limit as JSON.</summary>
-    public const string Room = "campfire:room";
+    public const string Room = "sl:room";
 
     /// <summary>Virtual host name prefix of a room's host; the room service port follows it.</summary>
-    public const string HostNamePrefix = "scaffolding-mc-server-";
+    public const string HostNamePrefix = "salmon-room-";
 
     /// <summary>Virtual address the host holds inside its room network.</summary>
     public const string HostAddress = "10.144.144.1";

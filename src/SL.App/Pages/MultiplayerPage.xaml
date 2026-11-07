@@ -338,6 +338,50 @@
                 </Border>
             </StackPanel>
 
+            <!-- ===================== Lobby ===================== -->
+            <Expander x:Name="LobbyExpander" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                      Header="联机大厅">
+                <StackPanel Spacing="12" Padding="4,8,4,4">
+                    <ToggleSwitch x:Name="UseLobbySwitch" Header="把我的房间发布到大厅"
+                                  OnContent="发布" OffContent="不发布" Toggled="OnSettingToggled" />
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="LobbyTagsBox" Header="标签(逗号分隔)" PlaceholderText="生存, 原版"
+                                 TextChanged="OnSettingTextChanged" />
+                        <TextBox x:Name="LobbyPasswordBox" Grid.Column="1" Header="房间密码(可选)"
+                                 PlaceholderText="留空则拿到房间码即可加入" TextChanged="OnSettingTextChanged" />
+                        <TextBox x:Name="LobbyUrlBox" Grid.Column="2" Header="大厅地址"
+                                 PlaceholderText="https://your-host/lobby" TextChanged="OnSettingTextChanged" />
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="刷新大厅" Click="OnRefreshLobby" />
+                        <TextBlock x:Name="LobbyStatusText" FontSize="11.5" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource Brush.FgFaint}" />
+                    </StackPanel>
+                    <ListView x:Name="LobbyList" MaxHeight="240" SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="pages:LobbyRoomRow">
+                                <Grid ColumnSpacing="10" Margin="0,3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{x:Bind Name}" FontSize="12.5" Foreground="{ThemeResource Brush.Fg}" />
+                                    <TextBlock Grid.Column="1" Text="{x:Bind Detail}" FontSize="11"
+                                               VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgFaint}" />
+                                    <Button Grid.Column="2" Content="加入" FontSize="11" Command="{x:Bind JoinCommand}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Expander>
+
             <!-- ===================== Settings ===================== -->
             <Expander x:Name="SettingsExpander" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
                       Header="联机设置">
@@ -364,6 +408,23 @@
                         <ComboBox x:Name="TimeoutCombo" Grid.Column="1" Header="等待房主" MinWidth="130"
                                   VerticalAlignment="Bottom" SelectionChanged="OnSettingSelected" />
                     </Grid>
+
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="CorePathBox" Header="本地联机内核(EasyTier)" IsReadOnly="True"
+                                 PlaceholderText="留空则自动下载"
+                                 TextChanged="OnSettingTextChanged" />
+                        <Button Grid.Column="1" Content="选择…" Click="OnPickCore" VerticalAlignment="Bottom" />
+                        <Button Grid.Column="2" Content="清除" Click="OnClearCore" VerticalAlignment="Bottom" />
+                    </Grid>
+
+                    <TextBox x:Name="MirrorBox" Header="内核下载地址前缀(可选)"
+                             PlaceholderText="例如 https://gh-proxy.com/"
+                             TextChanged="OnSettingTextChanged" />
 
                     <Grid ColumnSpacing="12" RowSpacing="10">
                         <Grid.ColumnDefinitions>
