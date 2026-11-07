@@ -872,5 +872,7 @@ public static partial class Loc
         ["这个房间设置了密码,请向房主索取"] = "This room has a password; ask the host for it",
         ["密码不正确"] = "Wrong password",
         ["大厅返回的房间码无效"] = "The lobby returned an unusable room code",
+
+        ["[模组] 已为 {0} 安装 {1}"] = "[Mod] Installed {1} into {0}",
     };
 }

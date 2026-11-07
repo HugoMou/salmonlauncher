@@ -34,3 +34,9 @@ web/downloads/
 Thumbs.db
 Desktop.ini
 installer/certs/
+
+# ---------- Companion mod (Gradle) ----------
+mod/.gradle/
+mod/build/
+mod/run/
+mod/.idea/

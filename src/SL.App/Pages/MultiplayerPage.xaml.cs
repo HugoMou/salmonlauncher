@@ -118,6 +118,7 @@ public sealed partial class MultiplayerPage : Page
     private string _lobbyId = "";
     private string _lobbySecret = "";
     private DispatcherQueueTimer? _lobbyTimer;
+    private DispatcherQueueTimer? _statusTimer;
 
     public MultiplayerPage()
     {
@@ -136,6 +137,13 @@ public sealed partial class MultiplayerPage : Page
         _lobbyTimer.Interval = TimeSpan.FromSeconds(60);
         _lobbyTimer.IsRepeating = true;
         _lobbyTimer.Tick += async (_, _) => await LobbyTickAsync();
+
+        // the companion mod reports the LAN port directly, which also covers networks where the multicast
+        // announcement never arrives; without the mod this reads a file that does not exist
+        _statusTimer = DispatcherQueue.CreateTimer();
+        _statusTimer.Interval = TimeSpan.FromSeconds(5);
+        _statusTimer.IsRepeating = true;
+        _statusTimer.Tick += (_, _) => StatusTick();
 
         PageScroll.SizeChanged += (_, _) => FitToViewport();
         Loaded += (_, _) =>
@@ -161,6 +169,7 @@ public sealed partial class MultiplayerPage : Page
         Attach(LinkSession.Current);
         Refresh();
         _lobbyTimer?.Start();
+        _statusTimer?.Start();
         AddLog(Loc.T("联机模块就绪"));
     }
 
@@ -170,6 +179,7 @@ public sealed partial class MultiplayerPage : Page
         // the room keeps running while the player visits other pages; only the scanner and the lobby poll stop here
         StopLanScan();
         _lobbyTimer?.Stop();
+        _statusTimer?.Stop();
     }
 
     // ------------------------------------------------------------ settings
@@ -413,6 +423,7 @@ public sealed partial class MultiplayerPage : Page
             Attach(session);
             SetDetail(null);
             Refresh();
+            InstallCompanion();
             await PublishLobbyAsync().ConfigureAwait(true);
             AppServices.Notify.Publish(NotifyKind.Success, Loc.T("房间已创建,把房间码发给好友即可"));
         }
@@ -445,6 +456,7 @@ public sealed partial class MultiplayerPage : Page
         Attach(null);
         await UnpublishLobbyAsync().ConfigureAwait(true);
         await session.StopAsync().ConfigureAwait(true);
+        CompanionBridge.ClearRoom();
         _worlds.Clear();
         Refresh();
         SetDetail(Loc.T("联机已停止"));
@@ -744,6 +756,13 @@ public sealed partial class MultiplayerPage : Page
             _lastPlayerCount = count;
             AddLog(string.Format(Loc.T("[房间] 当前 {0} 人"), count));
         }
+
+        if (session.Role == LinkRole.Host)
+        {
+            string roomName = session.Room.Name.Length > 0 ? session.Room.Name : Loc.T("未命名房间");
+            CompanionBridge.WriteRoom(roomName, session.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "",
+                session.Players.Select(p => p.Name));
+        }
     }
 
     private void ClearPlayers()
@@ -832,9 +851,11 @@ public sealed partial class MultiplayerPage : Page
             }
 
             var cfg = AppServices.Settings.Current;
+            InstallCompanion();
+            string jvm = (cfg.JvmExtraArgs + " " + CompanionBridge.JvmArguments()).Trim();
             SetDetail(string.Format(Loc.T("正在启动 {0} 并进入房间…"), instanceId));
             var result = await LaunchPipeline.StartAsync(instanceId, accountName, cfg.MemoryMb,
-                CancellationToken.None, identity, cfg.JvmExtraArgs, cfg.GameWidth, cfg.GameHeight,
+                CancellationToken.None, identity, jvm, cfg.GameWidth, cfg.GameHeight,
                 joinServer: joinServer ?? "").ConfigureAwait(true);
 
             if (result.Success)
@@ -889,6 +910,30 @@ public sealed partial class MultiplayerPage : Page
         {
             ModsButton.IsEnabled = true;
         }
+    }
+
+    /// <summary>Puts the companion mod into the instance the room will run, when this build ships one.</summary>
+    private void InstallCompanion()
+    {
+        string instanceId = SelectedInstance;
+        if (instanceId.Length == 0)
+            return;
+        string installed = CompanionBridge.EnsureInstalled(instanceId);
+        if (installed.Length > 0)
+            AddLog(string.Format(Loc.T("[模组] 已为 {0} 安装 {1}"), instanceId, installed));
+    }
+
+    /// <summary>Picks up the port the companion mod reported, so a room binds even without the multicast.</summary>
+    private void StatusTick()
+    {
+        if (_session is not { Role: LinkRole.Host } session || _busy)
+            return;
+
+        var status = CompanionBridge.ReadStatus();
+        if (!status.Ready || status.Port == session.GamePort)
+            return;
+
+        session.BindGamePort(status.Port, status.Motd.Length > 0 ? status.Motd : "Minecraft");
     }
 
     // ------------------------------------------------------------ lobby
