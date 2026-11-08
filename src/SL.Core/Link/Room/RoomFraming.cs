@@ -1,119 +1,141 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
-// Copyright (C) 2026 Hugo Mou
-//
-// This program is free software: you can redistribute it and/or modify it under
-// the terms of the GNU General Public License as published by the Free Software
-// Foundation, either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with
-// this program. If not, see <https://www.gnu.org/licenses/>.
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-using System.Buffers.Binary;
+// ---------------------------------------------------------------------------
+// Ported from Campfire (https://github.com/Xocio/Campfire), branch main, 2026-11-08.
+// Copyright (C) the Campfire contributors. Licensed under GPL-3.0.
+// Adapted for SalmonLauncher: namespace, wire kind prefixes (campfire: -> sl:),
+// nullable annotations disabled as upstream, and the Mods/Blocklist/RoomInfo
+// types this build defines itself. See THIRD-PARTY-NOTICES.md.
+// ---------------------------------------------------------------------------
+
+#nullable disable
+using System;
+using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace SL.Core.Link.Room;
-
-/// <summary>
-/// Wire framing of the room service.
-/// </summary>
-/// <remarks>
-/// Request:  kind length (1 byte), kind ("namespace:path", UTF-8), body length (4 bytes big-endian), body.
-/// Response: status (1 byte: 0 success, 32 not ready, 255 error), body length (4 bytes big-endian), body.
-/// </remarks>
-public static class RoomFraming
+namespace SL.Core.Link.Room
 {
-    public const byte StatusOk = 0;
-    public const byte StatusNotReady = 32;
-    public const byte StatusError = 255;
-
-    /// <summary>Largest body accepted in either direction.</summary>
-    public const int MaxBodySize = 1024 * 1024;
-
-    public static Task WriteRequestAsync(Stream stream, string kind, ReadOnlyMemory<byte> body, CancellationToken token)
+    /// <summary>
+    /// Message framing of the room service, which runs over one TCP connection per player.
+    /// </summary>
+    /// <remarks>
+    /// Request:  kind length (1 byte), kind ("namespace:path", UTF-8), body length (4 bytes, big-endian), body.
+    /// Response: status (1 byte, 0 = success), body length (4 bytes, big-endian), body.
+    /// </remarks>
+    internal static class RoomFraming
     {
-        byte[] kindBytes = Encoding.UTF8.GetBytes(kind);
-        if (kindBytes.Length > 255)
-            throw new ArgumentException("请求类型过长", nameof(kind));
+        public const byte StatusOk = 0;
+        public const byte StatusNotReady = 32;
+        public const byte StatusError = 255;
 
-        var frame = new byte[1 + kindBytes.Length + 4 + body.Length];
-        frame[0] = (byte)kindBytes.Length;
-        kindBytes.CopyTo(frame, 1);
-        BinaryPrimitives.WriteInt32BigEndian(frame.AsSpan(1 + kindBytes.Length, 4), body.Length);
-        body.Span.CopyTo(frame.AsSpan(5 + kindBytes.Length));
-        return SendAsync(stream, frame, token);
-    }
+        /// <summary>Largest body accepted.</summary>
+        private const int MaxBodySize = 1024 * 1024;
 
-    /// <summary>Reads one request; returns <c>null</c> when the peer closed the connection cleanly.</summary>
-    public static async Task<Request?> ReadRequestAsync(Stream stream, CancellationToken token)
-    {
-        var head = new byte[1];
-        if (await stream.ReadAsync(head, token).ConfigureAwait(false) == 0)
-            return null;
-
-        byte[] kind = await ReadExactAsync(stream, head[0], token).ConfigureAwait(false);
-        byte[] body = await ReadBodyAsync(stream, token).ConfigureAwait(false);
-        return new Request(Encoding.UTF8.GetString(kind), body);
-    }
-
-    public static Task WriteResponseAsync(Stream stream, byte status, ReadOnlyMemory<byte> body, CancellationToken token)
-    {
-        var frame = new byte[5 + body.Length];
-        frame[0] = status;
-        BinaryPrimitives.WriteInt32BigEndian(frame.AsSpan(1, 4), body.Length);
-        body.Span.CopyTo(frame.AsSpan(5));
-        return SendAsync(stream, frame, token);
-    }
-
-    public static async Task<Response> ReadResponseAsync(Stream stream, CancellationToken token)
-    {
-        byte[] status = await ReadExactAsync(stream, 1, token).ConfigureAwait(false);
-        byte[] body = await ReadBodyAsync(stream, token).ConfigureAwait(false);
-        return new Response(status[0], body);
-    }
-
-    private static async Task SendAsync(Stream stream, byte[] frame, CancellationToken token)
-    {
-        await stream.WriteAsync(frame, token).ConfigureAwait(false);
-        await stream.FlushAsync(token).ConfigureAwait(false);
-    }
-
-    private static async Task<byte[]> ReadBodyAsync(Stream stream, CancellationToken token)
-    {
-        byte[] size = await ReadExactAsync(stream, 4, token).ConfigureAwait(false);
-        int length = BinaryPrimitives.ReadInt32BigEndian(size);
-        if (length < 0 || length > MaxBodySize)
-            throw new InvalidDataException("消息体过大");
-        return await ReadExactAsync(stream, length, token).ConfigureAwait(false);
-    }
-
-    private static async Task<byte[]> ReadExactAsync(Stream stream, int count, CancellationToken token)
-    {
-        if (count == 0)
-            return [];
-
-        var buffer = new byte[count];
-        int filled = 0;
-        while (filled < count)
+        public static async Task WriteRequestAsync(Stream stream, string kind, byte[] body, CancellationToken cancellation)
         {
-            int read = await stream.ReadAsync(buffer.AsMemory(filled, count - filled), token).ConfigureAwait(false);
-            if (read == 0)
-                throw new EndOfStreamException("连接已被关闭");
-            filled += read;
+            byte[] kindBytes = Encoding.UTF8.GetBytes(kind);
+            if (kindBytes.Length > 255)
+                throw new ArgumentException("Request kind is too long.", nameof(kind));
+
+            body = body ?? Array.Empty<byte>();
+            var frame = new byte[1 + kindBytes.Length + 4 + body.Length];
+            frame[0] = (byte)kindBytes.Length;
+            Buffer.BlockCopy(kindBytes, 0, frame, 1, kindBytes.Length);
+            WriteInt32(frame, 1 + kindBytes.Length, body.Length);
+            Buffer.BlockCopy(body, 0, frame, 5 + kindBytes.Length, body.Length);
+
+            await stream.WriteAsync(frame, 0, frame.Length, cancellation).ConfigureAwait(false);
+            await stream.FlushAsync(cancellation).ConfigureAwait(false);
         }
-        return buffer;
-    }
 
-    /// <summary>One decoded request frame.</summary>
-    public sealed record Request(string Kind, byte[] Body);
+        /// <summary>Reads one request; returns <c>null</c> when the peer closed the connection cleanly.</summary>
+        public static async Task<Request> ReadRequestAsync(Stream stream, CancellationToken cancellation)
+        {
+            var sizeBuffer = new byte[1];
+            if (await stream.ReadAsync(sizeBuffer, 0, 1, cancellation).ConfigureAwait(false) == 0)
+                return null;
 
-    /// <summary>One decoded response frame.</summary>
-    public sealed record Response(byte Status, byte[] Body)
-    {
-        public bool IsOk => Status == StatusOk;
+            byte[] kind = await ReadExactAsync(stream, sizeBuffer[0], cancellation).ConfigureAwait(false);
+            byte[] body = await ReadBodyAsync(stream, cancellation).ConfigureAwait(false);
+            return new Request(Encoding.UTF8.GetString(kind), body);
+        }
+
+        public static async Task WriteResponseAsync(Stream stream, byte status, byte[] body, CancellationToken cancellation)
+        {
+            body = body ?? Array.Empty<byte>();
+            var frame = new byte[5 + body.Length];
+            frame[0] = status;
+            WriteInt32(frame, 1, body.Length);
+            Buffer.BlockCopy(body, 0, frame, 5, body.Length);
+
+            await stream.WriteAsync(frame, 0, frame.Length, cancellation).ConfigureAwait(false);
+            await stream.FlushAsync(cancellation).ConfigureAwait(false);
+        }
+
+        public static async Task<Response> ReadResponseAsync(Stream stream, CancellationToken cancellation)
+        {
+            byte[] status = await ReadExactAsync(stream, 1, cancellation).ConfigureAwait(false);
+            byte[] body = await ReadBodyAsync(stream, cancellation).ConfigureAwait(false);
+            return new Response(status[0], body);
+        }
+
+        private static async Task<byte[]> ReadBodyAsync(Stream stream, CancellationToken cancellation)
+        {
+            byte[] size = await ReadExactAsync(stream, 4, cancellation).ConfigureAwait(false);
+            int length = (size[0] << 24) | (size[1] << 16) | (size[2] << 8) | size[3];
+            if (length < 0 || length > MaxBodySize)
+                throw new InvalidDataException("Message body is too large.");
+            return await ReadExactAsync(stream, length, cancellation).ConfigureAwait(false);
+        }
+
+        private static async Task<byte[]> ReadExactAsync(Stream stream, int count, CancellationToken cancellation)
+        {
+            var buffer = new byte[count];
+            int offset = 0;
+            while (offset < count)
+            {
+                int read = await stream.ReadAsync(buffer, offset, count - offset, cancellation).ConfigureAwait(false);
+                if (read == 0)
+                    throw new EndOfStreamException("The connection was closed.");
+                offset += read;
+            }
+            return buffer;
+        }
+
+        private static void WriteInt32(byte[] buffer, int offset, int value)
+        {
+            buffer[offset] = (byte)(value >> 24);
+            buffer[offset + 1] = (byte)(value >> 16);
+            buffer[offset + 2] = (byte)(value >> 8);
+            buffer[offset + 3] = (byte)value;
+        }
+
+        internal sealed class Request
+        {
+            public Request(string kind, byte[] body)
+            {
+                Kind = kind;
+                Body = body;
+            }
+
+            public string Kind { get; }
+
+            public byte[] Body { get; }
+        }
+
+        internal sealed class Response
+        {
+            public Response(byte status, byte[] body)
+            {
+                Status = status;
+                Body = body;
+            }
+
+            public byte Status { get; }
+
+            public byte[] Body { get; }
+
+            public bool IsOk => Status == StatusOk;
+        }
     }
 }

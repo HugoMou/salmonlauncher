@@ -1,120 +1,169 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
-// Copyright (C) 2026 Hugo Mou
-//
-// This program is free software: you can redistribute it and/or modify it under
-// the terms of the GNU General Public License as published by the Free Software
-// Foundation, either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with
-// this program. If not, see <https://www.gnu.org/licenses/>.
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-using System.Text.Json;
-using System.Text.Json.Serialization;
+// ---------------------------------------------------------------------------
+// Ported from Campfire (https://github.com/Xocio/Campfire), branch main, 2026-11-08.
+// Copyright (C) the Campfire contributors. Licensed under GPL-3.0.
+// Adapted for SalmonLauncher: namespace, the local-profile factory reads this
+// project's settings instead of Campfire's account store, and the JSON types use
+// the Json helper ported alongside. See THIRD-PARTY-NOTICES.md.
+// ---------------------------------------------------------------------------
+#nullable disable
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using SL.Core.Link.Runtime;
 
-namespace SL.Core.Link.Room;
-
-/// <summary>How a player is signed in to Minecraft, as far as the room needs to know.</summary>
-public enum AccountKind
+namespace SL.Core.Link.Room
 {
-    Unknown,
-    Offline,
-    Microsoft,
-}
-
-/// <summary>One player as the room shows them.</summary>
-public sealed class PlayerProfile
-{
-    private PlayerProfile() { }
-
-    public PlayerProfile(string id, string name)
+    public enum PlayerKind
     {
-        Id = id;
-        Name = name;
+        Host,
+        Guest,
+        /// <summary>The player on this computer, when it joined someone else's room.</summary>
+        Local,
     }
 
-    /// <summary>Stable identifier of the player (the machine id of the sender).</summary>
-    public string Id { get; private set; } = "";
-
-    /// <summary>Name shown in the room list.</summary>
-    public string Name { get; private set; } = "";
-
-    public AccountKind Account { get; private set; }
-
-    /// <summary>Name of the sender's program, when it chose to share it.</summary>
-    public string Vendor { get; private set; } = "";
-
-    /// <summary>Version of the sender's program, when shared.</summary>
-    public string VendorVersion { get; private set; } = "";
-
-    /// <summary>Minecraft version and loader of the sender's game, when known.</summary>
-    public string GameVersion { get; private set; } = "";
-
-    /// <summary>Account id used to draw the skin face, shared only when the sender allows it.</summary>
-    public string Skin { get; private set; } = "";
-
-    /// <summary>True for the host of the room.</summary>
-    public bool IsHost { get; private set; }
-
-    public PlayerProfile WithAccount(AccountKind kind) { Account = kind; return this; }
-    public PlayerProfile WithVendor(string name, string version) { Vendor = name; VendorVersion = version; return this; }
-    public PlayerProfile WithGame(string version) { GameVersion = version; return this; }
-    public PlayerProfile WithSkin(string skin) { Skin = skin; return this; }
-    public PlayerProfile AsHost(bool host = true) { IsHost = host; return this; }
-
-    /// <summary>Serialises the profile for the room service, optionally tagging it as a host entry.</summary>
-    public byte[] ToJson(bool includeKind = true)
+    /// <summary>
+    /// A player in a room. The machine id tells computers apart.
+    /// </summary>
+    public sealed class PlayerProfile
     {
-        var wire = new WireProfile(Id, Name, Account.ToString(), Vendor, VendorVersion, GameVersion, Skin, IsHost, includeKind);
-        return JsonSerializer.SerializeToUtf8Bytes(wire, LinkJson.Options);
+        public PlayerProfile(string name, string machineId, string vendor, PlayerKind kind, string uuid = null, string gameName = null,
+            double? latencyMs = null)
+        {
+            GameName = string.IsNullOrEmpty(gameName) ? null : gameName;
+            Name = name ?? "";
+            MachineId = machineId ?? "";
+            Vendor = vendor ?? "";
+            Kind = kind;
+            Uuid = uuid;
+            LatencyMs = latencyMs.HasValue && !double.IsNaN(latencyMs.Value) && !double.IsInfinity(latencyMs.Value)
+                        && latencyMs.Value >= 0 && latencyMs.Value <= 60000
+                ? latencyMs
+                : null;
+        }
+
+        public string Name { get; }
+
+        public string MachineId { get; }
+
+        /// <summary>Which program and version the player uses.</summary>
+        public string Vendor { get; }
+
+        public PlayerKind Kind { get; }
+
+        /// <summary>
+        /// The premium account's UUID when the player's game runs with one. An optional field.
+        /// </summary>
+        public string Uuid { get; }
+
+        /// <summary>
+        /// The player name in the running game, which the host uses to recognize the player inside the world.
+        /// An optional field that other programs ignore.
+        /// </summary>
+        public string GameName { get; }
+
+        /// <summary>
+        /// The player's round-trip time to the host, reported with the heartbeat. An optional field.
+        /// </summary>
+        public double? LatencyMs { get; }
+
+        /// <summary>The profile of the player on this computer.</summary>
+        /// <param name="name">Name to show; falls back to the configured or account name.</param>
+        /// <param name="uuid">Premium account UUID, or <c>null</c> when it must not be shared.</param>
+        /// <param name="gameName">Name used in the running game, when known.</param>
+        public static PlayerProfile CreateLocal(PlayerKind kind, string name = null, string uuid = null, string gameName = null)
+        {
+            // the account id is only shared when the player allows skin sharing
+            string shared = LinkSettings.Current.ShowSkins ? uuid : null;
+            string shown = string.IsNullOrWhiteSpace(name) ? LinkSettings.EffectivePlayerName("") : name;
+            return new PlayerProfile(shown, LinkSettings.MachineId, LocalVendor, kind, shared, gameName);
+        }
+
+        /// <summary>The program and versions, or just the name when the user keeps the version private.</summary>
+        public static string LocalVendor => LinkSettings.Current.ShareVersion
+            ? string.Format(CultureInfo.InvariantCulture, "SalmonLauncher {0}, EasyTier v{1}",
+                Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0", EasyTierPackage.Version)
+            : "SalmonLauncher";
+
+        public PlayerProfile WithKind(PlayerKind kind)
+        {
+            return new PlayerProfile(Name, MachineId, Vendor, kind, Uuid, GameName, LatencyMs);
+        }
+
+        /// <summary>The same player with the latest measured latency.</summary>
+        public PlayerProfile WithLatency(double? latencyMs)
+        {
+            return new PlayerProfile(Name, MachineId, Vendor, Kind, Uuid, GameName, latencyMs);
+        }
+
+        public Dictionary<string, object> ToJson(bool includeKind)
+        {
+            var json = new Dictionary<string, object>
+            {
+                ["name"] = Name,
+                ["machine_id"] = MachineId,
+                ["vendor"] = Vendor,
+            };
+            if (includeKind)
+                json["kind"] = Kind == PlayerKind.Host ? "HOST" : "GUEST";
+            if (Uuid != null)
+                json["uuid"] = Uuid;
+            if (GameName != null)
+                json["game_name"] = GameName;
+            if (LatencyMs.HasValue)
+                json["latency_ms"] = LatencyMs.Value;
+            return json;
+        }
+
+        /// <summary>Reads a profile; returns <c>null</c> when a required field is missing.</summary>
+        public static PlayerProfile FromJson(object value, PlayerKind? kindOverride)
+        {
+            if (!(value is IDictionary<string, object> json))
+                return null;
+            if (!(Get(json, "name") is string name) || !(Get(json, "machine_id") is string machineId) || machineId.Length == 0)
+                return null;
+
+            string vendor = Get(json, "vendor") as string ?? "";
+            PlayerKind kind;
+            if (kindOverride.HasValue)
+                kind = kindOverride.Value;
+            else if (string.Equals(Get(json, "kind") as string, "HOST", StringComparison.Ordinal))
+                kind = PlayerKind.Host;
+            else if (string.Equals(Get(json, "kind") as string, "GUEST", StringComparison.Ordinal))
+                kind = PlayerKind.Guest;
+            else
+                return null;
+
+            string uuid = Get(json, "uuid") as string;
+            if (uuid != null && (uuid.Length != 32 || !IsHex(uuid)))
+                uuid = null;
+
+            // game names have at most 16 characters
+            string gameName = Get(json, "game_name") as string;
+            if (gameName != null && (gameName.Length == 0 || gameName.Length > 16))
+                gameName = null;
+
+            // latency values outside the plausible range are ignored
+            double? latency = Get(json, "latency_ms") is double measured && measured >= 0 && measured <= 60000
+                ? measured
+                : (double?)null;
+
+            return new PlayerProfile(name, machineId, vendor, kind, uuid, gameName, latency);
+        }
+
+        private static bool IsHex(string text)
+        {
+            foreach (char c in text)
+            {
+                if (!Uri.IsHexDigit(c))
+                    return false;
+            }
+            return true;
+        }
+
+        private static object Get(IDictionary<string, object> json, string key)
+        {
+            return json.TryGetValue(key, out var value) ? value : null;
+        }
     }
-
-    /// <summary>Reads a profile; returns <c>null</c> when it is not usable.</summary>
-    public static PlayerProfile? FromJson(JsonElement element, string? forcedId)
-    {
-        if (element.ValueKind != JsonValueKind.Object)
-            return null;
-
-        string id = forcedId ?? Text(element, "id");
-        string name = Text(element, "name");
-        if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name))
-            return null;
-
-        var profile = new PlayerProfile(id, name);
-        profile.Account = Enum.TryParse<AccountKind>(Text(element, "account"), ignoreCase: true, out var kind) ? kind : AccountKind.Unknown;
-        profile.Vendor = Text(element, "vendor");
-        profile.VendorVersion = Text(element, "vendorVersion");
-        profile.GameVersion = Text(element, "game");
-        profile.Skin = Text(element, "skin");
-        profile.IsHost = element.TryGetProperty("host", out var h) && h.ValueKind == JsonValueKind.True;
-        return profile;
-    }
-
-    private static string Text(JsonElement element, string property)
-        => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";
-
-    private sealed record WireProfile(
-        [property: JsonPropertyName("id")] string Id,
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("account")] string Account,
-        [property: JsonPropertyName("vendor")] string Vendor,
-        [property: JsonPropertyName("vendorVersion")] string VendorVersion,
-        [property: JsonPropertyName("game")] string Game,
-        [property: JsonPropertyName("skin")] string Skin,
-        [property: JsonPropertyName("host")] bool Host,
-        [property: JsonPropertyName("kind")] bool Kind);
-}
-
-/// <summary>Shared JSON options so every link payload is written the same way.</summary>
-internal static class LinkJson
-{
-    public static readonly JsonSerializerOptions Options = new()
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
-        WriteIndented = false,
-    };
 }

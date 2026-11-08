@@ -98,6 +98,15 @@ public static class LinkSettings
         }
     }
 
+    /// <summary>Whether the host offers its mods to guests; read by the ported room service.</summary>
+    public static bool ShareMods => Current.ShareMods;
+
+    /// <summary>Whether premium account ids may be shared so skin faces can be drawn.</summary>
+    public static bool ShowSkins => Current.ShowSkins;
+
+    /// <summary>Whether the program name and version are announced to other players.</summary>
+    public static bool ShareVersion => Current.ShareVersion;
+
     /// <summary>Identifier of this computer, created once and kept. Used as the player id in rooms.</summary>
     public static string MachineId
     {

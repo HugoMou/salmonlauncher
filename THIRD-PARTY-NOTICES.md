@@ -37,6 +37,11 @@ attribution this project is asked to preserve.
 | `src/SL.Core/Link/Runtime/ProgressStream.cs` | `src/Campfire/Link/Runtime/ProgressStream.cs` | verbatim (namespace) |
 | `src/SL.Core/Link/Runtime/RemoteZip.cs` | `src/Campfire/Link/Runtime/RemoteZip.cs` | verbatim (namespace) |
 | `src/SL.Core/Link/Runtime/ChildProcessJob.cs` | `src/Campfire/Link/Runtime/ChildProcessJob.cs` | verbatim (namespace) |
+| `src/SL.Core/Link/Room/RoomFraming.cs` | `src/Campfire/Link/Room/RoomFraming.cs` | adapted |
+| `src/SL.Core/Link/Room/RoomProtocol.cs` | `src/Campfire/Link/Room/RoomProtocol.cs` | adapted |
+| `src/SL.Core/Link/Room/RoomClient.cs` | `src/Campfire/Link/Room/RoomClient.cs` | adapted |
+| `src/SL.Core/Link/Room/RoomServer.cs` | `src/Campfire/Link/Room/RoomServer.cs` | adapted |
+| `src/SL.Core/Link/Room/PlayerProfile.cs` | `src/Campfire/Link/Room/PlayerProfile.cs` | adapted |
 
 ### Changes made to the ported files
 
@@ -51,16 +56,39 @@ attribution this project is asked to preserve.
   code, which is not ported; a local `TryGetImagePath` reads `Process.MainModule.FileName` instead.
 - Nullable reference annotations are disabled inside the ported files: upstream compiles without nullable
   analysis, and the port does not rewrite the code to satisfy it.
+- The room layer's wire kinds are renamed from `campfire:*` to `sl:*` (both ends of a room are this launcher),
+  matching the prefixes already used here, and `RoomServer`/`RoomClient` are `public` so the test harness can
+  drive them.
+- `RoomServer` gained `UpdateMinecraftPort`, because this launcher lets a host share the code before entering
+  a world, while upstream knows the port when the room opens.
+- `PlayerProfile.CreateLocal` reads this project's settings and account instead of Campfire's account store;
+  the premium UUID still only travels when skin sharing is enabled. `LocalVendor` names SalmonLauncher.
+- `LinkSettings` gained static `ShareMods` / `ShowSkins` / `ShareVersion` conveniences that the ported room
+  service reads.
+
+### Types written for this project, matching the calls the ported code makes
+
+Campfire's published sources reference a `Campfire.Mods` namespace and a `RoomInfo`/`Blocklist` that are not
+in the repository, so these are written here rather than copied:
+
+| File in this repository | Purpose |
+| --- | --- |
+| `src/SL.Core/Link/Mods/Mods.cs` | `ModFile`, `ModList`, `VoiceOffer`, `ModHost` (list + chunked file serving) |
+| `src/SL.Core/Link/Room/RoomInfo.cs` | room name, announcement and player limit |
+| `src/SL.Core/Link/Blocklist.cs` | players a host removed, remembered across sessions |
+
+`src/SL.Core/Link/LinkSession.cs` is this project's own orchestrator; it now drives the ported room service
+and network over local port forwards (guest reaches the room through `AddPortForwardAsync`, the game joins
+`127.0.0.1`), which is why neither side needs a virtual adapter or elevation.
 
 ### What was not ported, and why
 
-Campfire's `Link/Room/*` (room service protocol, client, server) and `Link/Minecraft/*` (game proxy, Java
-agent, overlay, LAN announcer) depend on types from namespaces `Campfire.Mods` (`ModHost`, `ModList`,
-`VoiceOffer`) and `Campfire.Link.Lobby`, plus the embedded Java agent jars under `src/java-agent/dist/`.
-Those namespaces are referenced by the published sources but are **not present** in the published
-repository at `main` (92 `.cs` files, no `Mods/` or `Lobby/` directory), so those files cannot be copied
-and compiled as they stand. SalmonLauncher keeps its own room layer and its own companion mod
-(`mod/`, Fabric) for the in-game part.
+- `Link/Minecraft/*` (game proxy, Java agent, overlay, LAN announcer, player heads) is not ported. It is tied
+  to Windows Presentation Foundation media types, to Campfire's embedded Java agent jars under
+  `src/java-agent/dist/`, and to its localisation layer. SalmonLauncher keeps its own Fabric companion mod
+  (`mod/`) for opening worlds to LAN and showing room information in game.
+- The lobby (`Online/*`) is Campfire's own service contract; SalmonLauncher talks to its own small lobby
+  (`scripts/lobby/`).
 
 Campfire's WinUI user interface, launcher repair, map browser, telemetry and updater are not part of this
 port.

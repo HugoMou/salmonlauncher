@@ -5,20 +5,14 @@
 // the terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with
-// this program. If not, see <https://www.gnu.org/licenses/>.
-//
 // SPDX-License-Identifier: GPL-3.0-or-later
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace SL.Core.Link.Room;
 
-/// <summary>The room's name, announcement and player limit, as the host configured them.</summary>
+/// <summary>The room's name, announcement and player limit, as players receive them.</summary>
+/// <remarks>
+/// Written for SalmonLauncher to match the calls Campfire's room service makes on this type. The field names
+/// on the wire follow the ported protocol.
+/// </remarks>
 public sealed class RoomInfo
 {
     public const int MaxName = 48;
@@ -26,8 +20,8 @@ public sealed class RoomInfo
 
     public RoomInfo(string? name, string? notice, int maxPlayers)
     {
-        Name = LinkUtil.ClipLine(name, MaxName);
-        Notice = LinkUtil.ClipLine(notice, MaxNotice);
+        Name = Clip(name, MaxName);
+        Notice = Clip(notice, MaxNotice);
         MaxPlayers = maxPlayers is >= 2 and <= 100 ? maxPlayers : 0;
     }
 
@@ -39,26 +33,36 @@ public sealed class RoomInfo
     /// <summary>Most players the room takes, host included; 0 means no limit.</summary>
     public int MaxPlayers { get; }
 
-    public byte[] ToJson()
+    public Dictionary<string, object?> ToJson() => new()
     {
-        var payload = new WireRoom(Name, Notice, MaxPlayers);
-        return JsonSerializer.SerializeToUtf8Bytes(payload, LinkJson.Options);
-    }
+        ["name"] = Name,
+        ["notice"] = Notice,
+        ["max"] = MaxPlayers,
+    };
 
-    /// <summary>Reads what the host sent; returns <c>null</c> when the payload is not an object.</summary>
-    public static RoomInfo? FromJson(JsonElement element)
+    /// <summary>Reads what the host sent; <c>null</c> when the value is not an object.</summary>
+    public static RoomInfo? FromJson(object? value)
     {
-        if (element.ValueKind != JsonValueKind.Object)
+        if (value is not IDictionary<string, object?> json)
             return null;
 
-        string name = element.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() ?? "" : "";
-        string notice = element.TryGetProperty("notice", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() ?? "" : "";
-        int max = element.TryGetProperty("max", out var m) && m.ValueKind == JsonValueKind.Number && m.TryGetInt32(out int v) && v is >= 0 and <= 100 ? v : 0;
+        string name = json.TryGetValue("name", out var n) ? n as string ?? "" : "";
+        string notice = json.TryGetValue("notice", out var t) ? t as string ?? "" : "";
+        int max = json.TryGetValue("max", out var m) && m is double d ? (int)d : 0;
         return new RoomInfo(name, notice, max);
     }
 
-    private sealed record WireRoom(
-        [property: JsonPropertyName("name")] string Name,
-        [property: JsonPropertyName("notice")] string Notice,
-        [property: JsonPropertyName("max")] int Max);
+    private static string Clip(string? text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return "";
+        var clean = new System.Text.StringBuilder(Math.Min(text.Length, maxLength));
+        foreach (char c in text.Trim())
+        {
+            if (clean.Length >= maxLength)
+                break;
+            clean.Append(char.IsControl(c) ? ' ' : c);
+        }
+        return clean.ToString();
+    }
 }

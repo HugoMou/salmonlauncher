@@ -54,20 +54,6 @@ public sealed class LinkException : Exception
     public LinkException(string message, Exception? inner = null) : base(message, inner) { }
 }
 
-/// <summary>The host took this player out of the room, blocked them, or the room is full.</summary>
-public sealed class RoomRejectedException : Exception
-{
-    public RoomRejectedException(bool blocked, bool full = false)
-        : base(full ? "房间人数已满" : blocked ? "房主已屏蔽你" : "你已被房主移出房间")
-    {
-        Blocked = blocked;
-        Full = full;
-    }
-
-    public bool Blocked { get; }
-    public bool Full { get; }
-}
-
 /// <summary>Small helpers shared by the link module.</summary>
 internal static class LinkUtil
 {

@@ -1,480 +1,357 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
-// Copyright (C) 2026 Hugo Mou
-//
-// This program is free software: you can redistribute it and/or modify it under
-// the terms of the GNU General Public License as published by the Free Software
-// Foundation, either version 3 of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with
-// this program. If not, see <https://www.gnu.org/licenses/>.
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-using System.Buffers.Binary;
-using System.Collections.Concurrent;
+// ---------------------------------------------------------------------------
+// Ported from Campfire (https://github.com/Xocio/Campfire), branch main, 2026-11-08.
+// Copyright (C) the Campfire contributors. Licensed under GPL-3.0.
+// Adapted for SalmonLauncher: namespace, wire kind prefixes (campfire: -> sl:),
+// nullable annotations disabled as upstream, and the Mods/Blocklist/RoomInfo
+// types this build defines itself. See THIRD-PARTY-NOTICES.md.
+// ---------------------------------------------------------------------------
+
+#nullable disable
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using SL.Core.Link.Mods;
 
-namespace SL.Core.Link.Room;
-
-/// <summary>
-/// The host half of a room: one TCP service on the room's virtual network that tells guests where the game
-/// listens, keeps the player list and hands out the host's mods. Guests hold one long-lived connection each.
-/// </summary>
-public sealed class RoomServer : IAsyncDisposable
+namespace SL.Core.Link.Room
 {
-    /// <summary>Port the room service always uses, so a guest never has to be told a second number.</summary>
-    public const int ServicePort = 38471;
-
-    /// <summary>A guest that has not said anything for this long drops out of the player list.</summary>
-    private const int HeartbeatTimeoutSeconds = 30;
-
-    /// <summary>Largest slice of a mod file sent in one response.</summary>
-    private const int ModChunkSize = 512 * 1024;
-
-    private readonly RoomInfo _info;
-    private readonly PlayerProfile _host;
-    private readonly int _requestedPort;
-    private readonly Func<string, string?>? _modPath;
-    private readonly Func<string, bool>? _isBlocked;
-    private readonly CancellationTokenSource _cts = new();
-    private readonly object _gate = new();
-    private readonly List<PlayerProfile> _players = [];
-    private readonly ConcurrentDictionary<string, Session> _sessions = new(StringComparer.OrdinalIgnoreCase);
-
-    private TcpListener? _listener;
-    private Task? _acceptLoop;
-    private Task? _reaperLoop;
-
-    /// <param name="info">Room name, announcement and player limit.</param>
-    /// <param name="host">The host itself, already carrying its name and account kind.</param>
-    /// <param name="gamePort">Port the host's game listens on inside the room network.</param>
-    /// <param name="modPath">Maps a mod's SHA-1 to its file on disk; guests that ask for it get the bytes.</param>
-    /// <param name="port">Port to listen on; 0 lets the system pick one (used by tests).</param>
-    /// <param name="isBlocked">Players the host removed and does not want back.</param>
-    public RoomServer(
-        RoomInfo info,
-        PlayerProfile host,
-        int gamePort,
-        Func<string, string?>? modPath = null,
-        int port = ServicePort,
-        Func<string, bool>? isBlocked = null)
+    /// <summary>
+    /// The room service on the host's computer. Joining players use it to check that they reached a room,
+    /// learn the game port and keep the player list in sync.
+    /// </summary>
+    /// <remarks>
+    /// It only listens on the loopback address; the virtual network delivers players' connections there.
+    /// </remarks>
+    public sealed class RoomServer : IDisposable
     {
-        _info = info;
-        _host = host.AsHost();
-        GamePort = gamePort;
-        _modPath = modPath;
-        _isBlocked = isBlocked;
-        _requestedPort = port;
-        _players.Add(_host);
-    }
+        public const int PreferredPort = 13448;
 
-    /// <summary>The port actually bound.</summary>
-    public int Port { get; private set; }
+        private static readonly TimeSpan GuestTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(64);
 
-    /// <summary>Port of the host's game inside the room network; guests connect here.</summary>
-    public int GamePort { get; set; }
+        /// <summary>How long a removed player is kept out before they may join again.</summary>
+        public static readonly TimeSpan RemovalTime = TimeSpan.FromMinutes(1);
 
-    /// <summary>Mods offered to guests; empty when the host does not share any.</summary>
-    public ModList Mods { get; set; } = ModList.Empty;
+        /// <summary>Error bodies that tell a joining Campfire the host turned it away.</summary>
+        public const string RemovedReply = "sl:removed";
+        public const string BlockedReply = "sl:blocked";
 
-    /// <summary>Voice chat endpoint offered to guests; <see cref="VoiceInfo.Off"/> when the host has none.</summary>
-    public VoiceInfo Voice { get; set; } = VoiceInfo.Off;
+        /// <summary>Error bodies of the mod requests.</summary>
+        public const string ModsPendingReply = "sl:mods_pending";
+        public const string ModsUnavailableReply = "sl:mods_unavailable";
+        public const string ModsOffReply = "sl:mods_off";
+        public const string ModFileRefusedReply = "sl:mod_file_refused";
 
-    /// <summary>The player limit of the room; 0 means unlimited.</summary>
-    public int MaxPlayers => _info.MaxPlayers;
+        /// <summary>Error body of the voice request while the host has voice chat off.</summary>
+        public const string VoiceOffReply = "sl:voice_off";
 
-    /// <summary>Host first, then every guest that checked in recently.</summary>
-    public IReadOnlyList<PlayerProfile> Players
-    {
-        get
+        /// <summary>Error body that tells a joining player the room is full.</summary>
+        public const string FullReply = "sl:full";
+
+        private readonly byte[] _protocolList;
+        private volatile bool _modsAllowed;
+        private volatile ModHost _mods;
+        private volatile bool _modsUnavailable;
+        private volatile byte[] _voice;
+        private volatile RoomInfo _room = new RoomInfo(null, null, 0);
+        private volatile byte[] _roomJson = Encoding.UTF8.GetBytes(Json.Serialize(new RoomInfo(null, null, 0).ToJson()));
+
+        private readonly PlayerProfile _host;
+        private volatile int _minecraftPort;
+        private readonly TcpListener _listener;
+        private readonly CancellationTokenSource _stop = new CancellationTokenSource();
+        private readonly List<Guest> _guests = new List<Guest>();
+        private readonly Dictionary<string, DateTime> _removed = new Dictionary<string, DateTime>();
+
+        private RoomServer(PlayerProfile host, int minecraftPort, TcpListener listener)
         {
-            lock (_gate)
-                return _players.ToArray();
+            _host = host;
+            _minecraftPort = minecraftPort;
+            _listener = listener;
+            _modsAllowed = LinkSettings.ShareMods;
+            // The mod kinds are always listed.
+            var kinds = new[]
+            {
+                RoomProtocol.Ping, RoomProtocol.Protocols, RoomProtocol.ServerPort, RoomProtocol.PlayerPing, RoomProtocol.PlayerList,
+                RoomProtocol.ModList, RoomProtocol.ModFile, RoomProtocol.Voice, RoomProtocol.Room,
+            };
+            _protocolList = Encoding.UTF8.GetBytes(string.Join("\0", kinds));
         }
-    }
 
-    /// <summary>Raised whenever the player list changes (thread-pool thread).</summary>
-    public event Action? PlayersChanged;
-
-    /// <summary>Binds the service and starts accepting guests.</summary>
-    public void Start()
-    {
-        if (_listener is not null)
-            return;
-
-        var listener = new TcpListener(IPAddress.Any, _requestedPort);
-        try
+        /// <summary>
+        /// SalmonLauncher addition: the world may be opened after the room exists, so the advertised port can
+        /// change while guests are already looking at it.
+        /// </summary>
+        public void UpdateMinecraftPort(int port)
         {
-            listener.Start();
+            if (port is >= 1 and <= 65535)
+                _minecraftPort = port;
         }
-        catch (SocketException ex)
-        {
-            throw new LinkException($"联机服务端口 {_requestedPort} 被占用,请关闭占用该端口的程序后重试", ex);
-        }
-        _listener = listener;
-        Port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        _acceptLoop = Task.Run(() => AcceptLoopAsync(_cts.Token));
-        _reaperLoop = Task.Run(() => ReaperLoopAsync(_cts.Token));
-        LinkLog.Info($"房间服务已监听 {Port},游戏端口 {GamePort}");
-    }
 
-    /// <summary>Takes a guest out of the room and closes its connection.</summary>
-    public void Kick(string playerId)
-    {
-        if (_sessions.TryRemove(playerId, out var session))
-        {
-            try { session.Client?.Close(); } catch { }
-            RemovePlayer(playerId);
-            LinkLog.Info($"已移出玩家 {playerId}");
-        }
-    }
+        /// <summary>Raised on a worker thread when a player joins, leaves or renames.</summary>
+        public event EventHandler PlayersChanged;
 
-    private async Task AcceptLoopAsync(CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
+        public int Port => ((IPEndPoint)_listener.LocalEndpoint).Port;
+
+        /// <summary>The host's mods once they are read; until then players are told to ask again.</summary>
+        public ModHost Mods
         {
-            TcpClient client;
+            get => _mods;
+            set => _mods = value;
+        }
+
+        /// <summary>Set when the host's mods cannot be read, such as for a dedicated server; players then stop asking.</summary>
+        public bool ModsUnavailable
+        {
+            get => _modsUnavailable;
+            set => _modsUnavailable = value;
+        }
+
+        /// <summary>Whether the host lets players compare and sync mods right now; it can change while the room is open.</summary>
+        public bool ModsAllowed
+        {
+            get => _modsAllowed;
+            set => _modsAllowed = value;
+        }
+
+        /// <summary>The room's name, announcement and player limit as players receive them.</summary>
+        public RoomInfo Room
+        {
+            get => _room;
+            set
+            {
+                _room = value ?? new RoomInfo(null, null, 0);
+                _roomJson = Encoding.UTF8.GetBytes(Json.Serialize(_room.ToJson()));
+            }
+        }
+
+        /// <summary>The host's voice chat as players receive it, or <c>null</c> while it is off.</summary>
+        public VoiceOffer Voice
+        {
+            set => _voice = value == null ? null : Encoding.UTF8.GetBytes(Json.Serialize(value.ToJson()));
+        }
+
+        public static RoomServer Start(PlayerProfile host, int minecraftPort)
+        {
+            TcpListener listener;
             try
             {
-                client = await _listener!.AcceptTcpClientAsync(token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (ObjectDisposedException)
-            {
-                break;
+                listener = new TcpListener(IPAddress.Loopback, PreferredPort);
+                listener.Start();
             }
             catch (SocketException)
             {
-                continue;
+                listener = new TcpListener(IPAddress.Loopback, 0);
+                listener.Start();
             }
 
-            _ = Task.Run(() => ServeAsync(client, token), token);
+            var server = new RoomServer(host, minecraftPort, listener);
+            LinkLog.Info($"Room service listening on port {server.Port}.");
+            _ = server.AcceptLoopAsync();
+            return server;
         }
-    }
 
-    private async Task ServeAsync(TcpClient client, CancellationToken token)
-    {
-        string remote = client.Client.RemoteEndPoint?.ToString() ?? "?";
-        Session? session = null;
-        try
+        /// <summary>The host followed by every guest, in joining order.</summary>
+        public IReadOnlyList<PlayerProfile> GetPlayers()
         {
-            client.NoDelay = true;
-            await using var stream = client.GetStream();
-            while (!token.IsCancellationRequested)
+            lock (_guests)
+                return new[] { _host }.Concat(_guests.Select(g => g.Profile)).ToList();
+        }
+
+        /// <summary>Drops guests that have not checked in for a while (they closed the game or lost the connection).</summary>
+        public void RemoveSilentGuests()
+        {
+            bool changed;
+            lock (_guests)
+                changed = _guests.RemoveAll(g => DateTime.UtcNow - g.LastSeen > GuestTimeout) > 0;
+            if (changed)
+                PlayersChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>Takes a guest out of the room; their computer is turned away for <see cref="RemovalTime"/>.</summary>
+        public void Remove(string machineId)
+        {
+            lock (_guests)
             {
-                var request = await RoomFraming.ReadRequestAsync(stream, token).ConfigureAwait(false);
-                if (request is null)
-                    break;
-
-                // a guest must check in before it can see anything about the room, but the two probes that only
-                // prove "this is a room service" are answered first so the handshake can identify itself
-                if (session is null)
-                {
-                    if (request.Kind is RoomProtocol.Ping or RoomProtocol.Protocols)
-                    {
-                        var (probeStatus, probeBody) = Handle(request, remote);
-                        await RoomFraming.WriteResponseAsync(stream, probeStatus, probeBody, token).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    if (request.Kind != RoomProtocol.PlayerPing)
-                    {
-                        await RejectAsync(stream, RoomMessages.Rejection.Removed, token).ConfigureAwait(false);
-                        return;
-                    }
-
-                    var admission = Admit(request.Body, remote, client);
-                    if (admission.Rejection is not null)
-                    {
-                        await RejectAsync(stream, admission.Rejection, token).ConfigureAwait(false);
-                        return;
-                    }
-
-                    session = admission.Session!;
-                    _sessions[session.PlayerId] = session;
-                    await RoomFraming.WriteResponseAsync(stream, RoomFraming.StatusOk, ReadOnlyMemory<byte>.Empty, token).ConfigureAwait(false);
-                    continue;
-                }
-
-                session.LastSeen = DateTime.UtcNow;
-
-                if (request.Kind == RoomProtocol.PlayerPing)
-                {
-                    // a guest may rename itself, but the id it checked in with never changes
-                    var profile = ParseProfile(request.Body);
-                    if (profile is null || !string.Equals(profile.Id, session.PlayerId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        await RejectAsync(stream, RoomMessages.Rejection.Removed, token).ConfigureAwait(false);
-                        return;
-                    }
-
-                    UpsertPlayer(profile);
-                    await RoomFraming.WriteResponseAsync(stream, RoomFraming.StatusOk, ReadOnlyMemory<byte>.Empty, token).ConfigureAwait(false);
-                    continue;
-                }
-
-                var (status, body) = Handle(request, remote);
-                await RoomFraming.WriteResponseAsync(stream, status, body, token).ConfigureAwait(false);
+                _removed[machineId] = DateTime.UtcNow + RemovalTime;
+                _guests.RemoveAll(g => g.Profile.MachineId == machineId);
             }
+            PlayersChanged?.Invoke(this, EventArgs.Empty);
         }
-        catch (OperationCanceledException)
+
+        public void Dispose()
         {
-            // shutting down
+            _stop.Cancel();
+            _listener.Stop();
         }
-        catch (Exception ex)
+
+        private async Task AcceptLoopAsync()
         {
-            LinkLog.Warn($"房间连接 {remote} 结束:{ex.Message}");
-        }
-        finally
-        {
-            try { client.Dispose(); } catch { }
-            if (session is not null)
+            while (!_stop.IsCancellationRequested)
             {
-                _sessions.TryRemove(session.PlayerId, out _);
-                RemovePlayer(session.PlayerId);
+                TcpClient client;
+                try
+                {
+                    client = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is ObjectDisposedException || ex is SocketException || ex is InvalidOperationException)
+                {
+                    return;
+                }
+                _ = ServeAsync(client);
             }
         }
-    }
 
-    private static Task RejectAsync(Stream stream, string reason, CancellationToken token)
-        => RoomFraming.WriteResponseAsync(stream, RoomFraming.StatusError, Encoding.UTF8.GetBytes(reason), token);
-
-    /// <summary>Validates a heartbeat and adds the player; <see cref="Admission.Rejection"/> says why when refused.</summary>
-    private Admission Admit(byte[] body, string remote, TcpClient client)
-    {
-        var profile = ParseProfile(body);
-        if (profile is null)
-            return new Admission(null, RoomMessages.Rejection.Removed);
-
-        if (_isBlocked?.Invoke(profile.Id) == true)
+        private async Task ServeAsync(TcpClient client)
         {
-            LinkLog.Info($"拒绝已被移出的玩家 {profile.Name}({remote})");
-            return new Admission(null, RoomMessages.Rejection.Blocked);
+            using (client)
+            using (var idle = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token))
+            using (idle.Token.Register(client.Close))
+            {
+                try
+                {
+                    client.NoDelay = true;
+                    var stream = client.GetStream();
+                    while (true)
+                    {
+                        idle.CancelAfter(IdleTimeout);
+                        var request = await RoomFraming.ReadRequestAsync(stream, idle.Token).ConfigureAwait(false);
+                        if (request == null)
+                            return;
+
+                        var (status, body) = Handle(request);
+                        await RoomFraming.WriteResponseAsync(stream, status, body, idle.Token).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException || ex is SocketException || ex is ObjectDisposedException
+                                           || ex is InvalidDataException || ex is OperationCanceledException)
+                {
+                    // The player left or the connection broke.
+                }
+            }
         }
 
-        bool known = _sessions.ContainsKey(profile.Id)
-                     || string.Equals(profile.Id, _host.Id, StringComparison.OrdinalIgnoreCase);
-        if (!known && IsFull())
-        {
-            LinkLog.Warn($"房间已满,拒绝 {profile.Name}({remote})");
-            return new Admission(null, RoomMessages.Rejection.Full);
-        }
-
-        UpsertPlayer(profile);
-        if (!known)
-            LinkLog.Info($"{profile.Name} 加入了房间({remote})");
-
-        return new Admission(new Session(profile.Id, client), null);
-    }
-
-    /// <summary>Reads a heartbeat body into a usable profile; <c>null</c> when it is not one.</summary>
-    private static PlayerProfile? ParseProfile(byte[] body)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(body);
-            var profile = PlayerProfile.FromJson(document.RootElement, forcedId: null);
-            if (profile is null || !LinkUtil.IsHex(profile.Id, 32) || profile.Name.Length == 0)
-                return null;
-            return profile;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private bool IsFull()
-    {
-        if (_info.MaxPlayers <= 0)
-            return false;
-        lock (_gate)
-        {
-            // the host counts towards the limit
-            return _players.Count >= _info.MaxPlayers;
-        }
-    }
-
-    /// <summary>Handles one request that needs no room membership check.</summary>
-    private (byte Status, byte[] Body) Handle(RoomFraming.Request request, string remote)
-    {
-        switch (request.Kind)
-        {
-            case RoomProtocol.Ping:
-                return (RoomFraming.StatusOk, request.Body);
-
-            case RoomProtocol.Protocols:
-                return (RoomFraming.StatusOk, RoomMessages.ProtocolList(SupportedKinds()));
-
-            case RoomProtocol.ServerPort:
-                // the code may be shared before the host has entered a world: say "not yet" instead of failing
-                return GamePort > 0
-                    ? (RoomFraming.StatusOk, RoomMessages.ServerPort(GamePort))
-                    : (RoomFraming.StatusNotReady, Array.Empty<byte>());
-
-            case RoomProtocol.PlayerList:
-                return (RoomFraming.StatusOk, RoomMessages.PlayerList(Players));
-
-            case RoomProtocol.Room:
-                return (RoomFraming.StatusOk, _info.ToJson());
-
-            case RoomProtocol.ModList:
-                return (RoomFraming.StatusOk, Mods.ToJson());
-
-            case RoomProtocol.Voice:
-                return (RoomFraming.StatusOk, Voice.ToJson());
-
-            case RoomProtocol.ModFile:
-                return ReadModChunk(request.Body);
-
-            default:
-                LinkLog.Warn($"{remote} 请求了不支持的类型 {request.Kind}");
-                return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("unknown"));
-        }
-    }
-
-    private IReadOnlyList<string> SupportedKinds()
-    {
-        var kinds = new List<string>
-        {
-            RoomProtocol.Ping,
-            RoomProtocol.Protocols,
-            RoomProtocol.ServerPort,
-            RoomProtocol.PlayerPing,
-            RoomProtocol.PlayerList,
-            RoomProtocol.Room,
-        };
-        if (Mods.Mods.Count > 0 && _modPath is not null)
-        {
-            kinds.Add(RoomProtocol.ModList);
-            kinds.Add(RoomProtocol.ModFile);
-        }
-        return kinds;
-    }
-
-    /// <summary>Body: the mod's SHA-1 in ASCII hex (40 bytes) followed by the offset as eight big-endian bytes.</summary>
-    private (byte Status, byte[] Body) ReadModChunk(byte[] body)
-    {
-        if (_modPath is null || body.Length != 48)
-            return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("bad request"));
-
-        string sha1 = Encoding.ASCII.GetString(body, 0, 40).ToLowerInvariant();
-        long offset = BinaryPrimitives.ReadInt64BigEndian(body.AsSpan(40, 8));
-        if (!LinkUtil.IsHex(sha1, 40) || offset < 0)
-            return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("bad request"));
-
-        string? path = _modPath(sha1);
-        if (path is null || !File.Exists(path))
-            return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("not found"));
-
-        try
-        {
-            using var file = File.OpenRead(path);
-            if (offset >= file.Length)
-                return (RoomFraming.StatusOk, []);
-
-            int count = (int)Math.Min(ModChunkSize, file.Length - offset);
-            var buffer = new byte[count];
-            file.Seek(offset, SeekOrigin.Begin);
-            int read = file.Read(buffer, 0, count);
-            return (RoomFraming.StatusOk, read == count ? buffer : buffer[..read]);
-        }
-        catch (IOException ex)
-        {
-            LinkLog.Warn("读取模组失败:" + ex.Message);
-            return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("read failed"));
-        }
-    }
-
-    private void UpsertPlayer(PlayerProfile profile)
-    {
-        lock (_gate)
-        {
-            int index = _players.FindIndex(p => string.Equals(p.Id, profile.Id, StringComparison.OrdinalIgnoreCase));
-            if (index >= 0)
-                _players[index] = profile;
-            else
-                _players.Add(profile);
-        }
-        PlayersChanged?.Invoke();
-    }
-
-    private void RemovePlayer(string playerId)
-    {
-        bool removed;
-        lock (_gate)
-            removed = _players.RemoveAll(p => string.Equals(p.Id, playerId, StringComparison.OrdinalIgnoreCase)) > 0;
-        if (removed)
-            PlayersChanged?.Invoke();
-    }
-
-    /// <summary>Drops guests whose connection died without a clean shutdown.</summary>
-    private async Task ReaperLoopAsync(CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
+        private (byte Status, byte[] Body) Handle(RoomFraming.Request request)
         {
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(5), token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-
-            var deadline = DateTime.UtcNow.AddSeconds(-HeartbeatTimeoutSeconds);
-            foreach (var (id, session) in _sessions)
-            {
-                if (session.LastSeen < deadline && _sessions.TryRemove(id, out _))
+                switch (request.Kind)
                 {
-                    try { session.Client?.Close(); } catch { }
-                    RemovePlayer(id);
+                    case RoomProtocol.Ping:
+                        return (RoomFraming.StatusOk, request.Body);
+                    case RoomProtocol.Protocols:
+                        return (RoomFraming.StatusOk, _protocolList);
+                    case RoomProtocol.ServerPort:
+                        return (RoomFraming.StatusOk, new[] { (byte)(_minecraftPort >> 8), (byte)_minecraftPort });
+                    case RoomProtocol.PlayerPing:
+                        return HandlePlayerPing(request.Body);
+                    case RoomProtocol.PlayerList:
+                        return (RoomFraming.StatusOk, SerializePlayers());
+                    case RoomProtocol.ModList:
+                        var mods = _mods;
+                        if (!_modsAllowed)
+                            return (RoomFraming.StatusError, Encoding.UTF8.GetBytes(ModsOffReply));
+                        if (mods != null)
+                            return (RoomFraming.StatusOk, mods.ListJson);
+                        return (RoomFraming.StatusError, Encoding.UTF8.GetBytes(_modsUnavailable ? ModsUnavailableReply : ModsPendingReply));
+                    case RoomProtocol.ModFile:
+                        return _modsAllowed
+                            ? HandleModFile(request.Body)
+                            : (RoomFraming.StatusError, Encoding.UTF8.GetBytes(ModFileRefusedReply));
+                    case RoomProtocol.Room:
+                        return (RoomFraming.StatusOk, _roomJson);
+                    case RoomProtocol.Voice:
+                        var voice = _voice;
+                        return voice != null
+                            ? (RoomFraming.StatusOk, voice)
+                            : (RoomFraming.StatusError, Encoding.UTF8.GetBytes(VoiceOffReply));
+                    default:
+                        return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("Requested protocol hasn't been implemented."));
                 }
             }
+            catch (Exception ex) when (ex is FormatException || ex is ArgumentException || ex is InvalidOperationException
+                                       || ex is IOException || ex is UnauthorizedAccessException)
+            {
+                return (RoomFraming.StatusError, Encoding.UTF8.GetBytes(ex.Message));
+            }
         }
-    }
 
-    /// <summary>Stops the service and drops every guest.</summary>
-    public async ValueTask DisposeAsync()
-    {
-        try { _cts.Cancel(); } catch { }
-        try { _listener?.Stop(); } catch { }
-
-        foreach (var session in _sessions.Values)
+        private (byte Status, byte[] Body) HandlePlayerPing(byte[] body)
         {
-            try { session.Client?.Close(); } catch { }
-        }
-        _sessions.Clear();
+            var json = Json.Parse(Encoding.UTF8.GetString(body));
+            var profile = PlayerProfile.FromJson(json, PlayerKind.Guest);
+            if (profile == null)
+                return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("Invalid player profile."));
+            if (profile.MachineId == _host.MachineId)
+                return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("The machine id belongs to the host."));
+            if (Blocklist.Contains(profile))
+                return (RoomFraming.StatusError, Encoding.UTF8.GetBytes(BlockedReply));
+            lock (_guests)
+            {
+                if (_removed.TryGetValue(profile.MachineId, out var until) && until > DateTime.UtcNow)
+                    return (RoomFraming.StatusError, Encoding.UTF8.GetBytes(RemovedReply));
+            }
 
-        if (_acceptLoop is not null)
+            bool changed;
+            lock (_guests)
+            {
+                int index = _guests.FindIndex(g => g.Profile.MachineId == profile.MachineId);
+                int limit = _room.MaxPlayers;
+                if (index < 0 && limit > 0 && _guests.Count + 1 >= limit)
+                    return (RoomFraming.StatusError, Encoding.UTF8.GetBytes(FullReply));
+                if (index < 0)
+                {
+                    _guests.Add(new Guest(profile));
+                    changed = true;
+                    LinkLog.Info($"Player joined: {profile.Name} ({profile.Vendor}).");
+                }
+                else
+                {
+                    changed = _guests[index].Profile.Name != profile.Name;
+                    _guests[index] = new Guest(profile);
+                }
+            }
+            if (changed)
+                PlayersChanged?.Invoke(this, EventArgs.Empty);
+            return (RoomFraming.StatusOk, Array.Empty<byte>());
+        }
+
+        private (byte Status, byte[] Body) HandleModFile(byte[] body)
         {
-            try { await _acceptLoop.ConfigureAwait(false); } catch { }
+            if (body == null || body.Length != 48)
+                return (RoomFraming.StatusError, Encoding.UTF8.GetBytes("Invalid mod file request."));
+            string sha1 = Encoding.ASCII.GetString(body, 0, 40);
+            long offset = 0;
+            for (int i = 40; i < 48; i++)
+                offset = (offset << 8) | body[i];
+            var chunk = _mods?.ReadChunk(sha1, offset);
+            return chunk == null
+                ? (RoomFraming.StatusError, Encoding.UTF8.GetBytes(ModFileRefusedReply))
+                : (RoomFraming.StatusOk, chunk);
         }
-        if (_reaperLoop is not null)
+
+        private byte[] SerializePlayers()
         {
-            try { await _reaperLoop.ConfigureAwait(false); } catch { }
+            var list = GetPlayers().Select(p => p.ToJson(includeKind: true)).ToList();
+            return Encoding.UTF8.GetBytes(Json.Serialize(list));
         }
-        _cts.Dispose();
-        _listener = null;
-    }
 
-    /// <summary>Result of a heartbeat: either a session to keep or the reason the player was refused.</summary>
-    private readonly record struct Admission(Session? Session, string? Rejection);
+        private sealed class Guest
+        {
+            public Guest(PlayerProfile profile)
+            {
+                Profile = profile;
+                LastSeen = DateTime.UtcNow;
+            }
 
-    /// <summary>One checked-in guest; the socket lets a kick close the connection.</summary>
-    private sealed class Session(string playerId, TcpClient? client)
-    {
-        public string PlayerId { get; } = playerId;
-        public TcpClient? Client { get; } = client;
-        public DateTime LastSeen { get; set; } = DateTime.UtcNow;
+            public PlayerProfile Profile { get; }
+
+            public DateTime LastSeen { get; }
+        }
     }
 }

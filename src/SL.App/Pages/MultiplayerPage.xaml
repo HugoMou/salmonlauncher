@@ -67,7 +67,7 @@
                     Padding="16,12"
                     Visibility="Collapsed">
                 <StackPanel Spacing="6">
-                    <TextBlock Text="联机需要一个虚拟网卡"
+                    <TextBlock Text="联机组件不可用"
                                FontSize="13"
                                FontWeight="SemiBold"
                                Foreground="{ThemeResource Brush.Fg}" />

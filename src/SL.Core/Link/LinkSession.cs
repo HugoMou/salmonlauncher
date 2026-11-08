@@ -5,17 +5,11 @@
 // the terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later version.
 //
-// This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-// PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along with
-// this program. If not, see <https://www.gnu.org/licenses/>.
-//
 // SPDX-License-Identifier: GPL-3.0-or-later
 using System.Net;
-using SL.Core.Link.Runtime;
+using SL.Core.Link.Mods;
 using SL.Core.Link.Room;
+using SL.Core.Link.Runtime;
 
 namespace SL.Core.Link;
 
@@ -54,24 +48,53 @@ public sealed record HostRequest(
     string RoomName,
     string Notice,
     int MaxPlayers,
-    ModShare? Mods);
+    ModSource? Mods);
+
+/// <summary>The mods an instance offers, plus the way back from a hash to the file on disk.</summary>
+public sealed class ModSource
+{
+    private readonly Dictionary<string, string> _pathBySha1 = new(StringComparer.OrdinalIgnoreCase);
+
+    private ModSource(ModList list, Dictionary<string, string> pathBySha1)
+    {
+        List = list;
+        _pathBySha1 = pathBySha1;
+    }
+
+    public ModList List { get; }
+
+    public bool HasMods => List.Files.Count > 0;
+
+    /// <summary>Fingerprints every jar in a folder; <c>null</c> when the folder yields nothing.</summary>
+    public static ModSource? FromDirectory(string? directory, string gameVersion, string loader)
+    {
+        var paths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var list = LinkSession.ScanMods(directory ?? "", gameVersion, loader, paths);
+        return list.Files.Count == 0 ? null : new ModSource(list, paths);
+    }
+
+    public string? PathFor(string sha1) => _pathBySha1.TryGetValue(sha1, out string? path) ? path : null;
+}
 
 /// <summary>
-/// One live room session: starts the virtual network, runs the host service or the guest connection, and
-/// keeps the player list, the room code and the world port in one place for the window to show.
+/// One live room session. The virtual network carries the room service through a local port forward, so the
+/// game only ever talks to this machine: no virtual adapter, no administrator rights, no port forwarding on
+/// the router. The room service itself is the one ported from Campfire.
 /// </summary>
 public sealed class LinkSession : IAsyncDisposable
 {
     private readonly PlayerProfile _me;
-    private readonly HashSet<string> _blocked = new(StringComparer.OrdinalIgnoreCase);
 
     private RoomServer? _server;
     private RoomClient? _client;
-    private EasyTierInstance? _runner;
+    private EasyTierInstance? _network;
     private RoomCode? _code;
-    private RoomInfo _room = new("", "", 0);
+    private RoomInfo _room = new(null, null, 0);
     private LinkStatus _status = LinkStatus.Idle;
     private int _gamePort;
+    private int _localGamePort;
+    private int _localServicePort;
+    private CancellationTokenSource? _heartbeat;
     private bool _stopped;
 
     private LinkSession(LinkRole role, PlayerProfile me)
@@ -85,23 +108,22 @@ public sealed class LinkSession : IAsyncDisposable
 
     public LinkRole Role { get; }
 
-    /// <summary>Lifecycle state of the session.</summary>
     public LinkStatus Status => _status;
 
     /// <summary>Why the session stopped or failed, when it did.</summary>
     public string? Error { get; private set; }
 
-    /// <summary>The invite code of the room; <c>null</c> before the session comes up.</summary>
     public RoomCode? Code => _code;
 
-    /// <summary>Name, announcement and limit of the room.</summary>
     public RoomInfo Room => _room;
 
-    /// <summary>Port of the game inside the room network; 0 while the host has not entered a world.</summary>
+    /// <summary>Port of the game inside the room; 0 while the host has not entered a world.</summary>
     public int GamePort => _gamePort;
 
-    /// <summary>The player list as of the last update, host first when this launcher is the host.</summary>
-    public IReadOnlyList<PlayerProfile> Players => _server?.Players ?? _client?.Players ?? [];
+    /// <summary>Host first, then every guest that checked in recently.</summary>
+    public IReadOnlyList<PlayerProfile> Players => _server?.GetPlayers() ?? _clientPlayers;
+
+    private IReadOnlyList<PlayerProfile> _clientPlayers = [];
 
     /// <summary>Whether the room has a world and a port, so a guest may actually play.</summary>
     public bool WorldReady => _gamePort is >= 1 and <= 65535;
@@ -112,10 +134,14 @@ public sealed class LinkSession : IAsyncDisposable
     /// <summary>Lines worth showing in the page log.</summary>
     public event Action<string>? Log;
 
-    /// <summary>Address a guest types into Minecraft's direct connect box.</summary>
-    public string JoinAddress => $"{RoomProtocol.HostAddress}:{_gamePort}";
+    /// <summary>
+    /// Address the game connects to: on this machine, because the network forwards the host's game port here.
+    /// </summary>
+    public string JoinAddress => Role == LinkRole.Host
+        ? $"{RoomProtocol.HostAddress}:{_gamePort}"
+        : $"127.0.0.1:{_localGamePort}";
 
-    /// <summary>Whether this process can build a virtual network at all, and why not when it cannot.</summary>
+    /// <summary>Whether this process can build a room; forwarding means no adapter and no elevation.</summary>
     public static bool CanRun(out string reason)
     {
         if (!OperatingSystem.IsWindows())
@@ -124,10 +150,9 @@ public sealed class LinkSession : IAsyncDisposable
             return false;
         }
 
-        // EasyTier needs to create a TUN adapter, which Windows only allows to elevated processes
-        if (!Environment.IsPrivilegedProcess)
+        if (!EasyTierPackage.IsSupportedSystem)
         {
-            reason = "建立虚拟局域网需要管理员权限,请以管理员身份重新启动启动器";
+            reason = "当前系统版本过低,联机组件无法运行";
             return false;
         }
 
@@ -155,23 +180,17 @@ public sealed class LinkSession : IAsyncDisposable
             await EnsureRuntimeAsync(downloadProgress, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
 
-            // the host name carries the room service port, which is how a guest finds the service
-            var config = CreateConfig(session._code, RoomProtocol.HostNamePrefix + RoomServer.ServicePort, RoomProtocol.HostAddress);
-            config.TcpWhitelist.Add(RoomServer.ServicePort.ToString());
-            session._runner = EasyTierInstance.Start(config);
-            session.HookRunner();
+            // the advertised port is the room service's own port; guests forward to it
+            session._server = RoomServer.Start(me.WithKind(PlayerKind.Host), 0);
+            session._server.Room = session._room;
+            session._server.ModsAllowed = LinkSettings.Current.ShareMods;
+            if (request.Mods is { } mods)
+                session._server.Mods = new ModHost(mods.List, mods.PathFor);
+            session._server.PlayersChanged += session.OnPlayersChanged;
 
-            session._server = new RoomServer(
-                session._room,
-                me,
-                gamePort: 0,
-                request.Mods is null ? null : request.Mods.PathFor,
-                RoomServer.ServicePort,
-                session.IsBlocked);
-            if (request.Mods is { HasMods: true } mods)
-                session._server.Mods = mods.List;
-            session._server.PlayersChanged += session.RaiseChanged;
-            session._server.Start();
+            var config = CreateConfig(session._code, RoomProtocol.HostNamePrefix + session._server.Port, null);
+            session._network = EasyTierInstance.Start(config);
+            session.HookNetwork();
 
             Current = session;
             session.SetStatus(LinkStatus.WaitingForWorld);
@@ -185,9 +204,36 @@ public sealed class LinkSession : IAsyncDisposable
         }
     }
 
+    /// <summary>Fingerprints every jar in a folder into a mod list, remembering where each hash lives.</summary>
+    public static ModList ScanMods(string directory, string gameVersion, string loader, Dictionary<string, string>? paths = null)
+    {
+        var files = new List<ModFile>();
+        if (Directory.Exists(directory))
+        {
+            foreach (string path in Directory.EnumerateFiles(directory, "*.jar", SearchOption.TopDirectoryOnly))
+            {
+                try
+                {
+                    var info = new FileInfo(path);
+                    if (info.Length == 0 || info.Length > 200L * 1024 * 1024)
+                        continue;
+                    string sha1 = Convert.ToHexStringLower(System.Security.Cryptography.SHA1.HashData(File.ReadAllBytes(path)));
+                    files.Add(new ModFile(info.Name, sha1, info.Length));
+                    paths?.TryAdd(sha1, path);
+                }
+                catch (IOException ex)
+                {
+                    LinkLog.Warn($"读取模组 {Path.GetFileName(path)} 失败:{ex.Message}");
+                }
+            }
+        }
+        files.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+        return new ModList(gameVersion, loader, files);
+    }
+
     /// <summary>
-    /// Joins a room. The virtual network comes up first and the room service is retried until the host has
-    /// entered a world, so a guest may paste the code before the host opens anything.
+    /// Joins a room: the network comes up, the room service is reached through a local forward, and the game
+    /// port is forwarded the same way, so the game joins <c>127.0.0.1</c>.
     /// </summary>
     public static async Task<LinkSession> JoinAsync(
         RoomCode code,
@@ -205,49 +251,36 @@ public sealed class LinkSession : IAsyncDisposable
             token.ThrowIfCancellationRequested();
             session.Log?.Invoke("正在加入虚拟局域网…");
 
-            // a guest takes whatever address the network hands out and looks the host up by its name
             var config = CreateConfig(code, "salmon-guest-" + Hex.Random(4), null);
-            session._runner = EasyTierInstance.Start(config);
-            session.HookRunner();
+            session._network = EasyTierInstance.Start(config);
+            session.HookNetwork();
 
             var deadline = DateTime.UtcNow.AddSeconds(Math.Max(30, LinkSettings.Current.SearchTimeoutSeconds));
-            var endpoint = await FindHostAsync(session._runner, deadline, session.Log, token).ConfigureAwait(false);
-            RoomClient? client = null;
-            Exception? lastError = null;
+            var host = await FindHostAsync(session._network, deadline, session.Log, token).ConfigureAwait(false);
 
-            while (DateTime.UtcNow < deadline)
-            {
-                token.ThrowIfCancellationRequested();
-                try
-                {
-                    client = await RoomClient.ConnectAsync(endpoint, me, token).ConfigureAwait(false);
-                    break;
-                }
-                catch (RoomRejectedException)
-                {
-                    throw;
-                }
-                catch (LinkException ex)
-                {
-                    lastError = ex;
-                    session.Log?.Invoke("房主尚未响应,继续等待…");
-                }
+            session._localServicePort = EasyTierInstance.FindFreePort();
+            if (!await session._network.AddPortForwardAsync("tcp",
+                    new IPEndPoint(IPAddress.Loopback, session._localServicePort), host, token).ConfigureAwait(false))
+                throw new LinkException("无法建立房间转发,请检查网络或关闭占用端口的程序");
 
-                await Task.Delay(TimeSpan.FromSeconds(2), token).ConfigureAwait(false);
-            }
+            session._client = await ConnectRoomAsync(session._localServicePort, deadline, session.Log, token).ConfigureAwait(false);
+            session._room = await session._client.GetRoomInfoAsync(token).ConfigureAwait(false);
+            session._gamePort = await session._client.GetServerPortAsync(token).ConfigureAwait(false);
+            session._clientPlayers = await session._client.GetPlayersAsync(token).ConfigureAwait(false);
 
-            if (client is null)
-                throw new LinkException("房间无响应,请确认房间码正确、双方网络正常", lastError);
+            // the game joins a local port; the network carries it to the host's game port
+            session._localGamePort = EasyTierInstance.FindFreePort();
+            var gameTarget = new IPEndPoint(host.Address, session._gamePort);
+            bool forwarded =
+                await session._network.AddPortForwardAsync("tcp", new IPEndPoint(IPAddress.Loopback, session._localGamePort), gameTarget, token).ConfigureAwait(false)
+                && await session._network.AddPortForwardAsync("udp", new IPEndPoint(IPAddress.Loopback, session._localGamePort), gameTarget, token).ConfigureAwait(false);
+            if (!forwarded)
+                session.Log?.Invoke("游戏端口转发失败,可能需要以管理员身份运行才能转发 UDP");
 
-            session._client = client;
-            session._room = client.Room;
-            session._gamePort = client.GamePort;
-            client.PlayersChanged += session.RaiseChanged;
-            client.Closed += session.OnRoomClosed;
-
+            session.StartHeartbeat();
             Current = session;
             session.SetStatus(LinkStatus.Online);
-            session.Log?.Invoke($"已加入房间「{session._room.Name}」· 游戏端口 {session._gamePort}");
+            session.Log?.Invoke($"已加入房间「{session._room.Name}」· 游戏地址 {session.JoinAddress}");
             return session;
         }
         catch
@@ -257,88 +290,33 @@ public sealed class LinkSession : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Host only: points the room at the world the host just opened. Called whenever the launcher sees a
-    /// Minecraft LAN announcement, so the host never has to type a port.
-    /// </summary>
-    public void BindGamePort(int port, string worldName)
+    private static async Task<RoomClient> ConnectRoomAsync(
+        int localPort, DateTime deadline, Action<string>? log, CancellationToken token)
     {
-        if (_server is null || port is < 1 or > 65535 || port == _gamePort)
-            return;
-
-        _gamePort = port;
-        _server.GamePort = port;
-        SetStatus(LinkStatus.Hosting);
-        Log?.Invoke($"已绑定世界「{worldName}」· 端口 {port}");
-        RaiseChanged();
-    }
-
-    /// <summary>Takes a player out of the room and remembers it, so the same code cannot walk back in.</summary>
-    public void BlockAndKick(string playerId, string playerName)
-    {
-        if (playerId.Length == 0)
-            return;
-        _blocked.Add(playerId);
-        _server?.Kick(playerId);
-        Log?.Invoke($"已移出 {playerName},并禁止其再次加入");
-    }
-
-    private bool IsBlocked(string playerId) => _blocked.Contains(playerId);
-
-    private void HookRunner()
-    {
-        if (_runner is null)
-            return;
-        _runner.Exited += (_, _) =>
+        Exception? last = null;
+        while (DateTime.UtcNow < deadline)
         {
-            if (_stopped)
-                return;
-            string output = _runner?.GetRecentOutput() ?? "";
-            foreach (string line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(8))
-                Log?.Invoke("[内核] " + line.Trim());
-            SetStatus(LinkStatus.Disconnected, "联机内核已退出");
-        };
-    }
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                var client = await RoomClient.TryConnectAsync(localPort, token).ConfigureAwait(false);
+                if (client is not null)
+                    return client;
+            }
+            catch (RoomRejectedException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                last = ex;
+                log?.Invoke("房主尚未响应,继续等待…");
+            }
 
-    private void OnRoomClosed(string reason)
-    {
-        if (_stopped)
-            return;
-        Log?.Invoke(reason);
-        SetStatus(LinkStatus.Disconnected, reason);
-    }
-
-    /// <summary>Installs and self-tests the EasyTier component the first time a room is opened.</summary>
-    private static async Task EnsureRuntimeAsync(IProgress<double>? progress, CancellationToken token)
-    {
-        if (!EasyTierPackage.IsInstalled())
-        {
-            LinkLog.Info("正在安装联机组件 EasyTier " + EasyTierPackage.Version);
-            var reporter = new Progress<DownloadProgress>(p => progress?.Report(p.Fraction));
-            await EasyTierPackage.InstallAsync(reporter, token).ConfigureAwait(false);
+            await Task.Delay(TimeSpan.FromSeconds(2), token).ConfigureAwait(false);
         }
 
-        if (!await EasyTierPackage.CanRunAsync().ConfigureAwait(false))
-            throw new LinkException("联机组件无法在当前系统运行,请检查杀毒软件拦截或系统版本");
-    }
-
-    /// <summary>Builds the network config both sides share; only the name and address differ.</summary>
-    private static EasyTierConfig CreateConfig(RoomCode code, string hostname, string? ipv4)
-    {
-        var settings = LinkSettings.Current;
-        var config = new EasyTierConfig
-        {
-            NetworkName = code.NetworkName,
-            NetworkSecret = code.NetworkSecret,
-            Hostname = hostname,
-            IPv4 = ipv4 ?? "",
-            NoTun = false,   // the room service is addressed by virtual IP, so the adapter must exist
-            DirectOnly = !settings.UsePublicNodes,
-            HideAddress = settings.HideAddress,
-        };
-        foreach (string peer in LinkSettings.GetNodes())
-            config.Peers.Add(peer);
-        return config;
+        throw new LinkException("房间无响应,请确认房间码正确、双方网络正常", last);
     }
 
     /// <summary>
@@ -383,6 +361,82 @@ public sealed class LinkSession : IAsyncDisposable
         throw new LinkException("房间无响应,请确认房间码正确、双方网络正常");
     }
 
+    /// <summary>Host only: points the room at the world the host just opened.</summary>
+    public void BindGamePort(int port, string worldName)
+    {
+        if (_server is null || port is < 1 or > 65535 || port == _gamePort)
+            return;
+
+        _gamePort = port;
+        _server.UpdateMinecraftPort(port);
+        SetStatus(LinkStatus.Hosting);
+        Log?.Invoke($"已绑定世界「{worldName}」· 端口 {port}");
+        RaiseChanged();
+    }
+
+    /// <summary>Takes a player out of the room and remembers it, so the same code cannot walk back in.</summary>
+    public void BlockAndKick(string machineId, string playerName)
+    {
+        if (string.IsNullOrEmpty(machineId))
+            return;
+        Blocklist.Add(new PlayerProfile(playerName, machineId, "", PlayerKind.Guest));
+        _server?.RemoveSilentGuests();
+        Log?.Invoke($"已移出 {playerName},并禁止其再次加入");
+    }
+
+    private void StartHeartbeat()
+    {
+        _heartbeat = new CancellationTokenSource();
+        var token = _heartbeat.Token;
+        _ = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), token).ConfigureAwait(false);
+                    var client = _client;
+                    if (client is null)
+                        continue;
+                    await client.SendHeartbeatAsync(_me.WithKind(PlayerKind.Local), token).ConfigureAwait(false);
+                    _clientPlayers = await client.GetPlayersAsync(token).ConfigureAwait(false);
+                    RaiseChanged();
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+                catch (Exception ex) when (RoomClient.IsConnectionError(ex))
+                {
+                    if (!_stopped)
+                    {
+                        Log?.Invoke("与房主的连接已断开");
+                        SetStatus(LinkStatus.Disconnected, "与房主的连接已断开");
+                    }
+                    return;
+                }
+                catch (Exception)
+                {
+                    // a single failed heartbeat is not fatal
+                }
+            }
+        }, token);
+    }
+
+    private void OnPlayersChanged(object? sender, EventArgs e) => RaiseChanged();
+
+    private void HookNetwork()
+    {
+        if (_network is null)
+            return;
+        _network.Exited += (_, _) =>
+        {
+            if (_stopped)
+                return;
+            SetStatus(LinkStatus.Disconnected, "联机内核已退出");
+        };
+    }
+
     private void SetStatus(LinkStatus status, string? error = null)
     {
         _status = status;
@@ -395,61 +449,67 @@ public sealed class LinkSession : IAsyncDisposable
         try { Changed?.Invoke(); } catch { }
     }
 
-    /// <summary>Asks the host which mods the room runs.</summary>
-    public Task<ModList> FetchModsAsync(CancellationToken token = default)
-        => _client is null ? Task.FromResult(ModList.Empty) : _client.GetModsAsync(token);
+    /// <summary>Asks the host which mods the room runs; <c>null</c> while pending or when sharing is off.</summary>
+    public async Task<ModList?> FetchModsAsync(CancellationToken token = default)
+    {
+        var client = _client;
+        if (client is null)
+            return null;
+        try
+        {
+            var (list, off) = await client.GetModListAsync(token).ConfigureAwait(false);
+            return off ? null : list;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 
-    /// <summary>
-    /// Copies the host's mods into <paramref name="targetDirectory"/>. A file is skipped only when the local
-    /// copy has the same size <em>and</em> the same SHA-1, so a truncated or swapped jar is replaced.
-    /// Reports 0..1 through <paramref name="progress"/>.
-    /// </summary>
+    /// <summary>Copies the host's mods into <paramref name="targetDirectory"/>, verifying every file.</summary>
     public async Task<int> DownloadModsAsync(string targetDirectory, IProgress<double>? progress, CancellationToken token)
     {
-        if (_client is null)
-            throw new LinkException("只有加入房间后才能下载房主的模组");
-
-        var mods = await _client.GetModsAsync(token).ConfigureAwait(false);
-        if (mods.Mods.Count == 0)
+        var client = _client ?? throw new LinkException("只有加入房间后才能下载房主的模组");
+        var (list, off) = await client.GetModListAsync(token).ConfigureAwait(false);
+        if (off || list is null || list.Files.Count == 0)
             return 0;
 
         Directory.CreateDirectory(targetDirectory);
-        long totalBytes = mods.Mods.Sum(m => Math.Max(0, m.Size));
+        long total = list.Files.Sum(f => Math.Max(0, f.Size));
         long copied = 0;
         int written = 0;
 
-        foreach (var mod in mods.Mods)
+        foreach (var file in list.Files)
         {
             token.ThrowIfCancellationRequested();
-            string target = Path.Combine(targetDirectory, Path.GetFileName(mod.Name));
-            if (Matches(target, mod))
+            string target = Path.Combine(targetDirectory, Path.GetFileName(file.Name));
+            if (Matches(target, file))
             {
-                copied += mod.Size;
-                progress?.Report(totalBytes == 0 ? 1 : (double)copied / totalBytes);
+                copied += file.Size;
+                progress?.Report(total == 0 ? 1 : (double)copied / total);
                 continue;
             }
 
             string temporary = target + ".download";
-            await using (var file = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+            await using (var stream = new FileStream(temporary, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
             {
                 long offset = 0;
                 while (true)
                 {
-                    var chunk = await _client.ReadModChunkAsync(mod.Sha1, offset, token).ConfigureAwait(false);
+                    var chunk = await client.GetModChunkAsync(file.Sha1, offset, token).ConfigureAwait(false);
                     if (chunk.Length == 0)
                         break;
-                    await file.WriteAsync(chunk, token).ConfigureAwait(false);
+                    await stream.WriteAsync(chunk, token).ConfigureAwait(false);
                     offset += chunk.Length;
                     copied += chunk.Length;
-                    progress?.Report(totalBytes == 0 ? 1 : (double)copied / totalBytes);
+                    progress?.Report(total == 0 ? 1 : (double)copied / total);
                 }
             }
 
-            // a truncated or tampered download must never reach the mods folder
-            if (!Matches(temporary, mod))
+            if (!Matches(temporary, file))
             {
                 try { File.Delete(temporary); } catch { }
-                throw new LinkException($"模组 {mod.Name} 校验失败,已丢弃");
+                throw new LinkException($"模组 {file.Name} 校验失败,已丢弃");
             }
 
             File.Move(temporary, target, overwrite: true);
@@ -460,21 +520,53 @@ public sealed class LinkSession : IAsyncDisposable
         return written;
     }
 
-    /// <summary>Whether a local file is already exactly the file the host offers.</summary>
-    private static bool Matches(string path, ModEntry mod)
+    private static bool Matches(string path, ModFile file)
     {
         var info = new FileInfo(path);
-        if (!info.Exists || info.Length != mod.Size)
+        if (!info.Exists || info.Length != file.Size)
             return false;
         try
         {
             using var stream = File.OpenRead(path);
-            return Convert.ToHexStringLower(System.Security.Cryptography.SHA1.HashData(stream)) == mod.Sha1.ToLowerInvariant();
+            return Convert.ToHexStringLower(System.Security.Cryptography.SHA1.HashData(stream)) == file.Sha1;
         }
         catch (IOException)
         {
             return false;
         }
+    }
+
+    /// <summary>Installs and self-tests the EasyTier component the first time a room is opened.</summary>
+    private static async Task EnsureRuntimeAsync(IProgress<double>? progress, CancellationToken token)
+    {
+        if (!EasyTierPackage.IsInstalled())
+        {
+            LinkLog.Info("正在安装联机组件 EasyTier " + EasyTierPackage.Version);
+            var reporter = new Progress<DownloadProgress>(p => progress?.Report(p.Fraction));
+            await EasyTierPackage.InstallAsync(reporter, token).ConfigureAwait(false);
+        }
+
+        if (!await EasyTierPackage.CanRunAsync().ConfigureAwait(false))
+            throw new LinkException("联机组件无法在当前系统运行,请检查杀毒软件拦截");
+    }
+
+    /// <summary>Builds the network config both sides share; only the name and address differ.</summary>
+    private static EasyTierConfig CreateConfig(RoomCode code, string hostname, string? ipv4)
+    {
+        var settings = LinkSettings.Current;
+        var config = new EasyTierConfig
+        {
+            NetworkName = code.NetworkName,
+            NetworkSecret = code.NetworkSecret,
+            Hostname = hostname,
+            IPv4 = ipv4 ?? "",
+            NoTun = true,   // traffic to the room travels through local port forwards, so no adapter is needed
+            DirectOnly = !settings.UsePublicNodes,
+            HideAddress = settings.HideAddress,
+        };
+        foreach (string peer in LinkSettings.GetNodes())
+            config.Peers.Add(peer);
+        return config;
     }
 
     /// <summary>Ends the session: drops the guests, closes the room service and stops the virtual network.</summary>
@@ -487,38 +579,33 @@ public sealed class LinkSession : IAsyncDisposable
         if (Current == this)
             Current = null;
 
-        if (_client is not null)
-        {
-            _client.PlayersChanged -= RaiseChanged;
-            _client.Closed -= OnRoomClosed;
-        }
+        try { _heartbeat?.Cancel(); } catch { }
 
         if (_server is not null)
-            _server.PlayersChanged -= RaiseChanged;
+            _server.PlayersChanged -= OnPlayersChanged;
 
-        try { _runner?.Dispose(); } catch { }
+        _client?.Dispose();
+        _client = null;
 
-        if (_client is not null)
-        {
-            try { await _client.DisposeAsync().ConfigureAwait(false); } catch { }
-            _client = null;
-        }
         if (_server is not null)
         {
-            try { await _server.DisposeAsync().ConfigureAwait(false); } catch { }
+            try { _server.Dispose(); } catch { }
             _server = null;
         }
 
-        _runner?.Dispose();
-        _runner = null;
+        _network?.Dispose();
+        _network = null;
+
+        _heartbeat?.Dispose();
+        _heartbeat = null;
         _status = LinkStatus.Idle;
         Error = null;
         Log?.Invoke("联机已停止");
         RaiseChanged();
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     public async ValueTask DisposeAsync() => await StopAsync().ConfigureAwait(false);
 
-    /// <summary>The host's own profile, exposed so the window can highlight the host row.</summary>
-    public string MyId => _me.Id;
+    public string MyId => _me.MachineId;
 }

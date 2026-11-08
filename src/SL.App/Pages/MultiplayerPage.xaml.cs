@@ -27,6 +27,7 @@ using SL.Core.Account;
 using SL.Core.Boot;
 using SL.Core.Launch;
 using SL.Core.Link;
+using SL.Core.Link.Mods;
 using SL.Core.Link.Room;
 using SL.Core.Logging;
 using Windows.ApplicationModel.DataTransfer;
@@ -56,13 +57,14 @@ public sealed class LinkPlayerRow
 {
     public LinkPlayerRow(PlayerProfile player, Action<PlayerProfile>? kick)
     {
-        Id = player.Id;
+        Id = player.MachineId;
         Name = player.Name;
-        Tag = player.IsHost
+        bool host = player.Kind == PlayerKind.Host;
+        Tag = host
             ? Loc.T("房主")
-            : player.Account == AccountKind.Microsoft ? Loc.T("正版") : Loc.T("离线");
-        Glyph = player.IsHost ? "\uE7FC" : "\uE77B";
-        CanKick = kick is not null && !player.IsHost ? Visibility.Visible : Visibility.Collapsed;
+            : player.Uuid is not null ? Loc.T("正版") : Loc.T("离线");
+        Glyph = host ? "\uE7FC" : "\uE77B";
+        CanKick = kick is not null && !host ? Visibility.Visible : Visibility.Collapsed;
         KickCommand = new RelayCommand(() => kick?.Invoke(player));
     }
 
@@ -416,7 +418,7 @@ public sealed partial class MultiplayerPage : Page
                 RoomNameBox.Text.Trim(),
                 NoticeBox.Text.Trim(),
                 ReadMaxPlayers(),
-                BuildModShare());
+                BuildModSource());
 
             var progress = new Progress<double>(value => ShowDownloadProgress(value));
             var session = await LinkSession.HostAsync(request, BuildProfile(), progress, Token).ConfigureAwait(true);
@@ -727,7 +729,7 @@ public sealed partial class MultiplayerPage : Page
     private string VersionHint(LinkSession session)
     {
         string mine = SelectedInstance;
-        string hostGame = session.Players.FirstOrDefault(p => p.IsHost)?.GameVersion ?? "";
+        string hostGame = session.Players.FirstOrDefault(p => p.Kind == PlayerKind.Host)?.GameName ?? "";
         if (mine.Length == 0 || hostGame.Length == 0)
             return "";
         return string.Equals(mine, hostGame, StringComparison.OrdinalIgnoreCase)
@@ -739,7 +741,7 @@ public sealed partial class MultiplayerPage : Page
     private void UpdatePlayers(LinkSession session)
     {
         string signature = string.Join('|', session.Players
-            .Select(p => $"{p.Id}:{p.Name}:{p.IsHost}:{p.Account}"));
+            .Select(p => $"{p.MachineId}:{p.Name}:{p.Kind}:{p.Uuid}"));
         if (signature == _playerSignature)
             return;
 
@@ -760,7 +762,7 @@ public sealed partial class MultiplayerPage : Page
         if (session.Role == LinkRole.Host)
         {
             string roomName = session.Room.Name.Length > 0 ? session.Room.Name : Loc.T("未命名房间");
-            CompanionBridge.WriteRoom(roomName, session.Players.FirstOrDefault(p => p.IsHost)?.Name ?? "",
+            CompanionBridge.WriteRoom(roomName, session.Players.FirstOrDefault(p => p.Kind == PlayerKind.Host)?.Name ?? "",
                 session.Players.Select(p => p.Name));
         }
     }
@@ -774,7 +776,7 @@ public sealed partial class MultiplayerPage : Page
 
     private void Kick(PlayerProfile player)
     {
-        _session?.BlockAndKick(player.Id, player.Name);
+        _session?.BlockAndKick(player.MachineId, player.Name);
         AddLog(string.Format(Loc.T("[房间] 已移出 {0}"), player.Name));
     }
 
@@ -785,9 +787,10 @@ public sealed partial class MultiplayerPage : Page
         try
         {
             var mods = await session.FetchModsAsync().ConfigureAwait(true);
-            ModsButton.Visibility = mods.Mods.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            if (mods.Mods.Count > 0)
-                ModsButton.Content = string.Format(Loc.T("同步房主模组({0})"), mods.Mods.Count);
+            int count = mods?.Files.Count ?? 0;
+            ModsButton.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (count > 0)
+                ModsButton.Content = string.Format(Loc.T("同步房主模组({0})"), count);
         }
         catch (Exception)
         {
@@ -1084,16 +1087,14 @@ public sealed partial class MultiplayerPage : Page
 
     // ------------------------------------------------------------ helpers
 
-    private ModShare? BuildModShare()
+    private ModSource? BuildModSource()
     {
         var settings = LinkSettings.Current;
         string instanceId = SelectedInstance;
         if (!settings.ShareMods || !settings.ServeMods || instanceId.Length == 0)
             return null;
 
-        // fingerprinting jars is disk work; keep it off the UI thread
-        var share = ModShare.FromDirectory(Path.Combine(Runtime.InstancesDir, instanceId, "mods"), instanceId, "");
-        return share.HasMods ? share : null;
+        return ModSource.FromDirectory(Path.Combine(Runtime.InstancesDir, instanceId, "mods"), instanceId, "");
     }
 
     private PlayerProfile BuildProfile()
@@ -1101,11 +1102,8 @@ public sealed partial class MultiplayerPage : Page
         var repo = AccountStore.Load();
         var active = repo.Accounts.FirstOrDefault(a => a.Id == repo.ActiveId);
         string accountName = active?.Name ?? AppServices.Settings.Current.AccountName;
-        var profile = new PlayerProfile(LinkSettings.MachineId, LinkSettings.EffectivePlayerName(accountName));
-        profile = profile.WithAccount(active?.Kind == "msa" ? AccountKind.Microsoft : AccountKind.Offline);
-        if (SelectedInstance.Length > 0)
-            profile = profile.WithGame(SelectedInstance);
-        return profile;
+        string? uuid = active?.Session?.Uuid is { Length: 32 } premium ? premium : null;
+        return PlayerProfile.CreateLocal(PlayerKind.Local, accountName, uuid, null);
     }
 
     private int ReadMaxPlayers()
