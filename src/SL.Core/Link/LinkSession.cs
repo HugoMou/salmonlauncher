@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 using System.Net;
-using SL.Core.Link.EasyTier;
+using SL.Core.Link.Runtime;
 using SL.Core.Link.Room;
 
 namespace SL.Core.Link;
@@ -67,7 +67,7 @@ public sealed class LinkSession : IAsyncDisposable
 
     private RoomServer? _server;
     private RoomClient? _client;
-    private EasyTierRunner? _runner;
+    private EasyTierInstance? _runner;
     private RoomCode? _code;
     private RoomInfo _room = new("", "", 0);
     private LinkStatus _status = LinkStatus.Idle;
@@ -113,7 +113,7 @@ public sealed class LinkSession : IAsyncDisposable
     public event Action<string>? Log;
 
     /// <summary>Address a guest types into Minecraft's direct connect box.</summary>
-    public string JoinAddress => $"{EasyTierArguments.HostAddress}:{_gamePort}";
+    public string JoinAddress => $"{RoomProtocol.HostAddress}:{_gamePort}";
 
     /// <summary>Whether this process can build a virtual network at all, and why not when it cannot.</summary>
     public static bool CanRun(out string reason)
@@ -152,10 +152,13 @@ public sealed class LinkSession : IAsyncDisposable
 
         try
         {
-            string core = await EasyTierRuntime.EnsureAsync(downloadProgress, token).ConfigureAwait(false);
+            await EnsureRuntimeAsync(downloadProgress, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
-            session._runner = EasyTierRunner.Start(core,
-                EasyTierArguments.Host(session._code, RoomServer.ServicePort, LinkSettings.GetNodes()));
+
+            // the host name carries the room service port, which is how a guest finds the service
+            var config = CreateConfig(session._code, RoomProtocol.HostNamePrefix + RoomServer.ServicePort, RoomProtocol.HostAddress);
+            config.TcpWhitelist.Add(RoomServer.ServicePort.ToString());
+            session._runner = EasyTierInstance.Start(config);
             session.HookRunner();
 
             session._server = new RoomServer(
@@ -198,14 +201,17 @@ public sealed class LinkSession : IAsyncDisposable
 
         try
         {
-            string core = await EasyTierRuntime.EnsureAsync(downloadProgress, token).ConfigureAwait(false);
+            await EnsureRuntimeAsync(downloadProgress, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             session.Log?.Invoke("正在加入虚拟局域网…");
-            session._runner = EasyTierRunner.Start(core, EasyTierArguments.Guest(code, LinkSettings.GetNodes()));
+
+            // a guest takes whatever address the network hands out and looks the host up by its name
+            var config = CreateConfig(code, "salmon-guest-" + Hex.Random(4), null);
+            session._runner = EasyTierInstance.Start(config);
             session.HookRunner();
 
-            var endpoint = new IPEndPoint(IPAddress.Parse(EasyTierArguments.HostAddress), RoomServer.ServicePort);
             var deadline = DateTime.UtcNow.AddSeconds(Math.Max(30, LinkSettings.Current.SearchTimeoutSeconds));
+            var endpoint = await FindHostAsync(session._runner, deadline, session.Log, token).ConfigureAwait(false);
             RoomClient? client = null;
             Exception? lastError = null;
 
@@ -283,13 +289,14 @@ public sealed class LinkSession : IAsyncDisposable
     {
         if (_runner is null)
             return;
-        _runner.Line += line => Log?.Invoke("[内核] " + line);
-        _runner.Exited += code =>
+        _runner.Exited += (_, _) =>
         {
             if (_stopped)
                 return;
-            Log?.Invoke($"[内核] 联机内核已退出({code})");
-            SetStatus(LinkStatus.Disconnected, $"联机内核已退出({code})");
+            string output = _runner?.GetRecentOutput() ?? "";
+            foreach (string line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(8))
+                Log?.Invoke("[内核] " + line.Trim());
+            SetStatus(LinkStatus.Disconnected, "联机内核已退出");
         };
     }
 
@@ -299,6 +306,81 @@ public sealed class LinkSession : IAsyncDisposable
             return;
         Log?.Invoke(reason);
         SetStatus(LinkStatus.Disconnected, reason);
+    }
+
+    /// <summary>Installs and self-tests the EasyTier component the first time a room is opened.</summary>
+    private static async Task EnsureRuntimeAsync(IProgress<double>? progress, CancellationToken token)
+    {
+        if (!EasyTierPackage.IsInstalled())
+        {
+            LinkLog.Info("正在安装联机组件 EasyTier " + EasyTierPackage.Version);
+            var reporter = new Progress<DownloadProgress>(p => progress?.Report(p.Fraction));
+            await EasyTierPackage.InstallAsync(reporter, token).ConfigureAwait(false);
+        }
+
+        if (!await EasyTierPackage.CanRunAsync().ConfigureAwait(false))
+            throw new LinkException("联机组件无法在当前系统运行,请检查杀毒软件拦截或系统版本");
+    }
+
+    /// <summary>Builds the network config both sides share; only the name and address differ.</summary>
+    private static EasyTierConfig CreateConfig(RoomCode code, string hostname, string? ipv4)
+    {
+        var settings = LinkSettings.Current;
+        var config = new EasyTierConfig
+        {
+            NetworkName = code.NetworkName,
+            NetworkSecret = code.NetworkSecret,
+            Hostname = hostname,
+            IPv4 = ipv4 ?? "",
+            NoTun = false,   // the room service is addressed by virtual IP, so the adapter must exist
+            DirectOnly = !settings.UsePublicNodes,
+            HideAddress = settings.HideAddress,
+        };
+        foreach (string peer in LinkSettings.GetNodes())
+            config.Peers.Add(peer);
+        return config;
+    }
+
+    /// <summary>
+    /// Waits for the host to appear in the network. The host puts the room service port at the end of its
+    /// name, so its address and port come from one peer entry and no fixed address is assumed.
+    /// </summary>
+    private static async Task<IPEndPoint> FindHostAsync(
+        EasyTierInstance network, DateTime deadline, Action<string>? log, CancellationToken token)
+    {
+        bool warned = false;
+        while (DateTime.UtcNow < deadline)
+        {
+            token.ThrowIfCancellationRequested();
+            try
+            {
+                var peers = await network.GetPeersAsync(token).ConfigureAwait(false);
+                foreach (var peer in peers)
+                {
+                    if (peer.IsLocal || !peer.Hostname.StartsWith(RoomProtocol.HostNamePrefix, StringComparison.Ordinal))
+                        continue;
+                    string portText = peer.Hostname[RoomProtocol.HostNamePrefix.Length..];
+                    if (int.TryParse(portText, out int port) && port is > 0 and < 65536
+                        && IPAddress.TryParse(peer.IPv4, out var address))
+                    {
+                        log?.Invoke($"已找到房主 {peer.IPv4}:{port}({(peer.IsDirect ? "直连" : "中转")})");
+                        return new IPEndPoint(address, port);
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                if (!warned)
+                {
+                    warned = true;
+                    log?.Invoke("读取网络节点失败:" + ex.Message);
+                }
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(2), token).ConfigureAwait(false);
+        }
+
+        throw new LinkException("房间无响应,请确认房间码正确、双方网络正常");
     }
 
     private void SetStatus(LinkStatus status, string? error = null)
@@ -414,7 +496,7 @@ public sealed class LinkSession : IAsyncDisposable
         if (_server is not null)
             _server.PlayersChanged -= RaiseChanged;
 
-        try { _runner?.Stop(); } catch { }
+        try { _runner?.Dispose(); } catch { }
 
         if (_client is not null)
         {
