@@ -880,5 +880,20 @@ public static partial class Loc
         ["[模组] Fabric API 安装失败:"] = "[Mod] Installing Fabric API failed: ",
 
         ["· 联机:房间码开房、联机大厅与游戏内房间信息"] = "· Multiplayer: room codes, a self-hosted lobby and in-game room info",
+
+        ["联机由内置的 Campfire 提供,点右上角启动即可"] = "Multiplayer runs on the bundled Campfire; press the button to start it",
+        ["没有找到内置的 Campfire,联机暂不可用"] = "The bundled Campfire was not found, so multiplayer is unavailable",
+        ["许可证:GPL-3.0 · 源码:https://github.com/Xocio/Campfire"] = "Licence: GPL-3.0 · source: https://github.com/Xocio/Campfire",
+        ["应位于 {0}。请重新安装启动器,或从上面的源码地址获取并放入该目录。"] = "Expected at {0}. Reinstall the launcher, or fetch it from the source above and place it there.",
+        ["找不到 Campfire"] = "Campfire not found",
+        ["Campfire 已在运行"] = "Campfire is already running",
+        ["已启动 Campfire,在那里开房或加入房间"] = "Campfire started; open or join a room there",
+        ["已启动 Campfire"] = "Campfire started",
+        ["启动 Campfire 失败:"] = "Failed to start Campfire: ",
+        ["路径已复制"] = "Path copied",
+        ["复制失败"] = "Copy failed",
+        ["打开文件夹失败:"] = "Failed to open the folder: ",
+        ["联机说明"] = "Multiplayer help",
+        ["1. 点「打开 Campfire」。\n2. 在 Campfire 里进入游戏,它会自动对局域网开放并生成邀请码。\n3. 把邀请码发给好友,好友在 Campfire 里粘贴即可加入。\n\n联机大厅、跨网联机与更新都由 Campfire 自己完成,启动器不介入其通信。"] = "1. Press Open Campfire.\n2. Enter a world there; it opens the world to LAN and produces an invite code.\n3. Send the code to your friends, who paste it into Campfire to join.\n\nThe lobby, cross-network play and updates are handled by Campfire itself; the launcher does not take part in its traffic.",
     };
 }

@@ -6,6 +6,31 @@ which licence, as the GPL requires.
 
 ---
 
+## Campfire — bundled program (unmodified release)
+
+The multiplayer feature of this launcher **is Campfire**: the upstream release binary is shipped unchanged
+and started from the 联机 page.
+
+- Program: `Campfire.exe`, version **v1.1.31**, SHA-256
+  `39086802e89880d7793e0952434ce648945dd4ef1d8276db5ffdb5d42d419f15`
+- Files: `src/SL.App/campfire/` — `Campfire.exe`, `LICENSE` (GPL-3.0), `SOURCE-OFFER.txt`
+- Licence: GNU General Public License v3.0 (no "or later" clause)
+- Source: https://github.com/Xocio/Campfire (tag `v1.1.31`)
+- The launcher does not modify, repack or patch it, and takes no part in its network traffic.
+
+Locating the full corresponding source, the licence and the checksum is `SOURCE-OFFER.txt` in the same folder.
+A distribution of this launcher that contains that folder is distributed as a whole under **GPL-3.0**.
+
+Campfire updates itself from its own release feed; an updated copy remains under the same licence, and the
+version and checksum above describe the copy this build ships.
+
+---
+
+## Campfire — ported source (kept as this launcher's own multiplayer library)
+
+The library code below was ported under the same licence before the bundled program was adopted. It still
+compiles and is covered by the same obligations; the 联机 page no longer drives it.
+
 ## Campfire — https://github.com/Xocio/Campfire
 
 - Licence: GNU General Public License v3.0 (GPL-3.0, without an "or later" clause).

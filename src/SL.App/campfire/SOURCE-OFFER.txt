@@ -1,0 +1,34 @@
+Campfire — bundled third-party program
+=====================================
+
+Program : Campfire
+Version : v1.1.31
+File    : Campfire.exe
+SHA-256 : 39086802e89880d7793e0952434ce648945dd4ef1d8276db5ffdb5d42d419f15
+Licence : GNU General Public License v3.0 (see LICENSE in this folder)
+Origin  : https://github.com/Xocio/Campfire
+Release : https://github.com/Xocio/Campfire/releases/tag/v1.1.31
+
+The file shipped here is the unmodified release binary published by the Campfire project.
+SalmonLauncher only starts it; it does not modify, repack or patch it.
+
+Source code
+-----------
+The complete corresponding source for this binary is published by the Campfire project at
+https://github.com/Xocio/Campfire (tag v1.1.31 or the commit that tag points to). If that location is
+unreachable, the same repository content can be obtained from the project's mirror; the licence text in
+LICENSE is the one the binary is distributed under.
+
+Why the binary is not rebuilt from source here
+----------------------------------------------
+Campfire's published repository does not contain every source file its own sources reference
+(namespaces Campfire.Mods and Campfire.Link.Lobby are used but absent at branch main), so the program
+cannot be rebuilt from that repository as it stands. Distributing the upstream release binary unchanged,
+together with this notice and the licence, is the compliant way to ship it.
+
+GPL-3.0 obligations honoured by SalmonLauncher
+----------------------------------------------
+* the program is distributed unmodified, with its licence text (LICENSE);
+* this file records the exact version and checksum, and where the source can be obtained;
+* because Campfire is GPL-3.0 (no "or later" clause), any distribution of SalmonLauncher that contains
+  this folder is distributed as a whole under GPL-3.0; SalmonLauncher's own files remain GPL-3.0-or-later.

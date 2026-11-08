@@ -39,6 +39,11 @@
     <Version>1.0.3</Version>
   </PropertyGroup>
 
+  <!-- multiplayer is Campfire: the upstream release binary ships unchanged, with its licence and source offer -->
+  <ItemGroup Condition="Exists('campfire')">
+    <Content Include="campfire\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- the optional companion mod ships next to the executable; without it multiplayer still works -->
   <ItemGroup Condition="Exists('companion')">
     <Content Include="companion\**\*.jar" CopyToOutputDirectory="PreserveNewest" />
