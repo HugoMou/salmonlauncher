@@ -44,11 +44,6 @@
     <Content Include="campfire\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- the optional companion mod ships next to the executable; without it multiplayer still works -->
-  <ItemGroup Condition="Exists('companion')">
-    <Content Include="companion\**\*.jar" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260921001" />
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.0" />

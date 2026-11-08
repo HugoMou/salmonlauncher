@@ -17,7 +17,7 @@ A Minecraft Java Edition launcher built with **WinUI 3 / Windows App SDK** and *
 | Launching | Instance picker, memory and window size, extra JVM arguments, one-click launch with live status |
 | Installation | Official Mojang version manifest, loaders (Fabric / Quilt / Forge / NeoForge), mirror fallback, resume, SHA-1 verification |
 | Instances and mods | Per-instance folders, mod toggling (`.jar` ↔ `.jar.disabled`), importing local mods, save backups |
-| Multiplayer | Room codes over an automatic virtual LAN — no port forwarding — plus an optional self-hosted lobby |
+| Multiplayer | Bundled Campfire (GPL-3.0): invite-code rooms, cross-network play and a public lobby |
 | Content | Modrinth search for mods, shaders and resource packs, installed into the selected instance |
 | Appearance | Four languages, light and dark themes, custom accent colour, block-colour theme workshop, wallpapers |
 | Diagnostics | Reads the tail of `logs/latest.log`, matches crash signatures and suggests fixes |
