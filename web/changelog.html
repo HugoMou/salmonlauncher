@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.2 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.2: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.3 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.3: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.2">Get 2.0.2</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.3">Get 2.0.3</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.2</div>
+      <div>LATEST v2.0.3</div>
     </div>
   </section>
 
@@ -73,8 +73,21 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.2</h2>
+          <h2>v2.0.3</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
+          <time datetime="2026-11-13">2026-11-13</time>
+        </div>
+        <p class="lede" data-zh="未处理的错误不再让启动器直接退出。">Unexpected errors no longer terminate the launcher.</p>
+        <ul>
+          <li data-zh="修复启动器意外退出：全局异常钩子过去只记录日志而没有标记为已处理，因此任何未预期错误仍会结束进程——2.0.2 的模组开关崩溃就是这样让启动器无提示消失的。现在会处理可恢复的异常、通过应用内通知提示一次，并保持窗口继续运行。">No more silent exits: the global exception hook logged the error but left it unhandled, so any unexpected error still terminated the process — which is why the 2.0.2 mod-toggle crash made the launcher vanish without explanation. Recoverable exceptions are now handled, reported once through the in-app notification, and the window keeps running.</li>
+          <li data-zh="为容易失败的操作补齐错误处理：皮肤预览、Java 扫描、打开登录链接、加载安装计划，以及联机与更新的确认对话框，都曾在保护范围之外抛出异常并结束进程。现在改为记录日志并提示。">Error handling for operations that can fail: skin preview loading, Java rescan, opening the sign-in link, loading the install plan, and the multiplayer/update confirmation dialogs could throw outside any guard and take the process down. They now log and report instead.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.2</h2>
           <time datetime="2026-11-13">2026-11-13</time>
         </div>
         <p class="lede" data-zh="修复模组启停导致崩溃以及模组无法启停的问题。">Fixed a crash when toggling mods, and mods that could not be enabled or disabled.</p>
@@ -163,7 +176,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.2 已可下载。">2.0.2 is ready.</h2>
+        <h2 data-zh="2.0.3 已可下载。">2.0.3 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">
