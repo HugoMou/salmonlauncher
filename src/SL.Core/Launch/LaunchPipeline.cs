@@ -113,8 +113,7 @@ public static class LaunchPipeline
         {
             Raise("游戏核心 jar 不完整,正在重新下载…");
             var temp = clientJar + ".download";
-            var ok = await FetchToFileAsync(detail.Client.Url, temp, cancellation).ConfigureAwait(false)
-                     || await FetchToFileAsync(MirrorOf(detail.Client.Url), temp, cancellation).ConfigureAwait(false);
+            var ok = await FetchWithFallbackAsync(detail.Client.Url, temp, cancellation).ConfigureAwait(false);
             if (!ok || !IsValidClientJar(temp, detail.Client.Sha1, detail.Client.Size))
             {
                 if (File.Exists(temp))
@@ -146,8 +145,7 @@ public static class LaunchPipeline
             {
                 cancellation.ThrowIfCancellationRequested();
                 var target = Path.Combine(Boot.Runtime.LibrariesDir, lib.RelativePath.Replace('/', Path.DirectorySeparatorChar));
-                var fetched = await FetchToFileAsync(lib.Url, target, cancellation).ConfigureAwait(false)
-                              || await FetchToFileAsync(MirrorOf(lib.Url), target, cancellation).ConfigureAwait(false);
+                var fetched = await FetchWithFallbackAsync(lib.Url, target, cancellation).ConfigureAwait(false);
                 if (!fetched)
                     return new LaunchResult(false, 0, $"库缺失且补齐失败:{lib.RelativePath}");
             }
@@ -329,6 +327,26 @@ public static class LaunchPipeline
             _ => null,
         };
     }
+
+    /// <summary>
+    /// Try the preferred source first, then the other one.
+    /// When the user prefers the mirror, BMCLAPI is attempted before the official host.
+    /// </summary>
+    private static async Task<bool> FetchWithFallbackAsync(string url, string target, CancellationToken cancellation)
+    {
+        var mirror = MirrorOf(url);
+        if (mirror is null)
+            return await FetchToFileAsync(url, target, cancellation).ConfigureAwait(false);
+
+        return MirrorFirst
+            ? await FetchToFileAsync(mirror, target, cancellation).ConfigureAwait(false)
+              || await FetchToFileAsync(url, target, cancellation).ConfigureAwait(false)
+            : await FetchToFileAsync(url, target, cancellation).ConfigureAwait(false)
+              || await FetchToFileAsync(mirror, target, cancellation).ConfigureAwait(false);
+    }
+
+    /// <summary>Mirror-first preference driven by the download source setting.</summary>
+    public static bool MirrorFirst { get; set; }
 
     /// <summary>Only official domains and the BMCLAPI mirror may be downloaded to disk (safety guard).</summary>
     private static bool IsAllowedSource(string? url) => !string.IsNullOrEmpty(url) && (url

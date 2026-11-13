@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -71,6 +71,18 @@ public sealed class AppConfig
 
     /// <summary>Whether the welcome page (first-run setup) has been completed; false after a fresh install or a data reset</summary>
     public bool OnboardingCompleted { get; set; }
+
+    /// <summary>Launcher version whose release notes were last shown, so an update announcement appears once</summary>
+    public string LastSeenVersion { get; set; } = "";
+
+    /// <summary>Check the project's GitHub releases for a newer launcher build at startup</summary>
+    public bool CheckLauncherUpdateOnStart { get; set; } = true;
+
+    /// <summary>Agreed version of the user agreement; a newer agreement asks the user to read it again</summary>
+    public string TermsVersion { get; set; } = "";
+
+    /// <summary>Instance selected by the user, shared by the launch panel and all instance pages</summary>
+    public string ActiveInstanceId { get; set; } = "";
 }
 
 public interface ISettingsService

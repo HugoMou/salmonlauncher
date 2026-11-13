@@ -73,8 +73,22 @@ public sealed class HomeVM : VmBase
     public InstanceRow? SelectedInstance
     {
         get => _selectedInstance;
-        set => Set(ref _selectedInstance, value);
+        set
+        {
+            if (!Set(ref _selectedInstance, value))
+                return;
+
+            // Picking an instance here must be the same choice the instance pages see.
+            if (value is not null && !_suppressSelectionSync)
+            {
+                _lastSelectedId = value.Id;
+                SL.App.Instances.InstanceContext.Select(value.Id);
+            }
+        }
     }
+
+    /// <summary>Set while rebuilding the list, so restoring the selection does not write it back.</summary>
+    private bool _suppressSelectionSync;
 
     private string? _lastSelectedId;
 
@@ -115,17 +129,29 @@ public sealed class HomeVM : VmBase
     public void Refresh()
     {
         var fresh = InstanceRegistry.List().Select(i => new InstanceRow(i)).ToList();
+
+        // Follow the shared instance context so the launch panel and instance pages never disagree.
+        SL.App.Instances.InstanceContext.Refresh();
+        var target = SL.App.Instances.InstanceContext.CurrentId;
+
+        _suppressSelectionSync = true;
         Instances.Clear();
         foreach (var row in fresh)
             Instances.Add(row);
 
         // Force one notification after rebuilding the collection to avoid losing selection when the ComboBox binds SelectedItem first
         SelectedInstance = null;
-        SelectedInstance = fresh.FirstOrDefault(r => r.Id == _lastSelectedId) ?? fresh.FirstOrDefault();
+        SelectedInstance = fresh.FirstOrDefault(r => r.Id == target)
+                           ?? fresh.FirstOrDefault(r => r.Id == _lastSelectedId)
+                           ?? fresh.FirstOrDefault();
+        _suppressSelectionSync = false;
+
         _lastSelectedId = SelectedInstance?.Id;
+        if (SelectedInstance is { } picked)
+            SL.App.Instances.InstanceContext.Select(picked.Id);
 
         InstanceSummary = fresh.Count == 0
-            ? Loc.T("尚无实例 · 可前往「下载 → 游戏版本」安装")
+            ? Loc.T("尚无实例 · 可前往「资源 → 游戏版本」安装")
             : string.Format(Loc.T("共 {0} 个实例 · 就绪"), fresh.Count);
 
         RefreshAccount();
@@ -165,7 +191,14 @@ public sealed class HomeVM : VmBase
             {
                 if (active.Session is not { } session)
                 {
-                    AppServices.Notify.Publish(NotifyKind.Warning, string.Format(Loc.T("账户 {0} 缺少完整会话,请到「外观与设置」重新登录。"), active.Name));
+                    var relogin = await AppServices.Dialogs.ConfirmAsync(
+                        Loc.T("账户需要重新登录"),
+                        string.Format(Loc.T("账户 {0} 的登录已失效。现在前往账户设置重新登录吗？"), active.Name),
+                        MsgMark.Warning,
+                        Loc.T("去登录"),
+                        Loc.T("取消")).ConfigureAwait(true);
+                    if (relogin)
+                        AppServices.Nav.Navigate("st.launch");
                     return;
                 }
                 StatusText = Loc.T("正在准备正版会话…");
@@ -179,9 +212,15 @@ public sealed class HomeVM : VmBase
             var instanceId = SelectedInstance?.Id ?? LaunchPipeline.LatestInstanceId();
             if (string.IsNullOrEmpty(instanceId))
             {
-                await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装任何版本"),
-                    Loc.T("请先到「下载 → 游戏版本」安装一个实例,再回到本页启动。"),
-                    MsgMark.Info).ConfigureAwait(true);
+                // No instance yet: offer to go where it can be installed instead of a dead-end notice.
+                var goInstall = await AppServices.Dialogs.ConfirmAsync(
+                    Loc.T("尚未安装任何版本"),
+                    Loc.T("启动游戏需要先安装一个版本。现在前往「资源 → 游戏版本」安装吗？"),
+                    MsgMark.Question,
+                    Loc.T("去安装"),
+                    Loc.T("取消")).ConfigureAwait(true);
+                if (goInstall)
+                    AppServices.Nav.Navigate("dl.game");
                 return;
             }
 
@@ -210,7 +249,7 @@ public sealed class HomeVM : VmBase
             {
                 AppLog.Info("Launch", "启动失败:" + result.Error);
                 AppServices.Notify.Publish(NotifyKind.Error, Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因")));
-                StatusText = Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因")) + Loc.T(" · 可到「工具 → 崩溃诊断」分析日志");
+                StatusText = Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因")) + Loc.T(" · 可到「系统 → 崩溃诊断」分析日志");
             }
         }
         catch (Exception ex)

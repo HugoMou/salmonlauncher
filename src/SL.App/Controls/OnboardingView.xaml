@@ -31,26 +31,46 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="1" Background="{ThemeResource Brush.PageBg}">
+            <!-- Soft accent wash behind the wizard so first launch does not look like a blank form -->
+            <Grid>
+                <Border IsHitTestVisible="False" Opacity="0.55">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Offset="0" Color="{ThemeResource AccentBandStart}" />
+                            <GradientStop Offset="0.55" Color="{ThemeResource AccentBandEnd}" />
+                            <GradientStop Offset="1" Color="Transparent" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           HorizontalScrollMode="Disabled">
                 <StackPanel MaxWidth="760"
-                            Margin="60,44,60,36"
+                            Margin="60,26,60,84"
                             HorizontalAlignment="Center"
-                            Spacing="18">
+                            Spacing="14">
 
                     <!-- Header -->
-                    <StackPanel Orientation="Horizontal" Spacing="11" HorizontalAlignment="Center">
-                        <Image Source="ms-appx:///Assets/Logo.png"
-                               Width="32"
-                               Height="32"
-                               Stretch="Uniform"
-                               VerticalAlignment="Center" />
+                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                        <Border Width="52"
+                                Height="52"
+                                CornerRadius="15"
+                                HorizontalAlignment="Center"
+                                Background="{ThemeResource Brush.AccentSoft}">
+                            <Image Source="ms-appx:///Assets/Logo.png"
+                                   Width="36"
+                                   Height="36"
+                                   Stretch="Uniform" />
+                        </Border>
                         <TextBlock Text="欢迎使用 SalmonLauncher"
-                                   FontSize="17"
+                                   FontSize="21"
                                    FontWeight="SemiBold"
                                    Foreground="{ThemeResource Brush.Fg}"
-                                   VerticalAlignment="Center" />
+                                   TextAlignment="Center" />
+                        <TextBlock Text="几步简单设置就可以开始游戏"
+                                   FontSize="12.5"
+                                   Foreground="{ThemeResource Brush.FgDim}"
+                                   TextAlignment="Center" />
                     </StackPanel>
 
                     <!-- Step indicator: five dots (ticked when finished) + progress bar below -->
@@ -389,9 +409,16 @@
                             </StackPanel>
                         </Grid>
                     </Border>
+                </StackPanel>
+            </ScrollViewer>
 
-                    <!-- Bottom navigation -->
-                    <Grid>
+                <!-- Bottom navigation: pinned outside the scroller so it is always reachable -->
+                <Border VerticalAlignment="Bottom"
+                        Background="{ThemeResource Brush.PageBg}"
+                        BorderBrush="{ThemeResource Brush.Border}"
+                        BorderThickness="0,1,0,0"
+                        Padding="60,12">
+                    <Grid MaxWidth="760" HorizontalAlignment="Center">
                         <Button x:Name="BackBtn"
                                 Content="上一步"
                                 Click="OnBack"
@@ -413,8 +440,8 @@
                                     Visibility="Collapsed" />
                         </StackPanel>
                     </Grid>
-                </StackPanel>
-            </ScrollViewer>
+                </Border>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

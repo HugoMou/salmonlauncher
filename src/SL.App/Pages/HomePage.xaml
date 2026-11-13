@@ -27,7 +27,7 @@
                   HorizontalScrollMode="Disabled">
         <Grid x:Name="Root"
               Margin="32,20,32,28"
-              MaxWidth="1060"
+              MaxWidth="1120"
               HorizontalAlignment="Left"
               RowSpacing="20">
 
@@ -38,39 +38,70 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header: greeting + live status -->
-            <Grid ColumnSpacing="16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Spacing="4">
-                    <TextBlock Text="欢迎回来" Style="{StaticResource Style.PageTitle}" />
-                    <TextBlock Text="准备好进入世界了吗？" Style="{StaticResource Style.PageSubtitle}" />
-                </StackPanel>
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            VerticalAlignment="Top"
-                            Margin="0,6,0,0">
-                    <Ellipse Width="6"
-                             Height="6"
-                             Fill="{ThemeResource Brush.Success}"
-                             VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding StatusText}"
-                               FontSize="11.5"
-                               Foreground="{ThemeResource Brush.FgFaint}"
-                               MaxWidth="420"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-            </Grid>
+            <!-- Header: title band + live status -->
+            <Border Grid.Row="0"
+                    CornerRadius="18"
+                    Padding="32,26"
+                    BorderThickness="1"
+                    BorderBrush="{ThemeResource Brush.Border}">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Offset="0" Color="{ThemeResource AccentBandStart}" />
+                        <GradientStop Offset="1" Color="{ThemeResource AccentBandEnd}" />
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock x:Name="GreetingText"
+                                       Text="启动面板"
+                                       FontSize="27"
+                                       FontWeight="SemiBold"
+                                       Foreground="{ThemeResource Brush.Fg}" />
+                            <Border Background="{ThemeResource Brush.Accent}"
+                                    CornerRadius="6"
+                                    Padding="8,2"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="VersionBadgeText"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{ThemeResource Brush.AccentFg}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="选好实例与账户，一键进入世界。"
+                                   FontSize="13"
+                                   Foreground="{ThemeResource Brush.FgDim}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                VerticalAlignment="Center">
+                        <Ellipse Width="7"
+                                 Height="7"
+                                 Fill="{ThemeResource Brush.Success}"
+                                 VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding StatusText}"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource Brush.FgDim}"
+                                   MaxWidth="420"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
             <!-- Hero: instance + launch on the left, account on the right -->
-            <Border Grid.Row="1"
-                    Style="{StaticResource Style.Card}"
-                    Padding="0"
-                    CornerRadius="18">
+            <Grid Grid.Row="1">
+                <Border CornerRadius="22"
+                        Background="{ThemeResource Shadow.Hero}"
+                        Margin="10,14,10,0"
+                        IsHitTestVisible="False" />
+                <Border Style="{StaticResource Style.HeroCard}"
+                        Padding="0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -81,8 +112,10 @@
                     <StackPanel Grid.Column="0" Padding="28,24" Spacing="14">
                         <TextBlock Text="游戏实例" Style="{StaticResource Style.SectionTitle}" />
 
-                        <ComboBox ItemsSource="{Binding Instances}"
+                        <ComboBox x:Name="InstanceBox"
+                                  ItemsSource="{Binding Instances}"
                                   SelectedItem="{Binding SelectedInstance, Mode=TwoWay}"
+                                  SelectionChanged="OnInstanceSelectionChanged"
                                   PlaceholderText="尚无实例 · 先去下载"
                                   HorizontalAlignment="Stretch"
                                   CornerRadius="10">
@@ -212,7 +245,8 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-            </Border>
+                </Border>
+            </Grid>
 
             <!-- Quick entries -->
             <StackPanel Grid.Row="2" Spacing="10">
@@ -278,7 +312,7 @@
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                 <TextBlock Text="联机" FontSize="13" FontWeight="SemiBold" />
-                                <TextBlock Text="与好友联机 · 本机开服或局域网"
+                                <TextBlock Text="使用 Campfire 与好友联机"
                                            FontSize="11"
                                            Foreground="{ThemeResource Brush.FgDim}"
                                            TextWrapping="Wrap"
@@ -385,7 +419,7 @@
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center" />
                             </StackPanel>
-                            <TextBlock Text="前往「下载 → 游戏版本」挑选并安装一个实例。"
+                            <TextBlock Text="前往「资源 → 游戏版本」挑选并安装一个实例。"
                                        FontSize="11.5"
                                        Foreground="{ThemeResource Brush.FgDim}"
                                        TextWrapping="Wrap"

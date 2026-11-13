@@ -28,6 +28,14 @@ public sealed partial class HomePage : Page
     {
         InitializeComponent();
         Root.DataContext = _vm;
+        VersionBadgeText.Text = $"v{SL.Core.Boot.Runtime.AppVersion}";
+    }
+
+    /// <summary>Picking an instance on the launch panel updates the shared instance used by every instance page.</summary>
+    private void OnInstanceSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm.SelectedInstance is { } row)
+            SL.App.Instances.InstanceContext.Select(row.Id);
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

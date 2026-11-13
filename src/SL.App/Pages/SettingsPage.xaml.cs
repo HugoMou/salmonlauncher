@@ -111,6 +111,16 @@ public sealed partial class SettingsPage : Page
 
         ConcurrencyBox.Value = c.TransferConcurrency;
         MirrorToggle.IsOn = c.ModrinthMirror;
+        AutoUpdateToggle.IsOn = c.CheckLauncherUpdateOnStart;
+        UpdateVersionText.Text = $"v{SL.Core.Boot.Runtime.AppVersion}";
+        UpdateStateText.Text = _launcherRelease is null
+            ? Loc.T("尚未检查更新。")
+            : LauncherUpdater.IsNewer(_launcherRelease)
+                ? string.Format(Loc.T("发现新版本 {0}。"), _launcherRelease.Tag)
+                : Loc.T("已是最新版本。");
+        UpdateActions.Visibility = _launcherRelease is not null && LauncherUpdater.IsNewer(_launcherRelease)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
         LanguageBox.ItemsSource = Loc.Languages
             .Select(l => l.Code == Loc.AutoCode
@@ -213,6 +223,148 @@ public sealed partial class SettingsPage : Page
             return;
         AppServices.Settings.Update(c => c.ModrinthMirror = MirrorToggle.IsOn);
     }
+
+    // ---------------------------------------------------------- Launcher self-update
+
+    private LauncherRelease? _launcherRelease;
+    private bool _updating;
+    private CancellationTokenSource? _updateCts;
+
+    private void OnAutoUpdateToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading)
+            return;
+        AppServices.Settings.Update(c => c.CheckLauncherUpdateOnStart = AutoUpdateToggle.IsOn);
+    }
+
+    private async void OnCheckLauncherUpdate(object sender, RoutedEventArgs e)
+    {
+        if (_updating)
+            return;
+
+        _updating = true;
+        CheckUpdateButton.IsEnabled = false;
+        UpdateStateText.Text = Loc.T("正在查询 GitHub 发布页…");
+
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            _launcherRelease = await LauncherUpdater.GetLatestAsync(timeout.Token);
+            UpdateStateText.Text = LauncherUpdater.IsNewer(_launcherRelease)
+                ? string.Format(Loc.T("发现新版本 {0}。"), _launcherRelease.Tag)
+                : Loc.T("已是最新版本。");
+            UpdateActions.Visibility = LauncherUpdater.IsNewer(_launcherRelease)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            UpdateStateText.Text = Loc.T("检查更新失败：") + DescribeUpdateError(ex);
+            UpdateActions.Visibility = Visibility.Collapsed;
+            _launcherRelease = null;
+        }
+        finally
+        {
+            _updating = false;
+            CheckUpdateButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnOpenReleasePage(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var url = _launcherRelease?.PageUrl.ToString() ?? LauncherUpdater.LatestPageUrl;
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+        }
+        catch (Exception ex)
+        {
+            UpdateStateText.Text = Loc.T("打开发布页失败：") + ex.Message;
+        }
+    }
+
+    private async void OnInstallLauncherUpdate(object sender, RoutedEventArgs e)
+    {
+        if (_updating || _launcherRelease is not { } release)
+            return;
+
+        var confirmed = await AppServices.Dialogs.ConfirmAsync(
+            Loc.T("下载并安装更新"),
+            string.Format(Loc.T("将下载 {0}（{1}），下载完成后启动安装程序。安装只替换程序文件，设置、账户、实例与存档不会被删除。是否继续？"),
+                release.FileName, FormatSize(release.Size)),
+            MsgMark.Question,
+            Loc.T("下载并安装"),
+            Loc.T("取消"));
+        if (!confirmed)
+            return;
+
+        _updating = true;
+        _updateCts = new CancellationTokenSource();
+        CheckUpdateButton.IsEnabled = false;
+        UpdateActions.Visibility = Visibility.Collapsed;
+        UpdateProgressBar.Visibility = Visibility.Visible;
+        UpdateProgressBar.Value = 0;
+        UpdateStateText.Text = Loc.T("正在下载安装包…");
+
+        try
+        {
+            var progress = new Progress<DownloadProgressInfo>(info =>
+            {
+                var total = info.Total > 0 ? info.Total : release.Size;
+                if (total > 0)
+                {
+                    var percent = Math.Clamp(info.Received * 100d / total, 0, 100);
+                    UpdateProgressBar.Value = percent;
+                    UpdateStateText.Text = string.Format(Loc.T("正在下载安装包… {0}% · {1}"),
+                        (int)percent, FormatSpeed(info.BytesPerSecond));
+                }
+            });
+
+            var installer = await LauncherUpdater.DownloadInstallerAsync(release, progress, _updateCts.Token);
+            UpdateProgressBar.Value = 100;
+            UpdateStateText.Text = Loc.T("下载完成，正在启动安装程序…");
+            LauncherUpdater.ClearOldInstallers(keep: installer);
+            LauncherUpdater.RunInstaller(installer, silent: false);
+
+            UpdateStateText.Text = Loc.T("安装程序已启动，按提示完成后重新打开启动器即可。");
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStateText.Text = Loc.T("已取消更新。");
+        }
+        catch (Exception ex)
+        {
+            UpdateStateText.Text = Loc.T("更新失败：") + DescribeUpdateError(ex);
+        }
+        finally
+        {
+            _updating = false;
+            _updateCts?.Dispose();
+            _updateCts = null;
+            CheckUpdateButton.IsEnabled = true;
+            UpdateProgressBar.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private static string DescribeUpdateError(Exception ex) => ex switch
+    {
+        HttpRequestException => Loc.T("无法连接 GitHub，请检查网络后重试。"),
+        TaskCanceledException => Loc.T("请求超时，请检查网络后重试。"),
+        InvalidDataException => ex.Message,
+        UnauthorizedAccessException => Loc.T("没有写入权限，无法保存安装包。"),
+        IOException => Loc.T("读写文件失败：") + ex.Message,
+        _ => ex.Message,
+    };
+
+    private static string FormatSize(long bytes)
+        => bytes >= 1024L * 1024L ? $"{bytes / 1024d / 1024d:0.0} MB" : $"{bytes / 1024d:0} KB";
+
+    private static string FormatSpeed(double bytesPerSecond)
+        => bytesPerSecond >= 1024d * 1024d
+            ? $"{bytesPerSecond / 1024d / 1024d:0.0} MB/s"
+            : bytesPerSecond >= 1024d
+                ? $"{bytesPerSecond / 1024d:0} KB/s"
+                : $"{bytesPerSecond:0} B/s";
 
     // ---------------------------------------------------------- Clear all data
 

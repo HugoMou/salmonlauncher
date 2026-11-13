@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -69,7 +69,7 @@ public sealed partial class LoaderListPage : Page
     private void UpdateSummary()
         => SummaryText.Text = InstallWizard.HasVersion
             ? string.Format(Loc.T("Minecraft {0} · 选择要一起安装的加载器"), InstallWizard.VersionId)
-            : Loc.T("尚未选择游戏版本 · 请先回到「下载 → 游戏版本」选择一个版本");
+            : Loc.T("尚未选择游戏版本 · 请先回到「资源 → 游戏版本」选择一个版本");
 
     private IReadOnlyList<LoaderRow> BuildRows() =>
     [

@@ -334,6 +334,84 @@
                 </StackPanel>
             </Border>
 
+            <!-- Software update -->
+            <Border Background="{ThemeResource Brush.Card}"
+                    BorderBrush="{ThemeResource Brush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="22"
+                    HorizontalAlignment="Stretch">
+                <StackPanel Spacing="14">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE895;" FontSize="20" Foreground="{ThemeResource Brush.Accent}" />
+                        <TextBlock Text="软件更新" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="88" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="当前版本" VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgDim}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock x:Name="UpdateVersionText"
+                                       FontFamily="Consolas"
+                                       Foreground="{ThemeResource Brush.Fg}" />
+                            <TextBlock x:Name="UpdateStateText"
+                                       FontSize="11.5"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgFaint}" />
+                        </StackPanel>
+                        <Button x:Name="CheckUpdateButton"
+                                Grid.Column="2"
+                                Content="检查更新"
+                                Click="OnCheckLauncherUpdate"
+                                VerticalAlignment="Center" />
+                    </Grid>
+
+                    <ProgressBar x:Name="UpdateProgressBar"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Visibility="Collapsed" />
+
+                    <StackPanel x:Name="UpdateActions" Orientation="Horizontal" Spacing="10" Visibility="Collapsed">
+                        <Button x:Name="InstallUpdateButton"
+                                Content="下载并安装"
+                                Click="OnInstallLauncherUpdate"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        <Button x:Name="OpenReleaseButton"
+                                Content="打开发布页"
+                                Click="OnOpenReleasePage" />
+                    </StackPanel>
+
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="88" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="启动时检查" VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgDim}" />
+                        <TextBlock Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource Brush.FgFaint}"
+                                   Text="启动时向 GitHub 发布页查询是否有新版本；只提示，不会自动安装。" />
+                        <ToggleSwitch x:Name="AutoUpdateToggle"
+                                      Grid.Column="2"
+                                      OnContent="开"
+                                      OffContent="关"
+                                      Toggled="OnAutoUpdateToggled" />
+                    </Grid>
+
+                    <TextBlock FontSize="11.5"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource Brush.FgFaint}"
+                               Text="安装包从本项目的 GitHub 发布页下载，并校验发布页提供的 SHA-256。升级只替换程序目录，设置、账户、实例与存档位于独立数据目录，不会被删除。" />
+                </StackPanel>
+            </Border>
+
             <!-- Language -->
             <Border Background="{ThemeResource Brush.Card}"
                     BorderBrush="{ThemeResource Brush.Border}"

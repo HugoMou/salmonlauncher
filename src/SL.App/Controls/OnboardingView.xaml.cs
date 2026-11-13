@@ -309,7 +309,14 @@ public sealed partial class OnboardingView : UserControl
         if (!NextBtn.IsEnabled)
             return;
         if (_step == 1)
-            AppServices.Settings.Update(c => c.TermsAccepted = true);
+        {
+            // Record the accepted agreement version too, otherwise the shell asks for it again right after onboarding.
+            AppServices.Settings.Update(c =>
+            {
+                c.TermsAccepted = true;
+                c.TermsVersion = SL.App.Pages.TermsPage.CurrentTermsVersion;
+            });
+        }
         _reached = Math.Max(_reached, _step + 1);
         ShowStep(_step + 1);
     }

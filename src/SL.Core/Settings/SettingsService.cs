@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -78,6 +78,10 @@ public sealed class SettingsService : ISettingsService
         TermsAccepted = s.TermsAccepted,
         Language = string.IsNullOrWhiteSpace(s.Language) ? "auto" : s.Language,
         OnboardingCompleted = s.OnboardingCompleted,
+        LastSeenVersion = s.LastSeenVersion ?? "",
+        CheckLauncherUpdateOnStart = s.CheckLauncherUpdateOnStart,
+        TermsVersion = s.TermsVersion ?? "",
+        ActiveInstanceId = s.ActiveInstanceId ?? "",
     };
 
     private static Data.Settings.AppSettings Map(AppConfig c) => new()
@@ -102,6 +106,10 @@ public sealed class SettingsService : ISettingsService
         TermsAccepted = c.TermsAccepted,
         Language = c.Language,
         OnboardingCompleted = c.OnboardingCompleted,
+        LastSeenVersion = c.LastSeenVersion,
+        CheckLauncherUpdateOnStart = c.CheckLauncherUpdateOnStart,
+        TermsVersion = c.TermsVersion,
+        ActiveInstanceId = c.ActiveInstanceId,
     };
 
     private static AppConfig Clone(AppConfig c) => new()
@@ -122,6 +130,10 @@ public sealed class SettingsService : ISettingsService
         TermsAccepted = c.TermsAccepted,
         Language = c.Language,
         OnboardingCompleted = c.OnboardingCompleted,
+        LastSeenVersion = c.LastSeenVersion,
+        CheckLauncherUpdateOnStart = c.CheckLauncherUpdateOnStart,
+        TermsVersion = c.TermsVersion,
+        ActiveInstanceId = c.ActiveInstanceId,
     };
 
     private static bool ConfigEquals(AppConfig a, AppConfig b)
@@ -140,5 +152,9 @@ public sealed class SettingsService : ISettingsService
            && a.ModrinthMirror == b.ModrinthMirror
            && a.TermsAccepted == b.TermsAccepted
            && a.Language == b.Language
-           && a.OnboardingCompleted == b.OnboardingCompleted;
+           && a.OnboardingCompleted == b.OnboardingCompleted
+           && a.LastSeenVersion == b.LastSeenVersion
+           && a.CheckLauncherUpdateOnStart == b.CheckLauncherUpdateOnStart
+           && a.TermsVersion == b.TermsVersion
+           && a.ActiveInstanceId == b.ActiveInstanceId;
 }

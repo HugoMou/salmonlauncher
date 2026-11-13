@@ -52,13 +52,15 @@ public static class AppServices
         TaskCenter = new TaskCenterVM();
         Nav = new NavService();
 
-        // Config change propagation: engine concurrency + theme (palette/accent/light-dark) + Modrinth mirror
+        // Config change propagation: engine concurrency + theme (palette/accent/light-dark) + mirror preferences
         Core.Net.Modrinth.PreferMirror = Settings.Current.ModrinthMirror;
+        Core.Launch.LaunchPipeline.MirrorFirst = Settings.Current.DownloadSource == "bmclapi";
         Settings.Changed += cfg =>
         {
             Transfers.Options.MaxConcurrency = cfg.TransferConcurrency;
             ThemeManager.Apply(cfg.Theme, cfg.Palette, cfg.Accent);
             Core.Net.Modrinth.PreferMirror = cfg.ModrinthMirror;
+            Core.Launch.LaunchPipeline.MirrorFirst = cfg.DownloadSource == "bmclapi";
         };
     }
 }

@@ -23,6 +23,7 @@ using SL.App.Infrastructure;
 using SL.App.Localization;
 using SL.App.Navigation;
 using SL.App.Notify;
+using SL.App.Pages;
 using SL.App.Themes;
 using Windows.Graphics;
 using Windows.Storage;
@@ -70,9 +71,15 @@ public sealed partial class MainWindow : Window
             AppServices.Dialogs.Attach(RootGrid.XamlRoot);
             Loc.ApplyTo(RootGrid);
             if (AppServices.Settings.Current.OnboardingCompleted)
+            {
                 await EnsureTermsAsync();
+                await ShowWhatsNewAsync();
+                await CheckLauncherUpdateAsync();
+            }
             else
+            {
                 Onboarding.Visibility = Visibility.Visible;
+            }
         };
         Onboarding.Completed += async () => await EnsureTermsAsync();
         AppServices.Nav.CurrentChanged += () => DispatcherQueue.TryEnqueue(SyncShell);
@@ -128,8 +135,58 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        AppServices.Settings.Update(c => c.TermsAccepted = true);
+        AppServices.Settings.Update(c =>
+        {
+            c.TermsAccepted = true;
+            c.TermsVersion = TermsPage.CurrentTermsVersion;
+        });
         AppServices.Notify.Publish(NotifyKind.Success, Loc.T("同意并继续"));
+    }
+
+    // ---------------------------------------------------------- Update announcement
+
+    /// <summary>Show the release notes once per launcher version.</summary>
+    private async Task ShowWhatsNewAsync()
+    {
+        try
+        {
+            if (!WhatsNew.ShouldShow(AppServices.Settings.Current.LastSeenVersion))
+                return;
+
+            var dialog = new WhatsNewDialog(WhatsNew.Version, WhatsNew.Items);
+            await AppServices.Dialogs.ShowCustomAsync(dialog);
+            WhatsNew.MarkSeen();
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Shell", "显示更新公告失败:" + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Query the release page at startup when the user left the option on. This only notifies:
+    /// nothing is downloaded or installed until the user confirms in Settings.
+    /// </summary>
+    private async Task CheckLauncherUpdateAsync()
+    {
+        if (!AppServices.Settings.Current.CheckLauncherUpdateOnStart)
+            return;
+
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            var release = await LauncherUpdater.GetLatestAsync(timeout.Token);
+            if (LauncherUpdater.IsNewer(release))
+            {
+                AppServices.Notify.Publish(NotifyKind.Info,
+                    string.Format(Loc.T("发现新版本 {0}，可在「外观与设置 → 软件更新」中安装"), release.Tag));
+            }
+        }
+        catch (Exception ex)
+        {
+            // A failed background check is silent by design: it must never block startup.
+            Core.Logging.AppLog.Info("Shell", "启动时检查更新未完成:" + ex.Message);
+        }
     }
 
     // ---------------------------------------------------------- Navigation menu

@@ -137,8 +137,8 @@
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 系统:Windows 10 版本 2004(内部版本 19041)或更高,Windows 11 亦可" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 架构:x64;暂不提供 ARM64 与 32 位版本" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 运行时:界面框架随软件自带,无需另行安装 .NET 或 Windows App SDK" />
-                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 内存:启动器约占用 300 MB;游戏建议分配 4 GB 以上" />
-                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 磁盘:启动器本体约 200 MB,每个游戏实例另需 300 MB 起" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 内存:启动器实测约 150–200 MB;游戏建议分配 4 GB 以上" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 磁盘:程序目录约 150 MB(含随附的 Campfire),每个游戏实例另需 300 MB 起" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 网络:首次安装需要联网下载游戏文件与 Java 运行时" />
                 </StackPanel>
             </Border>
@@ -153,7 +153,7 @@
                     <TextBlock Text="数据与隐私" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 所有设置、账户令牌、日志、实例、存档与壁纸都保存在上面的数据目录里,不会上传到任何服务器。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 不含统计、埋点与广告组件,不收集设备信息、游戏行为或个人信息。" />
-                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 卸载软件不会自动删除数据目录;需要清理时可在「外观与设置 → 清除全部数据」中选择范围。" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 卸载软件不会自动删除数据目录;需要清理时可在「外观与设置」页底部的「清除全部数据」中选择范围。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 迁移到新电脑时,复制整个数据目录即可带走全部设置与实例。" />
                 </StackPanel>
             </Border>
@@ -194,7 +194,7 @@
                         <TextBlock Grid.Column="1" Style="{ThemeResource Style.TermsBody}" Text="· 实例隔离:每个版本独立的模组、存档、日志与配置" />
                         <TextBlock Grid.Row="1" Grid.Column="0" Style="{ThemeResource Style.TermsBody}" Text="· 内容仓库:模组 / 光影 / 资源包检索并安装到对应实例" />
                         <TextBlock Grid.Row="1" Grid.Column="1" Style="{ThemeResource Style.TermsBody}" Text="· 账户:微软正版三种登录方式 + 无限量离线账户切换" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{ThemeResource Style.TermsBody}" Text="· 联机:房间码开房、联机大厅与游戏内房间信息" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Style="{ThemeResource Style.TermsBody}" Text="· 联机:随包分发 Campfire,一键启动并支持在线更新" />
                         <TextBlock Grid.Row="2" Grid.Column="1" Style="{ThemeResource Style.TermsBody}" Text="· 排障:崩溃诊断建议、日志检索与主题工坊换肤" />
                     </Grid>
                 </StackPanel>
@@ -208,7 +208,7 @@
                     Padding="22">
                 <StackPanel Spacing="12">
                     <TextBlock Text="遇到问题时" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
-                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 游戏崩溃:先到「工具 → 崩溃诊断」查看结论,再附上实例 logs/latest.log 的尾部。" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 游戏崩溃:先到「系统 → 崩溃诊断」查看结论,再附上实例 logs/latest.log 的尾部。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 启动器异常:打开日志目录,附上最近的日志与出错前的操作步骤。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· 反馈问题时请注明版本号与系统版本;请勿在公开渠道粘贴账户令牌。" />
                 </StackPanel>
@@ -227,6 +227,8 @@
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· Modrinth:模组、光影与资源包检索" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· Eclipse Temurin:按需获取的 Java 运行时" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· Windows App SDK:界面框架与窗口合成" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="· Campfire(GPL-3.0):联机功能,随安装包分发其未修改的官方发行版" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}" Text="第三方组件的版本、校验值与源码获取方式见程序目录下的 THIRD-PARTY-NOTICES.md 与 campfire/SOURCE-OFFER.txt。" />
                 </StackPanel>
             </Border>
 

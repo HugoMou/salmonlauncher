@@ -125,7 +125,7 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Text="镜像仅在官方源不可达或校验失败时使用;文件最终都会做 SHA-1 校验。"
+                    <TextBlock Text="「自动」先走官方源,失败或校验不通过时切到镜像;「镜像优先」则先走镜像。无论走哪条路径,下载完成后都会用官方清单里的 SHA-1 校验文件。"
                                FontSize="11.5"
                                Foreground="{ThemeResource Brush.FgFaint}"
                                TextWrapping="Wrap" />

@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -209,7 +209,7 @@ public sealed class RepoVM : VmBase, IRefreshable
         if (_targetInstance.Length == 0)
         {
             await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装实例"),
-                Loc.T("请先在「下载 → 游戏版本」安装一个实例;模组、光影与资源包都需要放进某个实例目录。"),
+                Loc.T("请先在「资源 → 游戏版本」安装一个实例;模组、光影与资源包都需要放进某个实例目录。"),
                 MsgMark.Info).ConfigureAwait(true);
             return;
         }

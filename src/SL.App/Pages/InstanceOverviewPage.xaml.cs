@@ -61,8 +61,22 @@ public sealed partial class InstanceOverviewPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+        InstanceContext.Changed -= OnContextChanged;
+        InstanceContext.Changed += OnContextChanged;
         Reload(selectCurrent: true);
     }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        InstanceContext.Changed -= OnContextChanged;
+    }
+
+    /// <summary>Another page changed the shared instance: reload so both views stay consistent.</summary>
+    private void OnContextChanged() => _ui.TryEnqueue(() => Reload(selectCurrent: true));
+
+    private readonly Microsoft.UI.Dispatching.DispatcherQueue _ui =
+        Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
     private void Reload(bool selectCurrent)
     {
@@ -78,7 +92,7 @@ public sealed partial class InstanceOverviewPage : Page
 
         if (_current is null)
         {
-            StatusText.Text = Loc.T("尚未安装实例 · 前往「下载 → 游戏版本」安装一个");
+            StatusText.Text = Loc.T("尚未安装实例 · 前往「资源 → 游戏版本」安装一个");
             InstanceId.Text = Loc.T("无实例");
             InstalledText.Text = "";
             ModCount.Text = "—";
@@ -108,7 +122,7 @@ public sealed partial class InstanceOverviewPage : Page
     {
         if (_current is null)
         {
-            await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装实例"), Loc.T("请先到「下载 → 游戏版本」安装一个实例。"),
+            await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装实例"), Loc.T("请先到「资源 → 游戏版本」安装一个实例。"),
                 MsgMark.Info).ConfigureAwait(true);
             return;
         }

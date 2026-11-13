@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -91,7 +91,7 @@ public sealed partial class InstanceModsPage : Page
 
         var enabled = _rows.Count(r => r.Enabled);
         StatusText.Text = _rows.Count == 0
-            ? string.Format(Loc.T("实例 {0} 的 mods 目录为空 · 可从「下载 → 模组仓库」安装"), InstanceContext.CurrentId)
+            ? string.Format(Loc.T("实例 {0} 的 mods 目录为空 · 可从「资源 → 模组仓库」安装"), InstanceContext.CurrentId)
             : string.Format(Loc.T("实例 {0} · 共 {1} 个模组,启用 {2} 个"), InstanceContext.CurrentId, _rows.Count, enabled);
     }
 

@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -26,6 +26,9 @@ namespace SL.App.Pages;
 /// <summary>User agreement and disclaimer.</summary>
 public sealed partial class TermsPage : Page
 {
+    /// <summary>Current agreement revision; bump when the text changes so users are asked to read it again.</summary>
+    public const string CurrentTermsVersion = "2.0";
+
     public TermsPage()
     {
         InitializeComponent();
@@ -58,7 +61,11 @@ public sealed partial class TermsPage : Page
 
     private void OnAccept(object sender, RoutedEventArgs e)
     {
-        AppServices.Settings.Update(c => c.TermsAccepted = true);
+        AppServices.Settings.Update(c =>
+        {
+            c.TermsAccepted = true;
+            c.TermsVersion = CurrentTermsVersion;
+        });
         SyncState();
         AppServices.Notify.Publish(NotifyKind.Success, Loc.T("已同意用户协议"));
     }

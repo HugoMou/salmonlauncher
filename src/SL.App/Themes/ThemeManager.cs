@@ -375,6 +375,16 @@ public static class ThemeManager
         Put(light, "Brush.AccentSoft", WithAlpha(accentLight, 0x30));
         Put(light, "Brush.AccentFg", Rgb(0xFF, 0xFF, 0xFF));
 
+        // Header band gradient (page hero); Color resources consumed by LinearGradientBrush stops
+        Put(dark, "AccentBandStart", WithAlpha(accentDark, 0x7A));
+        Put(dark, "AccentBandEnd", WithAlpha(accentDark, 0x14));
+        Put(light, "AccentBandStart", WithAlpha(accentLight, 0x59));
+        Put(light, "AccentBandEnd", WithAlpha(accentLight, 0x0D));
+
+        // Soft "shadow" layer behind hero cards (a blurred offset rectangle, no ThemeShadow dependency)
+        Put(dark, "Shadow.Hero", WithAlpha(Rgb(0x00, 0x00, 0x00), 0x59));
+        Put(light, "Shadow.Hero", WithAlpha(Rgb(0x00, 0x00, 0x00), 0x14));
+
         // Nav selection background follows the accent (unless the palette explicitly overrides it)
         if (!darkSrc.ContainsKey("Brush.NavItemChecked"))
             Put(dark, "Brush.NavItemChecked", WithAlpha(accentDark, 0x1F));
