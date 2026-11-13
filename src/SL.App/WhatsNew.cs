@@ -25,31 +25,31 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.0";
+    public const string Version = "2.0.1";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE74D",
+            Loc.T("清理无用文案"),
+            Loc.T("移除了约 500 条已不再使用的翻译词条（旧联机功能、旧版协议与过时措辞），安装体积更小，界面文字没有任何变化。")),
         new("\uE895",
-            Loc.T("启动器可以在设置里自我更新"),
+            Loc.T("可以在设置里自我更新"),
             Loc.T("「外观与设置 → 软件更新」会从 GitHub 发布页检查新版本、下载安装包并直接安装；升级只替换程序文件，设置、账户、实例与存档都保留。")),
         new("\uE7BA",
             Loc.T("启动时自动检查更新"),
             Loc.T("可在同一处关闭自动检查；有可用更新时首页会提示，不会在后台静默安装。")),
         new("\uE716",
-            Loc.T("联机改用 Campfire"),
-            Loc.T("联机页改为启动随附的 Campfire：它负责把世界开放到局域网并生成邀请码。启动器可一键检查并更新 Campfire，支持多源加速与 SHA-256 校验。")),
+            Loc.T("联机由随包的 Campfire 提供"),
+            Loc.T("联机页启动随附的 Campfire：它负责把世界开放到局域网并生成邀请码。启动器可一键检查并更新 Campfire，多源加速并校验 SHA-256。")),
         new("\uE896",
             Loc.T("下载更快、更稳"),
-            Loc.T("下载改为多连接分段并进行镜像回退，支持实时速度显示与随时取消；「镜像优先」设置现在对启动修补同样生效。")),
+            Loc.T("多连接分段下载并支持镜像回退，带实时速度显示与随时取消；「镜像优先」设置对启动修补同样生效。")),
         new("\uE8A5",
-            Loc.T("协议与版权说明更完整"),
-            Loc.T("用户协议与免责声明已重写扩写，新增第三方组件版权、再分发义务与数据保留说明；关于页补充了组件与源码获取方式。")),
-        new("\uE7FC",
-            Loc.T("界面与提示更准确"),
-            Loc.T("重做了联机页与设置页布局，减少重复点击；修正了动作路径、内存与磁盘占用、联机能力等与实际不符的说明。")),
+            Loc.T("协议与版权说明完整"),
+            Loc.T("用户协议与免责声明共 13 章，包含第三方组件版权、再分发义务与数据保留说明。")),
         new("\uE72A",
-            Loc.T("版本号升级到 2.0.0"),
-            Loc.T("本次为大版本更新，包含上述功能与修复；此版本同样不提供便携版，安装包会保留已有用户数据。")),
+            Loc.T("本版本为 2.0.1"),
+            Loc.T("不提供便携版；安装包会保留已有用户数据。")),
     ];
 
     /// <summary>Whether the announcement should be shown for the running version.</summary>

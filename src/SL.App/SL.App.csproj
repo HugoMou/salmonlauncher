@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   SalmonLauncher (SL) — a Minecraft Java edition launcher
   Copyright (C) 2026 Hugo Mou
 
@@ -36,7 +36,7 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
   </PropertyGroup>
 
   <!-- multiplayer is Campfire: the upstream release binary ships unchanged, with its licence and source offer -->
