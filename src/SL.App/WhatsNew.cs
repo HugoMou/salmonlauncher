@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -25,13 +25,16 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.1";
+    public const string Version = "2.0.2";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
         new("\uE74D",
-            Loc.T("清理无用文案"),
-            Loc.T("移除了约 500 条已不再使用的翻译词条（旧联机功能、旧版协议与过时措辞），安装体积更小，界面文字没有任何变化。")),
+            Loc.T("修复模组启停导致的崩溃"),
+            Loc.T("在模组管理里开关模组会重建列表，导致切换页面时崩溃；现在改为就地更新那一行，不再重建。")),
+        new("\uE7C3",
+            Loc.T("修复模组无法启停"),
+            Loc.T("上次切换被中断后残留的同名文件会让模组一直报「目标已存在」；现在会自动清理残留，正常启用或停用。")),
         new("\uE895",
             Loc.T("可以在设置里自我更新"),
             Loc.T("「外观与设置 → 软件更新」会从 GitHub 发布页检查新版本、下载安装包并直接安装；升级只替换程序文件，设置、账户、实例与存档都保留。")),
