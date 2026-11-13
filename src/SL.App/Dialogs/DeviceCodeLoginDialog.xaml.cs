@@ -107,5 +107,14 @@ public sealed partial class DeviceCodeLoginDialog : ContentDialog
     }
 
     private async void OnOpen(object sender, RoutedEventArgs e)
-        => await Windows.System.Launcher.LaunchUriAsync(new Uri(_link));
+    {
+        try
+        {
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(_link));
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Login", "打开登录链接失败:" + ex.Message);
+        }
+    }
 }

@@ -120,7 +120,14 @@ public sealed partial class GlobalSettingsPage : Page
     private async void OnRescanJava(object sender, RoutedEventArgs e)
     {
         JavaText.Text = Loc.T("正在扫描 Java…");
-        await JavaEnv.RescanAsync();
+        try
+        {
+            await JavaEnv.RescanAsync();
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Java", "扫描 Java 失败:" + ex.Message);
+        }
         UpdateJavaText();
     }
 }

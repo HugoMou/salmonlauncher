@@ -288,13 +288,22 @@ public sealed partial class SettingsPage : Page
         if (_updating || _launcherRelease is not { } release)
             return;
 
-        var confirmed = await AppServices.Dialogs.ConfirmAsync(
-            Loc.T("下载并安装更新"),
-            string.Format(Loc.T("将下载 {0}（{1}），下载完成后启动安装程序。安装只替换程序文件，设置、账户、实例与存档不会被删除。是否继续？"),
-                release.FileName, FormatSize(release.Size)),
-            MsgMark.Question,
-            Loc.T("下载并安装"),
-            Loc.T("取消"));
+        bool confirmed;
+        try
+        {
+            confirmed = await AppServices.Dialogs.ConfirmAsync(
+                Loc.T("下载并安装更新"),
+                string.Format(Loc.T("将下载 {0}（{1}），下载完成后启动安装程序。安装只替换程序文件，设置、账户、实例与存档不会被删除。是否继续？"),
+                    release.FileName, FormatSize(release.Size)),
+                MsgMark.Question,
+                Loc.T("下载并安装"),
+                Loc.T("取消"));
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Settings", "确认对话框失败:" + ex.Message);
+            return;
+        }
         if (!confirmed)
             return;
 

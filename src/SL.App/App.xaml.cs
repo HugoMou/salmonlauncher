@@ -31,6 +31,16 @@ public partial class App : Application
         {
             Core.Logging.AppLog.Error("Crash", e.Exception);
             Core.Logging.AppLog.Error("Crash", $"XamlUnhandled Message={e.Message} Handled={e.Handled}");
+
+            // An async void handler that throws must not take the whole process down: log it,
+            // tell the user what happened, and keep the window alive.
+            var canRecover = e.Exception is not OutOfMemoryException
+                             && e.Exception is not StackOverflowException;
+            if (canRecover)
+            {
+                e.Handled = true;
+                TryReportToUser(e.Exception);
+            }
         };
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             Core.Logging.AppLog.Error("Crash", e.ExceptionObject as Exception
@@ -40,6 +50,37 @@ public partial class App : Application
             Core.Logging.AppLog.Error("Crash", e.Exception);
             e.SetObserved();
         };
+    }
+
+    /// <summary>Surface a recovered exception instead of letting the app vanish without explanation.</summary>
+    private static void TryReportToUser(Exception ex)
+    {
+        try
+        {
+            var text = Localization.Loc.T("出现未处理的错误，已记录到日志：")
+                       + ex.GetType().Name + ": " + ex.Message;
+
+            // Marshal to the UI thread; the crash may have happened on a background context.
+            var window = Window;
+            if (window is not null)
+            {
+                window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        Infrastructure.AppServices.Notify.Publish(Notify.NotifyKind.Error, text);
+                    }
+                    catch
+                    {
+                        // Never let reporting throw.
+                    }
+                });
+            }
+        }
+        catch
+        {
+            // Reporting must never throw from inside the crash handler.
+        }
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)

@@ -25,11 +25,17 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.2";
+    public const string Version = "2.0.3";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
         new("\uE74D",
+            Loc.T("未处理的错误不再让启动器退出"),
+            Loc.T("以前后台任务或界面事件里出现未预期错误时，启动器会直接消失；现在会记录下来、提示一次，并继续运行。")),
+        new("\uE7BA",
+            Loc.T("补齐易失败操作的错误处理"),
+            Loc.T("皮肤预览、Java 扫描、打开登录链接、联机说明与更新对话框等操作失败时不再崩溃，改为记录日志并给出提示。")),
+        new("\uE71C",
             Loc.T("修复模组启停导致的崩溃"),
             Loc.T("在模组管理里开关模组会重建列表，导致切换页面时崩溃；现在改为就地更新那一行，不再重建。")),
         new("\uE7C3",
