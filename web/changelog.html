@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：1.0.3 与 1.0.2 的修复、签名与仓库变更。" content="SalmonLauncher release notes for 1.0.3 and 1.0.2: fixes, code signing and repository changes.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.0 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.0: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 1.0.3">Get 1.0.3</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.0">Get 2.0.0</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v1.0.3</div>
+      <div>LATEST v2.0.0</div>
     </div>
   </section>
 
@@ -73,8 +73,28 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v1.0.3</h2>
+          <h2>v2.0.0</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
+          <time datetime="2026-11-13">2026-11-13</time>
+        </div>
+        <p class="lede" data-zh="启动器可以在设置里自我更新，联机改用 Campfire，协议与版权说明全面重写。">The launcher can now update itself, multiplayer moved to Campfire, and the licence terms were rewritten in full.</p>
+        <ul>
+          <li data-zh="新增软件更新：在「外观与设置 → 软件更新」里检查 GitHub 发布页、下载安装包并校验 SHA-256 后直接安装；升级只替换程序文件，设置、账户、实例与存档都保留。">Software update: check the GitHub release page under Appearance &amp; settings → Software update, then download the installer, verify its SHA-256 and install it. Upgrading replaces program files only, keeping settings, accounts, instances and saves.</li>
+          <li data-zh="新增更新公告：版本变化后首次启动会列出本次改动，并说明数据不会被删除。">Update announcement: the first launch after a version change lists what changed and states that user data is kept.</li>
+          <li data-zh="启动时可自动检查新版本，可在设置中关闭；只提示，不会在后台静默安装。">Optional automatic update check at startup, which can be turned off and only ever notifies — nothing installs silently.</li>
+          <li data-zh="联机改用随包的 Campfire：不再嵌入窗口，改为独立程序，可一键检查并更新 Campfire，下载走多源加速并校验 SHA-256。">Multiplayer now runs the bundled Campfire as a separate program instead of an embedded window, with one-click Campfire updates over multi-source downloads verified by SHA-256.</li>
+          <li data-zh="下载改为多连接分段并支持镜像回退、实时速度显示与随时取消；「镜像优先」设置现在对启动修补同样生效。">Downloads use parallel ranges with mirror fallback, live speed and cancellation; the mirror-first setting now also applies when repairing files at launch.</li>
+          <li data-zh="启动面板与各实例页共享同一个「当前实例」，并会记住上次的选择；此前两处选择互不同步。">The launch panel and every instance page now share one current instance and remember it; previously the two kept separate selections.</li>
+          <li data-zh="修复欢迎页接受协议后未记录条款版本、以及「下一步」按钮在小窗口下不可见的问题。">Fixed onboarding not recording the accepted agreement version, and the Next button being unreachable in smaller windows.</li>
+          <li data-zh="用户协议扩写为 13 章，新增软件更新、第三方组件版权与再分发义务，并加强免责声明；条款版本升至 2.0。">The user agreement grew to 13 sections with software updates, third-party copyright and redistribution duties, plus stronger disclaimers; the terms version is now 2.0.</li>
+          <li data-zh="修正导航路径、内存与磁盘占用、加载器支持范围等与实际不符的说明。">Corrected descriptions of navigation paths, memory and disk usage, and loader support to match the actual behaviour.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v1.0.3</h2>
           <time datetime="2026-11-02">2026-11-02</time>
         </div>
         <p class="lede" data-zh="仓库统一英文命名，安装包与卸载程序加入代码签名。">English-first repository, unified naming, and code signing for the installer and uninstaller.</p>
@@ -116,7 +136,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="1.0.3 已可下载。">1.0.3 is ready.</h2>
+        <h2 data-zh="2.0.0 已可下载。">2.0.0 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">

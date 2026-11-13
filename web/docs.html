@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 1.0.3">Get 1.0.3</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.0">Get 2.0.0</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -59,7 +59,7 @@
 <main>
   <section class="wrap phead">
     <div>
-      <div class="eyebrow" data-zh="文档 · v1.0.3">Documentation · v1.0.3</div>
+      <div class="eyebrow" data-zh="文档 · v2.0.0">Documentation · v2.0.0</div>
       <h1 data-zh="从第一次打开，到第一次崩溃。">From first launch to first crash.</h1>
       <p class="lede" data-zh="这份文档按使用顺序排列：先启动，再登录，然后是 Java、实例、模组、联机、下载源与数据目录。最后一节是常见问题。">This page follows the order you will actually need: launch, sign in, then Java, instances, mods, multiplayer, download sources and the data folder. Troubleshooting sits at the end.</p>
     </div>
@@ -164,14 +164,16 @@
 
       <section id="multiplayer">
         <h2><span class="n">06</span><span data-zh="联机">Multiplayer</span></h2>
-        <p data-zh="联机只提供两种方式：在自己的电脑上开服，或与同一局域网内的玩家直接联机。端口由系统挑选，避免撞上常见端口；不提供公网中继，也不生成邀请码。">There are two routes only: host the server on your own PC, or play with people on the same LAN. The port is chosen by the system to avoid common conflicts; there is no public relay and no invite code.</p>
+        <p data-zh="联机由随包附带的 Campfire 提供。启动器只负责启动它、切回它的窗口和更新它，不参与也不需要转发任何联机流量。">Multiplayer is provided by the bundled Campfire. The launcher only starts it, switches back to its window and updates it; it neither takes part in nor relays any multiplayer traffic.</p>
         <ol class="steps">
-          <li data-zh="本机开服：在你的电脑上启动服务端，记下局域网内的地址与端口。">Host: start the server on your PC and note the LAN address and port.</li>
-          <li data-zh="局域网联机：同一网段的朋友在多人游戏里直接加入，或让启动器扫描局域网世界。">LAN play: friends on the same subnet join directly in Multiplayer, or let the launcher scan for LAN worlds.</li>
+          <li data-zh="在「联机」页点「打开 Campfire」，它会在自己的窗口里运行。">Press Open Campfire on the Multiplayer page; it runs in its own window.</li>
+          <li data-zh="在 Campfire 里进入一个世界，它会自动对局域网开放并生成邀请码。">Enter a world in Campfire; it opens to LAN and generates an invite code.</li>
+          <li data-zh="把邀请码发给好友，好友在 Campfire 里粘贴即可加入；也可以在房间大厅里挑选房间。">Send the code to friends, who paste it into Campfire to join; rooms can also be picked from the lobby.</li>
+          <li data-zh="需要新版本时，在同一页点「检查更新」即可更新 Campfire，下载会用官方 SHA-256 校验。">To get a newer build, press Check for updates on the same page; downloads are verified against the official SHA-256.</li>
         </ol>
         <div class="note">
           <b data-zh="联机范围：">Scope:</b>
-          <span data-zh="只覆盖这台电脑与同一局域网。启动器不提供公网中继，也不生成邀请码。">Only your computer and the same LAN are covered. The launcher provides no public relay and generates no invite codes.</span>
+          <span data-zh="连接能否建立、数据经过哪些服务器，都由 Campfire 及其服务端决定；启动器本身不读取、不转发也不记录联机内容。">Whether a connection can be made and which servers the data passes through are decided by Campfire and its servers; the launcher never reads, forwards or records multiplayer content.</span>
         </div>
       </section>
 
@@ -235,8 +237,8 @@ Get-ChildItem "$root\cache\meta"
             <p data-zh="确认三件事：模组与游戏版本匹配、加载器类型匹配（Fabric 的模组不能放进 Forge 实例）、文件没有被改成 .jar.disabled。">Check three things: the mod matches the game version, it matches the loader (a Fabric mod will not run in a Forge instance), and the file is not renamed to .jar.disabled.</p>
           </details>
           <details>
-            <summary data-zh="联机加入失败">Joining a LAN world fails</summary>
-            <p data-zh="联机只支持本机开服与同一局域网。确认对方与你在同一网段、双方版本一致；本机开服时，检查防火墙是否放行 Java 与启动器。">Multiplayer only covers local hosting and the same LAN. Make sure you are on the same subnet and both sides run the same version; when hosting, allow Java and the launcher through the firewall.</p>
+            <summary data-zh="联机加入失败">Joining fails</summary>
+            <p data-zh="先确认邀请码正确、房主仍处于开放状态，双方游戏版本一致。跨网联感受限时，可在 Campfire 的联机设置里允许中转；失败页面上的「查看联机日志」会记录具体原因。">Check that the invite code is correct, the host still has the world open, and both sides run the same game version. If cross-network play is restricted, allow relaying in Campfire's multiplayer settings; the “view multiplayer log” link on the failure page records the exact reason.</p>
           </details>
           <details>
             <summary data-zh="日志文件打不开，提示被占用">The log cannot be opened because it is in use</summary>

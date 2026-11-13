@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title data-zh-title="下载 — SalmonLauncher 1.0.3">Download — SalmonLauncher 1.0.3</title>
-<meta name="description" data-zh-content="下载 SalmonLauncher 1.0.3：标准安装包 SL-Setup-1.0.3-win64.exe 与便携版 SL-1.0.3-portable-win64.zip，附 SHA-256 校验值与安装步骤。" content="Download SalmonLauncher 1.0.3: the SL-Setup-1.0.3-win64.exe installer or the SL-1.0.3-portable-win64.zip portable build, with SHA-256 checksums and install steps.">
+<title data-zh-title="下载 — SalmonLauncher 2.0.0">Download — SalmonLauncher 2.0.0</title>
+<meta name="description" data-zh-content="下载 SalmonLauncher 2.0.0 安装包 SL-Setup-2.0.0-win64.exe，附 SHA-256 校验值与安装步骤；本版本不提供便携版。" content="Download the SalmonLauncher 2.0.0 installer (SL-Setup-2.0.0-win64.exe) with SHA-256 verification and install steps. This release has no portable build.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="#packages" data-zh="下载 1.0.3">Get 1.0.3</a>
+      <a class="btn btn-primary btn-sm" href="#packages" data-zh="下载 2.0.0">Get 2.0.0</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -60,8 +60,8 @@
   <section class="wrap phead">
     <div>
       <div class="eyebrow" data-zh="下载 · Windows x64">Download · Windows x64</div>
-      <h1 data-zh="拿走安装包，或者整个文件夹。">Take the installer, or the folder.</h1>
-      <p class="lede" data-zh="两个包都内置 .NET 10 与 Windows App SDK 运行时。选安装包获得开始菜单入口与卸载项，选便携版则不碰注册表。">Both packages include the .NET 10 and Windows App SDK runtimes. The installer adds a Start menu entry and an uninstall entry; the portable build touches no registry keys.</p>
+      <h1 data-zh="下载安装包，开始游戏。">Get the installer and start playing.</h1>
+      <p class="lede" data-zh="安装包内置 .NET 10 与 Windows App SDK 运行时，无需另行安装。本版本不提供便携版；升级只替换程序文件，设置、账户、实例与存档都会保留。">The installer bundles the .NET 10 and Windows App SDK runtimes, so nothing else needs installing. This release has no portable build. Upgrading replaces program files only, keeping your settings, accounts, instances and saves.</p>
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / DOWNLOAD</div>
@@ -72,9 +72,9 @@
 
   <div class="wrap">
     <div class="release reveal">
-      <span class="ver" data-sl-latest-tag>v1.0.3</span>
+      <span class="ver" data-sl-latest-tag>v2.0.0</span>
       <span class="badge" data-zh="最新版本">Latest</span>
-      <span class="mono" data-sl-latest-date>2026-11-02</span>
+      <span class="mono" data-sl-latest-date>2026-11-13</span>
       <span class="mono" data-zh="GPL-3.0-or-later">GPL-3.0-or-later</span>
       <span class="mono" data-sl-synced hidden></span>
       <a class="link-arrow" style="margin-left:auto" href="#history" data-zh="所有版本历史 →">All releases →</a>
@@ -86,34 +86,16 @@
           <h3 data-zh="标准安装包">Installer</h3>
           <span class="badge" data-zh="推荐">Recommended</span>
         </div>
-        <p class="dl-file" data-sl-asset-name="installer">SL-Setup-1.0.3-win64.exe</p>
+        <p class="dl-file" data-sl-asset-name="installer">SL-Setup-2.0.0-win64.exe</p>
         <p class="dl-note" data-zh="四语言安装向导（简体中文 / 繁体中文 / English / 日本語），创建开始菜单与桌面快捷方式，写入标准卸载项；不要求管理员权限即可为当前用户安装。">A four-language setup wizard (简体中文 / 繁體中文 / English / 日本語) that creates Start menu and desktop shortcuts and registers a standard uninstall entry. It can install for the current user without administrator rights.</p>
-        <div class="dl-meta"><span><b data-sl-asset-size="installer">59.5 MB</b></span><span>EXE</span><span>X64</span><span data-zh="自签名">Self-signed</span></div>
-        <a class="btn btn-primary" data-sl-asset-link="installer" href="downloads/v1.0.3/SL-Setup-1.0.3-win64.exe" download>
+        <div class="dl-meta"><span><b data-sl-asset-size="installer">65 MB</b></span><span>EXE</span><span>X64</span><span data-zh="自签名">Self-signed</span></div>
+        <a class="btn btn-primary" data-sl-asset-link="installer" href="downloads/v2.0.0/SL-Setup-2.0.0-win64.exe" download>
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1v9m0 0 3.5-3.5M8 10 4.5 6.5M2 12.5h12" stroke="currentColor" stroke-width="1.4"/></svg>
           <span data-zh="下载安装包">Download installer</span>
         </a>
         <div class="hash">
-          <code id="hash-setup" data-sl-asset-hash="installer">E3F26AC075C42F4422DFE0E548F8E6A80E19732A88A192B028C64B45519B1D7E</code>
+          <code id="hash-setup" data-sl-asset-hash="installer" data-zh="SHA-256 在发布时写入">SHA-256 is filled in at release time</code>
           <button class="copy" data-copy="hash-setup" data-zh="复制">COPY</button>
-        </div>
-      </div>
-
-      <div class="dl-card">
-        <div class="dl-top">
-          <h3 data-zh="便携版">Portable</h3>
-          <span class="mono" data-zh="免安装">No install</span>
-        </div>
-        <p class="dl-file" data-sl-asset-name="portable">SL-1.0.3-portable-win64.zip</p>
-        <p class="dl-note" data-zh="解压到任意可写目录，运行 SL.exe。不写注册表，适合 U 盘、共用电脑或临时测试。设置与实例仍然写入 %APPDATA%\SalmonLauncher。">Unzip anywhere writable and run SL.exe. Nothing goes into the registry, which makes it right for a USB drive, a shared PC or a quick test. Settings and instances still live in %APPDATA%\SalmonLauncher.</p>
-        <div class="dl-meta"><span><b data-sl-asset-size="portable">87 MB</b></span><span>ZIP</span><span>X64</span><span data-zh="自签名">Self-signed</span></div>
-        <a class="btn btn-ghost" data-sl-asset-link="portable" href="downloads/v1.0.3/SL-1.0.3-portable-win64.zip" download>
-          <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1v9m0 0 3.5-3.5M8 10 4.5 6.5M2 12.5h12" stroke="currentColor" stroke-width="1.4"/></svg>
-          <span data-zh="下载便携版">Download portable</span>
-        </a>
-        <div class="hash">
-          <code id="hash-portable" data-sl-asset-hash="portable">F3BF1B257FC23B677FDD459BB4F65C1AC0E9062356733925C3819F422B36E38D</code>
-          <button class="copy" data-copy="hash-portable" data-zh="复制">COPY</button>
         </div>
       </div>
     </div>
@@ -129,20 +111,19 @@
       <p class="sec-intro reveal" data-zh="版本列表与安装包由官网服务器定时从 GitHub 同步到本站，下载全程不跳转 GitHub；旧版本仍可下载，用于回退或复现问题。">Version data and packages are mirrored from GitHub Releases onto this site by the server on a schedule. Downloads stay here; older builds remain available for rollbacks or reproducing issues.</p>
       <div class="rel-list" data-sl-history>
         <div class="rel-row latest">
-          <span class="rel-tag">v1.0.3</span>
+          <span class="rel-tag">v2.0.0</span>
           <span class="badge">Latest</span>
+          <span class="rel-date">2026-11-13</span>
+          <div class="rel-files">
+            <a class="rel-dl" href="downloads/v2.0.0/SL-Setup-2.0.0-win64.exe" download>EXE</a>
+          </div>
+        </div>
+        <div class="rel-row">
+          <span class="rel-tag">v1.0.3</span>
           <span class="rel-date">2026-11-02</span>
           <div class="rel-files">
             <a class="rel-dl" href="downloads/v1.0.3/SL-Setup-1.0.3-win64.exe" download>EXE <em>59.5 MB</em></a>
             <a class="rel-dl" href="downloads/v1.0.3/SL-1.0.3-portable-win64.zip" download>ZIP <em>87 MB</em></a>
-          </div>
-        </div>
-        <div class="rel-row">
-          <span class="rel-tag">v1.0.2</span>
-          <span class="rel-date">2026-11-02</span>
-          <div class="rel-files">
-            <a class="rel-dl" href="downloads/v1.0.2/SL-Setup-1.0.2-win64.exe" download>EXE <em>59.5 MB</em></a>
-            <a class="rel-dl" href="downloads/v1.0.2/SL-1.0.2-portable-win64.zip" download>ZIP <em>87 MB</em></a>
           </div>
         </div>
       </div>
@@ -161,10 +142,7 @@
           <button class="copy-inline" data-copy="code-hash">COPY</button>
         </div>
         <pre id="code-hash"><span class="c"># Installer</span>
-Get-FileHash .\SL-Setup-1.0.3-win64.exe -Algorithm SHA256
-
-<span class="c"># Portable</span>
-Get-FileHash .\SL-1.0.3-portable-win64.zip -Algorithm SHA256</pre>
+Get-FileHash .\SL-Setup-2.0.0-win64.exe -Algorithm SHA256</pre>
       </div>
       <div class="note reveal">
         <b data-zh="关于 SmartScreen：">On SmartScreen:</b>
@@ -211,7 +189,7 @@ Get-FileHash .\SL-1.0.3-portable-win64.zip -Algorithm SHA256</pre>
       <div class="two-col reveal">
         <div class="doc-body" style="padding:0">
           <ol class="steps">
-            <li data-zh="下载 SL-Setup-1.0.3-win64.exe，并在 PowerShell 中核对 SHA-256。">Download SL-Setup-1.0.3-win64.exe and compare its SHA-256 in PowerShell.</li>
+            <li data-zh="下载 SL-Setup-2.0.0-win64.exe，并在 PowerShell 中核对 SHA-256。">Download SL-Setup-2.0.0-win64.exe and compare its SHA-256 in PowerShell.</li>
             <li data-zh="双击运行。若出现 SmartScreen 提示，选择“更多信息 → 仍要运行”。">Run it. If SmartScreen appears, choose “More info → Run anyway”.</li>
             <li data-zh="按向导选择安装位置与是否创建桌面图标，完成安装。">Follow the wizard: pick a location and whether to create a desktop icon.</li>
             <li data-zh="从开始菜单启动 SalmonLauncher，首次打开会引导完成基础设置。">Launch SalmonLauncher from the Start menu; the first run walks through basic setup.</li>
@@ -223,8 +201,8 @@ Get-FileHash .\SL-1.0.3-portable-win64.zip -Algorithm SHA256</pre>
             <span data-zh="实例、存档、账户与日志都在 %APPDATA%\SalmonLauncher。卸载程序不会删除这个目录；要彻底清空，请在应用内使用“清除全部数据”，或手动删除该目录。">Instances, worlds, accounts and logs all live in %APPDATA%\SalmonLauncher. The uninstaller leaves that folder alone. To wipe everything, use “Clear all data” inside the app or delete the folder manually.</span>
           </div>
           <div class="note plain">
-            <b data-zh="便携版注意：">Portable note:</b>
-            <span data-zh="便携版虽然不写注册表，但仍使用同一个 %APPDATA% 数据目录。若要在 U 盘上完全隔离，请在一台没有安装过本应用的机器上使用。">The portable build writes nothing to the registry but still uses the same %APPDATA% data folder. For a fully isolated USB setup, use it on a machine that has never run the app.</span>
+            <b data-zh="升级也保留数据：">Upgrading keeps data too:</b>
+            <span data-zh="本版本不提供便携版。安装新版时只会替换程序目录，数据目录不受影响，因此可以直接覆盖升级；应用内「外观与设置 → 软件更新」也可以自动完成升级。">This release has no portable build. Installing a newer version replaces only the program folder and leaves the data folder untouched, so you can upgrade in place; “Appearance &amp; settings → Software update” inside the app can do it for you.</span>
           </div>
         </div>
       </div>

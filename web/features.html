@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="功能 — SalmonLauncher">Features — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 功能详解：版本安装、启动流水线、实例与模组、本机开服与局域网联机、Modrinth 内容、账户、外观与崩溃诊断。" content="What SalmonLauncher does: version installs, the launch pipeline, instances and mods, local hosting and LAN multiplayer, Modrinth content, accounts, appearance and crash diagnostics.">
+<meta name="description" data-zh-content="SalmonLauncher 功能详解：版本安装、启动流水线、实例与模组、Campfire 联机、Modrinth 内容、账户、外观与崩溃诊断。" content="What SalmonLauncher does: version installs, the launch pipeline, instances and mods, Campfire multiplayer, Modrinth content, accounts, appearance and crash diagnostics.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 1.0.3">Get 1.0.3</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.0">Get 2.0.0</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / FEATURES</div>
-      <div>v1.0.3</div>
+      <div>v2.0.0</div>
       <div>WIN 10 2004+</div>
     </div>
   </section>
@@ -152,18 +152,18 @@
     <div class="feature rev reveal">
       <div class="feature-copy">
         <span class="mono">04 / MULTIPLAYER</span>
-        <h2 data-zh="联机：本机开服与局域网">Multiplayer: local hosting and LAN</h2>
-        <p data-zh="只提供两种联机方式：在自己的电脑上开服，或与同一局域网内的玩家直接联机。启动器负责挑选端口与检查 Java，不需要公网中继，也不需要邀请码。">Two routes only: host the server on your own PC, or play with people on the same LAN. The launcher picks the port and checks Java for you — no public relay and no invite codes.</p>
+        <h2 data-zh="联机：交给 Campfire">Multiplayer runs on Campfire</h2>
+        <p data-zh="联机由随包附带的 Campfire 提供。在它里面进入一个世界，就会自动对局域网开放并生成邀请码；好友凭邀请码即可加入，跨网联机与房间大厅也由 Campfire 自己完成。">Multiplayer is handled by the bundled Campfire. Enter a world in it and the world opens to LAN with an invite code; friends join with that code. Cross-network play and the room lobby are provided by Campfire itself.</p>
         <ul class="checks">
-          <li data-zh="本机开服：用你自己的电脑作为服务端，朋友直接连到这台机器">Host on your own PC: your machine runs the server and friends connect to it directly</li>
-          <li data-zh="局域网联机：同一网段内自动发现可加入的世界">LAN play: worlds on the same subnet are discovered automatically</li>
-          <li data-zh="端口自动挑选，冲突时自动换到下一个可用端口">The port is picked automatically, with a free one chosen on conflict</li>
-          <li data-zh="不提供公网中继，也不生成邀请码">No public relay and no invite codes</li>
+          <li data-zh="邀请码：进入世界即生成，发给好友即可加入">Invite codes: generated as soon as you enter a world, ready to send</li>
+          <li data-zh="跨网联机：不在同一局域网也能一起玩，由 Campfire 负责建立连接">Cross-network play: works beyond your LAN, with Campfire handling the connection</li>
+          <li data-zh="一键更新：启动器可检查并更新 Campfire，多源加速并校验 SHA-256">One-click updates: the launcher checks and updates Campfire, downloading over multiple mirrors verified by SHA-256</li>
+          <li data-zh="独立进程：Campfire 单独运行，启动器不参与也不需要转发任何联机流量">A separate process: Campfire runs on its own and the launcher neither takes part in nor relays any multiplayer traffic</li>
         </ul>
       </div>
       <div class="feature-visual">
         <div class="viz">
-          <div class="viz-head"><span>multiplayer / modes</span><b>2 ROUTES</b></div>
+          <div class="viz-head"><span>multiplayer / campfire</span><b>1 CLICK</b></div>
           <div class="relay">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               <line x1="22" y1="26" x2="50" y2="50" stroke="rgba(255,255,255,.18)"/>
@@ -171,11 +171,11 @@
               <line x1="22" y1="76" x2="50" y2="50" stroke="rgba(255,255,255,.18)"/>
               <line x1="78" y1="76" x2="50" y2="50" stroke="rgba(255,255,255,.18)"/>
             </svg>
-            <div class="relay-node n1"><b>player</b>lan</div>
-            <div class="relay-node n2"><b>player</b>lan</div>
-            <div class="relay-node n3"><b>world</b>local</div>
-            <div class="relay-node n4"><b>port</b>auto</div>
-            <div class="relay-node hub"><b>SERVER</b>your pc</div>
+            <div class="relay-node n1"><b>player</b>join</div>
+            <div class="relay-node n2"><b>player</b>join</div>
+            <div class="relay-node n3"><b>code</b>invite</div>
+            <div class="relay-node n4"><b>lan</b>open</div>
+            <div class="relay-node hub"><b>CAMPFIRE</b>bundled</div>
           </div>
         </div>
       </div>
@@ -316,7 +316,7 @@
             <li data-zh="不捆绑、不修改任何 Minecraft 游戏文件">No Minecraft game files are bundled or modified</li>
             <li data-zh="不提供盗版服务器或账号">No cracked servers or accounts are provided</li>
             <li data-zh="不自动追踪模组更新（由你决定版本）">Mods are not auto-updated; you choose the version</li>
-            <li data-zh="不提供公网中继；联机限于本机与同一局域网">No public relay; multiplayer stays local or on the same LAN</li>
+            <li data-zh="联机由随包附带的 Campfire 提供">Multiplayer is provided by the bundled Campfire</li>
           </ul>
         </div>
         <div class="req">
@@ -338,7 +338,7 @@
         <p data-zh="59.5 MB 安装包，自带运行时，不需要额外依赖。">A 59.5 MB installer with its runtimes included, no extra dependencies.</p>
       </div>
       <div class="btn-row">
-        <a class="btn btn-primary btn-lg" href="download.html" data-zh="下载 1.0.3">Download 1.0.3</a>
+        <a class="btn btn-primary btn-lg" href="download.html" data-zh="下载 2.0.0">Download 2.0.0</a>
         <a class="btn btn-ghost btn-lg" href="docs.html" data-zh="阅读文档">Read the docs</a>
       </div>
     </section>
