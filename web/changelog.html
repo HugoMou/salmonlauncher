@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.0 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.0: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.1 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.1: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.0">Get 2.0.0</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.1">Get 2.0.1</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.0</div>
+      <div>LATEST v2.0.1</div>
     </div>
   </section>
 
@@ -73,11 +73,26 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.0</h2>
+          <h2>v2.0.1</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
           <time datetime="2026-11-13">2026-11-13</time>
         </div>
-        <p class="lede" data-zh="启动器可以在设置里自我更新，联机改用 Campfire，协议与版权说明全面重写。">The launcher can now update itself, multiplayer moved to Campfire, and the licence terms were rewritten in full.</p>
+        <p class="lede" data-zh="清理无用文案，安装包更小；功能与 2.0.0 一致。">Dead translation entries removed, making the package smaller; features match 2.0.0.</p>
+        <ul>
+          <li data-zh="移除约 500 条已不再使用的翻译词条（旧联机功能、旧版协议与过时措辞），每种语言从 990 条降至 728 条。">Removed 262 unused entries per language (relay, lobby, room codes, LAN scanning, companion-mod messages, obsolete terms text), dropping from 990 to 728 entries per language.</li>
+          <li data-zh="界面显示的文字没有任何变化；残留词条此前已无引用，删除不会影响任何可见文案。">No displayed text changed: the removed entries were unreferenced, so deleting them cannot alter any visible string.</li>
+          <li data-zh="首次启动的更新公告改为说明本次改动。">The update announcement now describes this release.</li>
+          <li data-zh="安装包体积略增（60.5 MB），因签名与运行时随版本更新。">The installer is 60.5 MB, signed and carrying the bundled runtimes.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.0</h2>
+          <time datetime="2026-11-13">2026-11-13</time>
+        </div>
+        <p class="lede" data-zh="启动器可以在设置里自我更新，联机改用 Campfire，协议与版权说明全面重写。">The launcher gained self-update, multiplayer moved to Campfire, and the licence terms were rewritten in full.</p>
         <ul>
           <li data-zh="新增软件更新：在「外观与设置 → 软件更新」里检查 GitHub 发布页、下载安装包并校验 SHA-256 后直接安装；升级只替换程序文件，设置、账户、实例与存档都保留。">Software update: check the GitHub release page under Appearance &amp; settings → Software update, then download the installer, verify its SHA-256 and install it. Upgrading replaces program files only, keeping settings, accounts, instances and saves.</li>
           <li data-zh="新增更新公告：版本变化后首次启动会列出本次改动，并说明数据不会被删除。">Update announcement: the first launch after a version change lists what changed and states that user data is kept.</li>
@@ -136,7 +151,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.0 已可下载。">2.0.0 is ready.</h2>
+        <h2 data-zh="2.0.1 已可下载。">2.0.1 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">
