@@ -382,8 +382,15 @@ public sealed partial class MultiplayerPage : Page
 
         if (!File.Exists(CampfireUpdater.ProgramPath))
         {
-            await AppServices.Dialogs.AlertAsync(Loc.T("找不到 Campfire"),
-                Loc.T("可点「检查更新」从官方发布页下载并安装。"), MsgMark.Warning);
+            try
+            {
+                await AppServices.Dialogs.AlertAsync(Loc.T("找不到 Campfire"),
+                    Loc.T("可点「检查更新」从官方发布页下载并安装。"), MsgMark.Warning);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("Multiplayer", "提示对话框失败:" + ex.Message);
+            }
             return;
         }
 
@@ -479,12 +486,21 @@ public sealed partial class MultiplayerPage : Page
         if (_busy || !IsCampfireRunning())
             return;
 
-        var confirmed = await AppServices.Dialogs.ConfirmAsync(
-            Loc.T("关闭 Campfire"),
-            Loc.T("确定要关闭 Campfire 吗？正在进行的联机会中断。"),
-            MsgMark.Question,
-            Loc.T("关闭"),
-            Loc.T("取消"));
+        bool confirmed;
+        try
+        {
+            confirmed = await AppServices.Dialogs.ConfirmAsync(
+                Loc.T("关闭 Campfire"),
+                Loc.T("确定要关闭 Campfire 吗？正在进行的联机会中断。"),
+                MsgMark.Question,
+                Loc.T("关闭"),
+                Loc.T("取消"));
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Multiplayer", "确认对话框失败:" + ex.Message);
+            return;
+        }
         if (!confirmed)
             return;
 
@@ -580,12 +596,21 @@ public sealed partial class MultiplayerPage : Page
 
         if (IsCampfireRunning())
         {
-            var confirmed = await AppServices.Dialogs.ConfirmAsync(
-                Loc.T("需要先关闭 Campfire"),
-                Loc.T("更新会关闭正在运行的 Campfire，是否继续？"),
-                MsgMark.Question,
-                Loc.T("关闭并更新"),
-                Loc.T("取消"));
+            bool confirmed;
+            try
+            {
+                confirmed = await AppServices.Dialogs.ConfirmAsync(
+                    Loc.T("需要先关闭 Campfire"),
+                    Loc.T("更新会关闭正在运行的 Campfire，是否继续？"),
+                    MsgMark.Question,
+                    Loc.T("关闭并更新"),
+                    Loc.T("取消"));
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("Multiplayer", "确认对话框失败:" + ex.Message);
+                return;
+            }
             if (!confirmed)
                 return;
 
@@ -733,7 +758,19 @@ public sealed partial class MultiplayerPage : Page
 
     private async void OnShowHelp(object sender, RoutedEventArgs e)
     {
-        await AppServices.Dialogs.AlertAsync(Loc.T("联机说明"),
+        try
+        {
+            await ShowHelpAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("Multiplayer", "显示联机说明失败:" + ex.Message);
+        }
+    }
+
+    private Task ShowHelpAsync()
+    {
+        return AppServices.Dialogs.AlertAsync(Loc.T("联机说明"),
             Loc.T("1. 点「打开 Campfire」，它会以独立窗口运行。\n2. 在 Campfire 里进入一个世界，它会自动对局域网开放并生成邀请码。\n3. 把邀请码发给好友，好友在 Campfire 里粘贴即可加入；也可以在「联机大厅」里选择房间。\n4. 联机时游戏数据优先在玩家之间直接传输，只有建立连接所需的信令经过 Campfire 的服务器，启动器不参与任何联机通信。\n5. Campfire 会在新手引导结束后询问是否发送匿名使用统计，之后可在它的设置里修改。"),
             MsgMark.Info);
     }

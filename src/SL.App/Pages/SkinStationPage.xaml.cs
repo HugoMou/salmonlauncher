@@ -157,13 +157,31 @@ public sealed partial class SkinStationPage : Page
             return;
         SkinNameText.Text = row.Name;
         SkinMetaText.Text = string.Format(Loc.T("{0} · {1} · 保存于 {2}"), row.Item.SizeText, row.Item.ModelText, row.Item.SavedText);
-        await Preview.LoadAsync(row.Item.Path);
+
+        try
+        {
+            await Preview.LoadAsync(row.Item.Path);
+        }
+        catch (Exception ex)
+        {
+            // A broken or missing skin file must not take the app down.
+            AppLog.Warn("SkinStation", $"皮肤预览加载失败: {ex.Message}");
+        }
     }
 
     private void OnResetView(object sender, RoutedEventArgs e)
     {
-        if (SkinList.SelectedItem is SkinRow row)
+        if (SkinList.SelectedItem is not SkinRow row)
+            return;
+
+        try
+        {
             _ = Preview.LoadAsync(row.Item.Path);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("SkinStation", $"皮肤预览加载失败: {ex.Message}");
+        }
     }
 
     private async void OnImportSkin(object sender, RoutedEventArgs e)

@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -40,13 +40,23 @@ public sealed partial class InstallPage : Page
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
-        TitleText.Text = InstallWizard.HasVersion
-            ? string.Format(Loc.T("安装 {0} → Minecraft {1}"), Loc.T(InstallWizard.Loader), InstallWizard.VersionId)
-            : Loc.T("安装概览");
-        PathText.Text = InstallWizard.HasVersion
-            ? System.IO.Path.Combine(Runtime.InstancesDir, InstallWizard.VersionId)
-            : Runtime.InstancesDir;
-        await LoadPlanAsync();
+
+        try
+        {
+            TitleText.Text = InstallWizard.HasVersion
+                ? string.Format(Loc.T("安装 {0} → Minecraft {1}"), Loc.T(InstallWizard.Loader), InstallWizard.VersionId)
+                : Loc.T("安装概览");
+            PathText.Text = InstallWizard.HasVersion
+                ? System.IO.Path.Combine(Runtime.InstancesDir, InstallWizard.VersionId)
+                : Runtime.InstancesDir;
+            await LoadPlanAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Install", ex);
+            StageText.Text = Loc.T("加载安装计划失败");
+            PlanList.ItemsSource = new[] { Loc.T("加载安装计划失败:") + ex.Message };
+        }
     }
 
     private async Task LoadPlanAsync()
