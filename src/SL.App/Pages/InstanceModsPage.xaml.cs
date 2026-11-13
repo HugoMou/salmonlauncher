@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -29,24 +29,45 @@ using SL.App.Notify;
 
 namespace SL.App.Pages;
 
-/// <summary>Mod row (bound to the mod list).</summary>
-public sealed class ModRow
+/// <summary>Mod row (bound to the mod list). Enabled is observable so a toggle can update it in place.</summary>
+public sealed class ModRow : System.ComponentModel.INotifyPropertyChanged
 {
+    private bool _enabled;
+
     public ModRow(ModInfo info)
     {
         FileName = info.FileName;
         Name = info.BaseName;
-        Enabled = info.Enabled;
-        Detail = $"{info.SizeBytes / 1024.0:F0} KB · {info.ModifiedAt:yyyy-MM-dd HH:mm}"
-                 + (info.Enabled ? "" : Loc.T(" · 已停用"));
-        Glyph = info.Enabled ? "\uE7B8" : "\uE7BA";
+        _enabled = info.Enabled;
+        SizeBytes = info.SizeBytes;
+        ModifiedAt = info.ModifiedAt;
     }
 
     public string FileName { get; }
     public string Name { get; }
-    public bool Enabled { get; }
-    public string Detail { get; }
-    public string Glyph { get; }
+    public long SizeBytes { get; }
+    public DateTimeOffset ModifiedAt { get; }
+
+    public bool Enabled
+    {
+        get => _enabled;
+        set
+        {
+            if (_enabled == value)
+                return;
+            _enabled = value;
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Enabled)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Detail)));
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Glyph)));
+        }
+    }
+
+    public string Detail => $"{SizeBytes / 1024.0:F0} KB · {ModifiedAt:yyyy-MM-dd HH:mm}"
+                            + (Enabled ? "" : Loc.T(" · 已停用"));
+
+    public string Glyph => Enabled ? "\uE7B8" : "\uE7BA";
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 }
 
 /// <summary>Mod management page: enable / disable (via the .disabled suffix), delete, and import from local files.</summary>
@@ -89,6 +110,18 @@ public sealed partial class InstanceModsPage : Page
         foreach (var mod in InstanceRegistry.ListMods(InstanceContext.CurrentId))
             _rows.Add(new ModRow(mod));
 
+        RefreshSummary();
+    }
+
+    /// <summary>Refresh the status line from the current rows without rebuilding the list.</summary>
+    private void RefreshSummary()
+    {
+        if (InstanceContext.CurrentId.Length == 0)
+        {
+            StatusText.Text = Loc.T("尚未安装实例 · 请先安装一个版本");
+            return;
+        }
+
         var enabled = _rows.Count(r => r.Enabled);
         StatusText.Text = _rows.Count == 0
             ? string.Format(Loc.T("实例 {0} 的 mods 目录为空 · 可从「资源 → 模组仓库」安装"), InstanceContext.CurrentId)
@@ -113,14 +146,22 @@ public sealed partial class InstanceModsPage : Page
         try
         {
             var enabled = InstanceRegistry.ToggleMod(InstanceContext.CurrentId, row.FileName);
+
+            // Update the row in place. Rebuilding the list from inside the ToggleSwitch's own
+            // Toggled event destroys the control mid-operation and crashes the XAML measure pass.
+            row.Enabled = enabled;
             AppServices.Notify.Publish(NotifyKind.Info, (enabled ? Loc.T("已启用") : Loc.T("已停用")) + ":" + row.Name);
+            RefreshSummary();
         }
         catch (Exception ex)
         {
             AppLog.Error("InstanceMods", ex);
+            // Put the switch back where it was, so the UI still matches the files on disk.
+            toggle.IsOn = row.Enabled;
             AppServices.Notify.Publish(NotifyKind.Error, Loc.T("切换失败:") + ex.Message);
         }
-        Reload();
+
+        await Task.CompletedTask;
     }
 
     private async void OnDeleteMod(object sender, RoutedEventArgs e)
