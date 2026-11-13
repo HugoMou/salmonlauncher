@@ -99,7 +99,10 @@ public static class InstanceRegistry
         return list.OrderByDescending(m => m.Enabled).ThenByDescending(m => m.ModifiedAt).ToList();
     }
 
-    /// <summary>Toggle enable/disable: append or strip the .disabled suffix (the file system is the state). Returns the enabled state after toggling.</summary>
+    /// <summary>
+    /// Toggle enable/disable by adding or removing the .disabled suffix (the file system is the state).
+    /// Returns the enabled state after toggling.
+    /// </summary>
     public static bool ToggleMod(string instanceId, string fileName)
     {
         var dir = ModsDirOf(instanceId);
@@ -110,17 +113,18 @@ public static class InstanceRegistry
         if (fileName.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase))
         {
             var renamed = path[..^".disabled".Length];
+            // A leftover file with the target name (e.g. an interrupted toggle) must not block enabling.
             if (File.Exists(renamed))
-                throw new IOException($"目标已存在:{Path.GetFileName(renamed)}");
-            Directory.Move(path, renamed);
-            return true; // enabled as soon as the rename succeeds
+                File.Delete(renamed);
+            File.Move(path, renamed);
+            return true;
         }
 
         var disabled = path + ".disabled";
         if (File.Exists(disabled))
-            throw new IOException($"目标已存在:{Path.GetFileName(disabled)}");
-        Directory.Move(path, disabled);
-        return false; // disable succeeded
+            File.Delete(disabled);
+        File.Move(path, disabled);
+        return false;
     }
 
     public static void DeleteMod(string instanceId, string fileName)
