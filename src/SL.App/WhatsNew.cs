@@ -25,10 +25,13 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.8";
+    public const string Version = "2.0.9";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE774",
+            Loc.T("补齐英文与日文翻译"),
+            Loc.T("此前约 110 条界面文案（条款正文、联机说明、更新公告等）在英文与日文界面下仍显示中文，现已全部补齐。")),
         new("\uE8B7",
             Loc.T("新增「打开文件夹」"),
             Loc.T("启动面板的实例选择旁可直接打开当前实例的文件夹，方便查看或手动管理文件。")),
