@@ -1,6 +1,6 @@
 // Film.tsx — SalmonLauncher promo, Apple-keynote energy, 355.2s tightly synced to "3 Strikes" played twice (108 BPM).
-// Apple keynote grammar: pure-black stage, huge metal headline, ONE centered floating rotating 3D product card per chapter,
-// minimal copy, generous negative space, smooth camera travel between chapters, beat-sync pulse only.
+// Apple keynote grammar: black stage with layered ambient glow, huge metal headline, ONE centered floating rotating 3D product card per chapter,
+// surround deco cards forming a product matrix, camera fly-in entry & define-then-punch hold, minimal copy, generous negative space.
 import React from 'react';
 import {AbsoluteFill, Audio, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {AUDIO_FILE, COLOR, CREDITS, FILM, FONT, LINKS, SHOTS, toF} from './spec';
@@ -9,7 +9,6 @@ import {Big, Camera, ClickFx, LegalStrip, MetalText, Panel, QRCard, ScanLine, Sh
 
 const BF = (i: number) => beatFrame(i, FILM.fps);
 const stepDur = (beats: number) => Math.round(beats * PERIOD * FILM.fps);
-const beatOf = (l: number) => Math.floor(l / (PERIOD * FILM.fps));
 
 // --- micro overlays ---
 const Cursor: React.FC<{x1: number; y1: number; x2: number; y2: number; at: number; dur: number}> = ({x1, y1, x2, y2, at, dur}) => {
@@ -38,7 +37,7 @@ const Pulse: React.FC<{x: number; y: number; at: number; c?: string}> = ({x, y, 
   );
 };
 
-// 用户点击按钮：光标移动 → 点击光环 → 标签，全程保持 3D 镜头语境
+// 用户点击按钮：光标移动 → 点击光环 → 标签
 const ClickPoint: React.FC<{x:number;y:number;at:number;label?:string}> = ({x,y,at,label}) => {
   const l = useCurrentFrame();
   const t = l - at;
@@ -54,36 +53,51 @@ const ClickPoint: React.FC<{x:number;y:number;at:number;label?:string}> = ({x,y,
   );
 };
 
-// 浮动旋转 3D 剪贴图：每拍翻转角度并轻微上下浮动，作为装饰性 3D 动画
+// 浮动旋转 3D 剪贴图：作为环绕装饰，随拍点翻转与上下浮动
 const FloatCard: React.FC<{file:string;x:number;y:number;w:number;baseBeat:number;ryBase?:number;rxBase?:number;z?:number}> = ({file,x,y,w,baseBeat,ryBase=0,rxBase=5,z=0}) => {
   const l = useCurrentFrame();
   const b = Math.floor(l / stepDur(1)) - baseBeat;
-  const ry = ryBase + (b % 2 === 0 ? 12 : -12) * (0.6 + 0.4 * Math.sin(b));
-  const rx = rxBase + (b % 3 === 0 ? 3 : -2);
-  const tz = z + (b % 2 === 0 ? 55 : 0);
-  const floatY = Math.sin((l + baseBeat * 7) / 22) * 14;
-  return <Shot3D file={file} x={x} y={y + floatY} w={w} delay={0} ry={ry} rx={rx} z={tz} scale={1.02} label={undefined} />;
+  const ry = ryBase + (b % 2 === 0 ? 14 : -14) * (0.6 + 0.4 * Math.sin(b));
+  const rx = rxBase + (b % 3 === 0 ? 4 : -2);
+  const tz = z + (b % 2 === 0 ? 60 : 0);
+  const floatY = Math.sin((l + baseBeat * 7) / 22) * 16;
+  const punch = 1 + 0.03 * Math.max(0, 1 - ((l % stepDur(1)) / stepDur(1)) * 2) ** 2;
+  return <Shot3D file={file} x={x} y={y + floatY} w={w} delay={0} ry={ry} rx={rx} z={tz} scale={punch} label={undefined} />;
 };
 
-// ---------- Apple-keynote chapter shell ----------
-// 每章节：黑底 + 巨大金属标题居中 + 一行副标题 + 居中单一大卡片（悬浮旋转）+ 可选点击交互
-// 相机在章节间平滑飞行，卡片随拍点轻微脉冲
+// 章节入场动画：卡片从远处飞入并旋转定格，主标题随之弹出
+// entryMs 毫秒内完成飞入，之后进入静止旋转状态
 const Chapter: React.FC<{
   base: number; dur: number; head: string; sub?: string; file?: string;
   cardX?: number; cardY?: number; cardW?: number; cardRy?: number; cardRx?: number; cardZ?: number;
   camRy?: number; camRx?: number; camZ?: number; click?: {x:number;y:number;label:string;atRel:number};
-  punch?: number; deco?: boolean;
-}> = ({base, dur, head, sub, file, cardX=960, cardY=520, cardW=900, cardRy=-10, cardRx=6, cardZ=0, camRy=0, camRx=4, camZ=140, click, punch=0.04, deco=false}) => {
+  punch?: number; deco?: boolean; closeup?: boolean;
+}> = ({base, dur, head, sub, file, cardX=960, cardY=520, cardW=900, cardRy=-10, cardRx=6, cardZ=0, camRy=0, camRx=4, camZ=140, click, punch=0.04, deco=false, closeup=false}) => {
   const l = useCurrentFrame();
   const ls = l - base;
-  const camRyT = interpolate(ls, [0, dur], [camRy - 12, camRy + 12], clamp);
-  const camRxT = interpolate(ls, [0, dur], [camRx + 3, camRx - 3], clamp);
-  const camZT = interpolate(ls, [0, dur / 2, dur], [camZ - 60, camZ + 40, camZ - 20], clamp);
-  const cardRyT = interpolate(ls, [0, dur], [cardRy - 14, cardRy + 14], clamp);
-  const cardRxT = interpolate(ls, [0, dur], [cardRx - 3, cardRx + 3], clamp);
+  const entry = stepDur(8); // 8 beats entry fly-in
+  const entryP = interpolate(ls, [0, entry], [0, 1], clamp);
+  // 相机：从远处拉近并环绕
+  const camRyT = interpolate(ls, [0, entry, dur], [camRy - 20, camRy, camRy + 10], clamp);
+  const camRxT = interpolate(ls, [0, entry, dur], [camRx + 8, camRx, camRx - 2], clamp);
+  const camZT = interpolate(ls, [0, entry, dur], [camZ - 300, camZ + 20, camZ - 10], clamp);
+  // 主卡片：从远处飞入，旋转定格，随后轻微脉冲
+  const cardEntryZ = interpolate(ls, [0, entry], [cardZ - 500, cardZ], clamp);
+  const cardEntryRy = interpolate(ls, [0, entry], [cardRy + 40, cardRy], clamp);
+  const cardEntryRx = interpolate(ls, [0, entry], [cardRx + 20, cardRx], clamp);
+  const cardEntryScale = interpolate(ls, [0, entry], [0.55, 1.0], clamp);
+  const cardRyT = interpolate(ls, [entry, dur], [cardRy - 12, cardRy + 12], clamp);
+  const cardRxT = interpolate(ls, [entry, dur], [cardRx - 3, cardRx + 3], clamp);
+  const cardFlyScale = ls < entry ? cardEntryScale : 1 + punch * Math.max(0, 1 - ((ls - entry) % stepDur(1)) / (stepDur(1) * 0.6)) ** 2;
   const punchScale = beatPunch(ls, FILM.fps, PERIOD, punch);
+  // 产品特写：后半段放大主卡片
+  const isCloseup = closeup && ls > dur / 2;
+  const closeupW = isCloseup ? cardW * 1.35 : cardW;
+  const closeupY = isCloseup ? cardY - 40 : cardY;
+  const closeupZ = isCloseup ? cardZ - 120 : cardZ;
+  const entryOpacity = interpolate(ls, [0, entry], [0, 1], clamp);
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{opacity: entryOpacity}}>
       <Camera ry={camRyT} rx={camRxT} tz={camZT} scale={punchScale}>
         <div style={{position: 'absolute', left: 0, right: 0, top: 130, textAlign: 'center'}}>
           <MetalText size={106} delay={0} from="scale" tint="silver">{head}</MetalText>
@@ -91,13 +105,13 @@ const Chapter: React.FC<{
         </div>
         {file && (
           <>
-            <Shot3D key={file + base + '-main'} file={file} x={cardX} y={cardY} w={cardW} delay={0} ry={cardRyT} rx={cardRxT} z={cardZ} floatAmp={14} scale={1.03} label={undefined} />
+            <Shot3D key={file + base + '-main'} file={file} x={cardX} y={closeupY} w={closeupW} delay={0} ry={ls < entry ? cardEntryRy : cardRyT} rx={ls < entry ? cardEntryRx : cardRxT} z={ls < entry ? cardEntryZ : closeupZ} floatAmp={14} scale={cardFlyScale * 1.03} label={undefined} />
             {deco && (
               <>
-                <FloatCard file={file} x={cardX - 420} y={cardY - 220} w={300} baseBeat={Math.floor(ls / stepDur(1))} ryBase={-20} rxBase={8} z={-120} />
-                <FloatCard file={file} x={cardX + 420} y={cardY - 220} w={280} baseBeat={Math.floor(ls / stepDur(1)) + 3} ryBase={22} rxBase={-6} z={-100} />
-                <FloatCard file={file} x={cardX - 260} y={cardY + 260} w={320} baseBeat={Math.floor(ls / stepDur(1)) + 6} ryBase={-10} rxBase={12} z={-140} />
-                <FloatCard file={file} x={cardX + 260} y={cardY + 260} w={300} baseBeat={Math.floor(ls / stepDur(1)) + 9} ryBase={14} rxBase={-8} z={-110} />
+                <FloatCard file={file} x={cardX - 460} y={cardY - 240} w={320} baseBeat={Math.floor(ls / stepDur(1))} ryBase={-24} rxBase={10} z={-140} />
+                <FloatCard file={file} x={cardX + 460} y={cardY - 240} w={300} baseBeat={Math.floor(ls / stepDur(1)) + 3} ryBase={24} rxBase={-8} z={-120} />
+                <FloatCard file={file} x={cardX - 300} y={cardY + 280} w={340} baseBeat={Math.floor(ls / stepDur(1)) + 6} ryBase={-12} rxBase={14} z={-160} />
+                <FloatCard file={file} x={cardX + 300} y={cardY + 280} w={320} baseBeat={Math.floor(ls / stepDur(1)) + 9} ryBase={16} rxBase={-10} z={-130} />
               </>
             )}
           </>
@@ -111,7 +125,6 @@ const Chapter: React.FC<{
 // ---------- 1) IMPACT INTRO (beats 0-20) ----------
 const Impact: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
-  const {fps} = useVideoConfig();
   const hits = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
   return (
     <AbsoluteFill>
@@ -164,7 +177,6 @@ const Onboarding: React.FC<{base: number}> = ({base}) => {
     {file: SHOTS.wDone, head: '完成引导', sub: '初始化完成，直接进入启动器开始使用'},
   ];
   const idx = Math.min(steps.length - 1, Math.floor(l / seg));
-  const ls = l - idx * seg;
   const s = steps[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
@@ -246,7 +258,7 @@ const Content: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={1050} cardRy={idx % 2 ? -16 : 16} cardRx={6} cardZ={50}
-      camRy={idx % 2 ? -14 : 14} camRx={6} camZ={130} click={{x:1500,y:680,label:s.head,atRel:stepDur(5)}} deco={true} />
+      camRy={idx % 2 ? -14 : 14} camRx={6} camZ={130} click={{x:1500,y:680,label:s.head,atRel:stepDur(5)}} deco={true} closeup={idx === 2} />
   );
 };
 
@@ -255,7 +267,6 @@ const Online: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const half = stepDur(30);
   const p2 = l >= base + half;
-  const ls = p2 ? l - base - half : l - base;
   if (!p2) {
     return (
       <Chapter base={base} dur={half} head="联机 · Campfire" sub="把世界开给朋友。集成在启动器内"
@@ -266,7 +277,7 @@ const Online: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + half} dur={half} head="皮肤站与 3D 预览" sub="皮肤站集成与 3D 皮肤预览，外观所见即所得"
       file={SHOTS.skins} cardX={960} cardY={560} cardW={1050} cardRy={14} cardRx={6} cardZ={50}
-      camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'更换皮肤',atRel:stepDur(8)}} deco={true} />
+      camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'更换皮肤',atRel:stepDur(8)}} deco={true} closeup={true} />
   );
 };
 
