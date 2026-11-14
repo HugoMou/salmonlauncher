@@ -194,6 +194,28 @@
                         </Border>
                     </Grid>
 
+                    <!-- Window backdrop -->
+                    <Grid ColumnSpacing="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="88" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="窗口背景" VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgDim}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="云母材质 (Mica)" Foreground="{ThemeResource Brush.Fg}" />
+                            <TextBlock Text="Windows 11 可选半透明云母背景；默认关闭，使用普通配色背景。套用壁纸时以壁纸为准。"
+                                       FontSize="11.5"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgFaint}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="MicaToggle"
+                                      Grid.Column="2"
+                                      OnContent="开"
+                                      OffContent="关"
+                                      Toggled="OnMicaToggled" />
+                    </Grid>
+
                     <!-- Color schemes: skinnable cards -->
                     <StackPanel Spacing="10">
                         <TextBlock Text="配色方案" Foreground="{ThemeResource Brush.FgDim}" />

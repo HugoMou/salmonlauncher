@@ -4,21 +4,39 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.11 的欢迎页修复，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.11: onboarding fixes, plus the 2.0 series feature changes and earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.13 默认改为普通窗口背景并可选云母，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.13: Mica backdrop is now opt-in with a normal background by default, plus the 2.0 series feature changes and earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
-<link rel="stylesheet" href="assets/css/site.css?v=20261114">
+<link rel="stylesheet" href="assets/css/site.css?v=202611142">
 <link rel="canonical" href="https://sl.hugomou.com/changelog.html">
+<link rel="preload" as="image" href="assets/img/logo.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SalmonLauncher">
+<meta property="og:title" content="Changelog — SalmonLauncher">
+<meta property="og:description" content="SalmonLauncher release notes for 2.0.12: popular picks in repository pages, stability fixes, plus the 2.0 series feature changes and earlier versions.">
+<meta property="og:url" content="https://sl.hugomou.com/changelog.html">
+<meta property="og:image" content="https://sl.hugomou.com/assets/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="zh_TW">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Changelog — SalmonLauncher">
+<meta name="twitter:description" content="SalmonLauncher release notes for 2.0.12: popular picks in repository pages, stability fixes, plus the 2.0 series feature changes and earlier versions.">
+<meta name="twitter:image" content="https://sl.hugomou.com/assets/img/og.png">
 </head>
 <body>
+<a class="skip-link" href="#main" data-zh="跳到主要内容">Skip to content</a>
 <div class="bg-grid" aria-hidden="true"></div>
 <div class="bg-glow" aria-hidden="true"></div>
 
 <header class="nav">
   <div class="wrap nav-in">
     <a class="brand" href="index.html">
-      <img src="assets/img/logo.png" alt="SalmonLauncher logo">
+      <img src="assets/img/logo.png" width="150" height="150" decoding="async" alt="SalmonLauncher logo">
       <span class="brand-name">SalmonLauncher</span>
       <span class="brand-slash" data-zh="启动器官网">Launcher site</span>
     </a>
@@ -42,7 +60,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.12">Get 2.0.12</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.13">Get 2.0.13</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -56,7 +74,7 @@
   </div>
 </header>
 
-<main>
+<main id="main">
   <section class="wrap phead">
     <div>
       <div class="eyebrow" data-zh="更新日志">Release notes</div>
@@ -65,7 +83,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.12</div>
+      <div>LATEST v2.0.13</div>
     </div>
   </section>
 
@@ -73,8 +91,21 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.12</h2>
+          <h2>v2.0.13</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
+          <time datetime="2026-11-14">2026-11-14</time>
+        </div>
+        <p class="lede" data-zh="窗口背景默认改为普通样式，云母（Mica）改为可选。">The window background now uses the normal palette style by default; Mica is opt-in.</p>
+        <ul>
+          <li data-zh="云母（Mica）半透明背景不再默认开启，默认使用普通配色背景，避免在不需要时改变窗口观感。">The Windows 11 Mica translucent backdrop is no longer enabled by default. The launcher uses the normal palette background unless you turn Mica on.</li>
+          <li data-zh="「外观与设置 → 外观」新增云母材质开关，可按需开启；旧版系统会自动回退为普通背景。套用壁纸时仍以壁纸为准。">Appearance settings now include a Mica toggle. On systems where Mica is unavailable it falls back to the normal background automatically; wallpapers still take precedence when applied.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.12</h2>
           <time datetime="2026-11-14">2026-11-14</time>
         </div>
         <p class="lede" data-zh="仓库页新增热门推荐，并修复无实例时打开概览会卡死的问题。">Popular picks in repository pages, plus a fix for the instance overview freezing when no instance is installed.</p>
@@ -317,7 +348,7 @@
     <div class="foot-grid">
       <div class="foot-brand">
         <a class="brand" href="index.html">
-          <img src="assets/img/logo.png" alt="">
+          <img loading="lazy" src="assets/img/logo.png" width="150" height="150" decoding="async" alt="">
           <span class="brand-name">SalmonLauncher</span>
         </a>
         <p data-zh="一个开源的 Minecraft Java 版启动器：安装、启动、模组、联机、诊断，全部本地完成。">An open-source Minecraft: Java Edition launcher. Install, launch, mod, play together and diagnose — all locally.</p>
@@ -348,7 +379,7 @@
   </div>
 </footer>
 
-<script src="assets/js/i18n.js?v=20261114"></script>
-<script src="assets/js/site.js?v=20261114"></script>
+<script src="assets/js/i18n.js?v=202611142"></script>
+<script src="assets/js/site.js?v=202611142"></script>
 </body>
 </html>

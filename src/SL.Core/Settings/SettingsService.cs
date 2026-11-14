@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -82,6 +82,7 @@ public sealed class SettingsService : ISettingsService
         CheckLauncherUpdateOnStart = s.CheckLauncherUpdateOnStart,
         TermsVersion = s.TermsVersion ?? "",
         ActiveInstanceId = s.ActiveInstanceId ?? "",
+        UseMicaBackdrop = s.UseMicaBackdrop,
     };
 
     private static Data.Settings.AppSettings Map(AppConfig c) => new()
@@ -110,6 +111,7 @@ public sealed class SettingsService : ISettingsService
         CheckLauncherUpdateOnStart = c.CheckLauncherUpdateOnStart,
         TermsVersion = c.TermsVersion,
         ActiveInstanceId = c.ActiveInstanceId,
+        UseMicaBackdrop = c.UseMicaBackdrop,
     };
 
     private static AppConfig Clone(AppConfig c) => new()
@@ -134,6 +136,7 @@ public sealed class SettingsService : ISettingsService
         CheckLauncherUpdateOnStart = c.CheckLauncherUpdateOnStart,
         TermsVersion = c.TermsVersion,
         ActiveInstanceId = c.ActiveInstanceId,
+        UseMicaBackdrop = c.UseMicaBackdrop,
     };
 
     private static bool ConfigEquals(AppConfig a, AppConfig b)
@@ -156,5 +159,6 @@ public sealed class SettingsService : ISettingsService
            && a.LastSeenVersion == b.LastSeenVersion
            && a.CheckLauncherUpdateOnStart == b.CheckLauncherUpdateOnStart
            && a.TermsVersion == b.TermsVersion
-           && a.ActiveInstanceId == b.ActiveInstanceId;
+           && a.ActiveInstanceId == b.ActiveInstanceId
+           && a.UseMicaBackdrop == b.UseMicaBackdrop;
 }

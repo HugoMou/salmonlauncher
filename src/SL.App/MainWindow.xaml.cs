@@ -41,7 +41,8 @@ public sealed partial class MainWindow : Window
         Title = "SalmonLauncher";
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-        TryEnableMica();
+        ApplyBackdropPreference();
+        AppServices.Settings.Changed += _ => DispatcherQueue.TryEnqueue(ApplyBackdropPreference);
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         var scale = GetDpiForWindow(hwnd) / 96.0;
@@ -121,27 +122,39 @@ public sealed partial class MainWindow : Window
     // ---------------------------------------------------------- Window icon
 
     /// <summary>
-    /// Enable a Mica backdrop when the OS supports it (Windows 11). On older Windows the
-    /// property is unavailable or throws, so the window falls back to its own background.
+    /// Apply window backdrop from settings. Mica is opt-in and only available on Windows 11+;
+    /// the default is the normal palette background (no Mica).
     /// </summary>
-    private void TryEnableMica()
+    private void ApplyBackdropPreference()
     {
         try
         {
-            // Mica needs Windows 11 (build 22000+); constructing the backdrop on older builds
-            // throws, so probe the build and fall back to the window's own background.
-            if (Environment.OSVersion.Version.Build < 22000)
+            var wantMica = AppServices.Settings.Current.UseMicaBackdrop;
+            if (wantMica)
             {
-                Core.Logging.AppLog.Info("Shell", "系统版本低于 Windows 11，Mica 不可用，使用纯色背景");
-                return;
+                if (Environment.OSVersion.Version.Build < 22000)
+                {
+                    Core.Logging.AppLog.Info("Shell", "系统版本低于 Windows 11，Mica 不可用，使用普通背景");
+                    SystemBackdrop = null;
+                }
+                else if (SystemBackdrop is not MicaBackdrop)
+                {
+                    SystemBackdrop = new MicaBackdrop();
+                }
             }
-
-            SystemBackdrop = new MicaBackdrop();
+            else
+            {
+                SystemBackdrop = null;
+            }
         }
         catch (Exception ex)
         {
-            Core.Logging.AppLog.Warn("Shell", "启用 Mica 背景失败:" + ex.Message);
+            Core.Logging.AppLog.Warn("Shell", "应用窗口背景失败:" + ex.Message);
+            SystemBackdrop = null;
         }
+
+        // Re-evaluate content surface for the current wallpaper/backdrop combination.
+        ApplyWallpaper();
     }
 
     /// <summary>Taskbar / Alt+Tab icon: bundled Assets\Logo.ico (with multiple sizes from 16 to 256).</summary>
@@ -352,8 +365,9 @@ public sealed partial class MainWindow : Window
         {
             WallpaperLayer.Visibility = Visibility.Collapsed;
             WallpaperBrush.ImageSource = null;
-            // Transparent enough for the Mica backdrop to show; a wallpaper replaces it entirely.
-            SetContentBackground(ThemedBrush("Brush.PageBgMica"));
+            // Mica (opt-in) needs a translucent surface to show through; default uses normal palette background.
+            var useMica = AppServices.Settings.Current.UseMicaBackdrop && SystemBackdrop is not null;
+            SetContentBackground(ThemedBrush(useMica ? "Brush.PageBgMica" : "Brush.PageBg"));
             return;
         }
 
@@ -371,7 +385,8 @@ public sealed partial class MainWindow : Window
         catch
         {
             WallpaperLayer.Visibility = Visibility.Collapsed;
-            SetContentBackground(ThemedBrush("Brush.PageBgMica"));
+            var useMica = AppServices.Settings.Current.UseMicaBackdrop && SystemBackdrop is not null;
+            SetContentBackground(ThemedBrush(useMica ? "Brush.PageBgMica" : "Brush.PageBg"));
         }
     }
 
