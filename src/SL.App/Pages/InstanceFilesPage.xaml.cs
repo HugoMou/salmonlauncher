@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -78,6 +78,7 @@ public sealed partial class InstanceFilesPage : Page
             _ => ("resourcepacks", false, Loc.T("资源包")),
         };
         BackupButton.Visibility = _isSaves ? Visibility.Visible : Visibility.Collapsed;
+        RestoreButton.Visibility = _isSaves ? Visibility.Visible : Visibility.Collapsed;
         Reload();
     }
 
@@ -222,6 +223,53 @@ public sealed partial class InstanceFilesPage : Page
         {
             AppLog.Error("InstanceFiles", ex);
             AppServices.Notify.Publish(NotifyKind.Error, Loc.T("备份失败:") + ex.Message);
+        }
+    }
+
+    /// <summary>Pick one of this instance's save backups and restore it; the current saves are moved aside.</summary>
+    private async void OnRestoreBackup(object sender, RoutedEventArgs e)
+    {
+        if (InstanceContext.CurrentId.Length == 0)
+            return;
+
+        try
+        {
+            var backups = InstanceRegistry.ListBackups(InstanceContext.CurrentId);
+            if (backups.Count == 0)
+            {
+                await AppServices.Dialogs.AlertAsync(
+                    Loc.T("还没有备份"),
+                    Loc.T("先点「备份全部」创建一份存档备份，之后才能还原。"),
+                    MsgMark.Info).ConfigureAwait(true);
+                return;
+            }
+
+            var labels = backups
+                .Select(b => $"{b.Name} · {b.SizeBytes / 1024.0 / 1024.0:0.0} MB · {b.CreatedAt:yyyy-MM-dd HH:mm}")
+                .ToList();
+
+            var index = await AppServices.Dialogs.ChooseAsync(
+                Loc.T("还原存档备份"),
+                Loc.T("将用选中的备份替换当前存档；现有存档会先移动到 backups 目录，随时可以找回。"),
+                labels).ConfigureAwait(true);
+
+            if (index is not { } pick || pick < 0 || pick >= backups.Count)
+                return;
+
+            var chosen = backups[pick];
+            var parked = InstanceRegistry.RestoreBackup(InstanceContext.CurrentId, chosen.Path);
+
+            AppServices.Notify.Publish(NotifyKind.Success, Loc.T("存档已还原:") + chosen.Name);
+            StatusText.Text = parked.Length > 0
+                ? string.Format(Loc.T("已还原 {0} · 原存档已移到 {1}"), chosen.Name, System.IO.Path.GetFileName(parked))
+                : string.Format(Loc.T("已还原 {0}"), chosen.Name);
+
+            Reload();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("InstanceFiles", ex);
+            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("还原失败:") + ex.Message);
         }
     }
 
