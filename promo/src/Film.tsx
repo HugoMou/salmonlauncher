@@ -531,8 +531,9 @@ const Outro: React.FC<{base: number; total: number}> = ({base, total}) => {
           <div style={{marginTop: 12}}><Sub delay={4} size={32} color={COLOR.dim}>把复杂留给启动器，把时间留给游戏。</Sub></div>
         </div>
 
-        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={450} y={285} delay={6} size={165} />
-        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={950} y={285} delay={10} size={165} />
+        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={260} y={285} delay={6} size={170} />
+        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={660} y={285} delay={10} size={170} />
+        <QRCard file="blog.png" title="作者博客" url={LINKS.blog} x={1060} y={285} delay={14} size={170} />
 
         <div style={{position: 'absolute', left: 100, right: 100, bottom: 138, padding: '20px 26px', borderRadius: 18, background: 'rgba(20,20,22,0.76)', border: `1px solid ${COLOR.line}`, opacity: interpolate(l, [18, 28], [0, 1], clamp), transform: `translateY(${interpolate(l, [18, 28], [30, 0], clamp)}px)`}}>
           <div style={{fontFamily: FONT, fontSize: 21, color: COLOR.ink, fontWeight: 700, marginBottom: 8}}>视频声明 · 制作人员 · 致谢名单 · 版权解释</div>
