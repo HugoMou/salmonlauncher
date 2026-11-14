@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -331,9 +331,21 @@ public sealed partial class OnboardingView : UserControl
                 c.TermsVersion = SL.App.Pages.TermsPage.CurrentTermsVersion;
             });
         }
+
+        // The theme page is the last step: finish from here instead of pushing a separate summary
+        // page that has no obvious way forward.
+        if (_step == ThemeStep)
+        {
+            OnStart(sender, e);
+            return;
+        }
+
         _reached = Math.Max(_reached, _step + 1);
         ShowStep(_step + 1);
     }
+
+    /// <summary>Index of the last interactive step (theme).</summary>
+    private const int ThemeStep = 4;
 
     private void OnBack(object sender, RoutedEventArgs e)
     {
@@ -360,8 +372,12 @@ public sealed partial class OnboardingView : UserControl
         PanelDone.Visibility = step == 5 ? Visibility.Visible : Visibility.Collapsed;
 
         BackBtn.Visibility = step is 0 or 5 ? Visibility.Collapsed : Visibility.Visible;
-        NextBtn.Visibility = step == 5 ? Visibility.Collapsed : Visibility.Visible;
-        StartBtn.Visibility = step == 5 ? Visibility.Visible : Visibility.Collapsed;
+
+        // The theme page finishes the wizard, so it shows "开始使用" instead of "下一步".
+        // Showing both at once made them overlap on narrow layouts.
+        var isLast = step >= ThemeStep;
+        NextBtn.Visibility = isLast ? Visibility.Collapsed : Visibility.Visible;
+        StartBtn.Visibility = isLast ? Visibility.Visible : Visibility.Collapsed;
         SkipBtn.Visibility = step is 2 or 4 ? Visibility.Visible : Visibility.Collapsed;
 
         if (step == 4)
