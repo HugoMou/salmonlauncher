@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.3 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.3: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.4 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.4: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.3">Get 2.0.3</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.4">Get 2.0.4</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.3</div>
+      <div>LATEST v2.0.4</div>
     </div>
   </section>
 
@@ -73,8 +73,21 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.3</h2>
+          <h2>v2.0.4</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
+          <time datetime="2026-11-13">2026-11-13</time>
+        </div>
+        <p class="lede" data-zh="支持 Mica 半透明背景，协议改版后会再次确认。">Mica backdrop support, and the agreement is confirmed again when it changes.</p>
+        <ul>
+          <li data-zh="新增 Mica 背景：未套用壁纸时，窗口改用 Windows 11 的 Mica 材质，界面能透出桌面；套用壁纸时仍以壁纸为准。Windows 10 会自动回退为纯色背景，不会报错。">Mica backdrop: with no theme wallpaper applied, the window now uses the Windows 11 Mica material so the desktop shows through. An applied wallpaper still takes precedence, and Windows 10 falls back to a plain surface instead of failing.</li>
+          <li data-zh="修复协议确认失效：此前只记录「已同意」而不记录条款版本，因此协议改版后也不会再提示。现在会保存已同意的版本，条款更新后再次请你确认。">Agreement confirmation fixed: only “accepted” was stored, never the revision, so an updated agreement never prompted again. The accepted revision is now saved and compared, and you are asked to confirm when it changes.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.3</h2>
           <time datetime="2026-11-13">2026-11-13</time>
         </div>
         <p class="lede" data-zh="未处理的错误不再让启动器直接退出。">Unexpected errors no longer terminate the launcher.</p>
@@ -176,7 +189,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.3 已可下载。">2.0.3 is ready.</h2>
+        <h2 data-zh="2.0.4 已可下载。">2.0.4 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">
