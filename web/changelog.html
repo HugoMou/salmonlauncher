@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.9 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.9: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.10 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.10: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.9">Get 2.0.9</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.10">Get 2.0.10</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.9</div>
+      <div>LATEST v2.0.10</div>
     </div>
   </section>
 
@@ -73,14 +73,28 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.9</h2>
+          <h2>v2.0.10</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
           <time datetime="2026-11-13">2026-11-13</time>
         </div>
+        <p class="lede" data-zh="新增实例健康检查、备份还原与实例复制。">Instance health check, backup restore and instance duplication.</p>
+        <ul>
+          <li data-zh="新增实例健康检查：在实例概览点「检查实例」，会检查核心文件是否缺失或损坏、是否启用了模组却缺少 Fabric API、是否存在重复的模组文件，并对每条问题给出处理建议。">Instance health check: “检查实例” on the overview reports a missing or truncated core jar, mods enabled without Fabric API, and duplicate mod files — each with a concrete remedy.</li>
+          <li data-zh="新增还原备份：存档页的「还原备份」可从历史备份中选一份覆盖当前存档；原存档会先移到 backups/replaced-时间 目录，误操作可以找回。每个实例只保留最近 10 份备份。">Backup restore: “还原备份” on the saves page replaces the current saves with a chosen backup, moving the previous saves into backups/replaced-&lt;timestamp&gt; so mistakes can be undone. Only the newest 10 backups are kept.</li>
+          <li data-zh="新增复制实例：实例概览的「复制实例」会把模组、存档、配置与版本目录复制到新实例，用于安全地试新配置；版本文件共享，不会重复占用磁盘。">Duplicate instance: copies mods, saves, config, options and the version folder under a new id, so a setup can be tried without touching the original.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.9</h2>
+          <time datetime="2026-11-14">2026-11-14</time>
+        </div>
         <p class="lede" data-zh="补齐英文与日文翻译：此前约 110 条界面文案在英文/日文下仍显示中文。">English and Japanese interfaces no longer fall back to Chinese text.</p>
         <ul>
-          <li data-zh="审计发现 117 条界面文案没有英日翻译，包括整节用户协议、联机说明、更新公告词条、迁移步骤与多个提示框。">The audit found 117 user-facing strings with no English or Japanese entry: the whole expanded terms section, the multiplayer help, update announcement entries, the migration step and several prompts.</li>
-          <li data-zh="现已全部补齐；用英文界面实测扫描，除产品名外不再出现中文。">All are translated now; a rendered-text scan with the English interface shows no Chinese outside product names.</li>
+          <li data-zh="审计发现 117 条界面文案没有英日翻译，包括整节用户协议、联机说明、更新公告词条、迁移步骤与多个提示框。">The audit found 117 user-facing strings with no English or Japanese entry, including the whole terms section, multiplayer help and several prompts.</li>
+          <li data-zh="现已全部补齐；用英文界面实测扫描，除产品名外不再出现中文。">All are translated now; a rendered-text scan shows no Chinese outside product names.</li>
           <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
         </ul>
       </article>
@@ -258,7 +272,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.9 已可下载。">2.0.9 is ready.</h2>
+        <h2 data-zh="2.0.10 已可下载。">2.0.10 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">
