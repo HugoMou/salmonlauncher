@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.7 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.7: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.8 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.8: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.7">Get 2.0.7</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.8">Get 2.0.8</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.7</div>
+      <div>LATEST v2.0.8</div>
     </div>
   </section>
 
@@ -73,14 +73,29 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.7</h2>
+          <h2>v2.0.8</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
           <time datetime="2026-11-13">2026-11-13</time>
         </div>
+        <p class="lede" data-zh="新增打开实例文件夹与一键诊断，并为所有页面操作补齐错误保护。">Instance folder shortcut, one-click diagnostics, and error protection for every page action.</p>
+        <ul>
+          <li data-zh="新增「打开文件夹」：启动面板的实例选择旁可直接打开当前实例目录，方便查看或手动管理文件。">New “打开文件夹” link next to the instance picker opens the selected instance's folder for manual file management.</li>
+          <li data-zh="启动失败可直接跳转诊断：失败时会询问是否打开崩溃诊断，不必自己找入口。">Failed launches offer to open the crash diagnostics page directly.</li>
+          <li data-zh="全面加固：应用内 37 处事件处理都补上了错误保护，异常会记录并提示，不会让启动器退出。">Every event handler in the app (37 of them) is now guarded, so a failure is logged and reported instead of terminating the launcher.</li>
+          <li data-zh="清除数据中途出错会明确告知部分数据可能已删除，并说明下次启动会继续完成。">A half-finished data purge is reported explicitly, including that the next start finishes the job.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.7</h2>
+          <time datetime="2026-11-14">2026-11-14</time>
+        </div>
         <p class="lede" data-zh="更新公告不再每次启动都弹出。">The update announcement no longer appears on every launch.</p>
         <ul>
-          <li data-zh="修复更新公告反复弹出：此前要等你关掉对话框才记录已读版本，若关闭窗口或直接退出，记录就会失败，于是每次启动都再弹一次。现在启动时先记录再显示，只弹一次。">Announcement repeat fixed: the version was only recorded after the dialog was dismissed, so closing the window with it open left the record stale and the notes returned on every launch. It is recorded before showing now, so it appears once.</li>
-          <li data-zh="新增「查看本次更新」：关于页提供按钮重新打开更新公告，想回顾时不依赖启动弹窗。">Release notes on demand: the About page gained a “查看本次更新” button that reopens the same dialog.</li>
+          <li data-zh="修复更新公告反复弹出：此前要等你关掉对话框才记录已读版本，若关闭窗口或直接退出，记录就会失败，于是每次启动都再弹一次。现在启动时先记录再显示，只弹一次。">Announcement repeat fixed: the version is recorded before the dialog shows, so it appears once.</li>
+          <li data-zh="新增「查看本次更新」：关于页提供按钮重新打开更新公告。">Release notes on demand from the About page.</li>
           <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
         </ul>
       </article>
@@ -230,7 +245,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.7 已可下载。">2.0.7 is ready.</h2>
+        <h2 data-zh="2.0.8 已可下载。">2.0.8 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">
