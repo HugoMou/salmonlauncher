@@ -484,39 +484,7 @@ const ToolsSettings: React.FC<{base: number}> = ({base}) => {
   );
 };
 
-// ---------- 10) BLOG & COMMUNITY (beats 260-276) ----------
-const Blog: React.FC<{base: number}> = ({base}) => {
-  const l = useCurrentFrame();
-  return (
-    <AbsoluteFill>
-      <Camera tz={interpolate(l, [0, stepDur(16)], [-220, 80], clamp)} ry={interpolate(l, [0, stepDur(16)], [-10, 10], clamp)} rx={4} scale={beatPunch(l, 30, PERIOD, 0.05)}>
-        <AbsoluteFill style={{justifyContent: 'center', alignItems: 'center'}}>
-          <Tag text="作者博客 · 文章与反馈" accent delay={0} />
-          <div style={{marginTop: 22}}><MetalText size={92} delay={1} from="scale" tint="gold">www.hugomou.com</MetalText></div>
-          <div style={{marginTop: 26, textAlign: 'center'}}>
-            <Sub delay={4} size={36} color={COLOR.ink}>阅读 SalmonLauncher 相关文章</Sub>
-            <Sub delay={6} size={36} color={COLOR.ink}>在文章下留言提建议</Sub>
-            <Sub delay={8} size={36} color={COLOR.ink}>也可以通过博客联系作者</Sub>
-          </div>
-          <div style={{marginTop: 34, display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center'}}>
-            <Tag text={LINKS.siteFull} delay={10} accent />
-            <Tag text={LINKS.githubFull} delay={11} accent />
-            <Tag text={LINKS.blogFull} delay={12} accent />
-            <ClickPoint x={620} y={470} at={stepDur(12)} label="官网" />
-            <ClickPoint x={960} y={470} at={stepDur(14)} label="GitHub" />
-            <ClickPoint x={1300} y={470} at={stepDur(16)} label="博客" />
-          </div>
-        </AbsoluteFill>
-        <Shot3D file={SHOTS.about} x={70} y={240} w={430} delay={2} ry={22} rx={7} z={-40} floatAmp={6} label="关于" />
-        <Shot3D file={SHOTS.home} x={1420} y={240} w={430} delay={3} ry={-22} rx={7} z={-40} floatAmp={6} label="启动面板" />
-        <FloatCard file={SHOTS.about} x={100} y={420} w={330} baseBeat={8} label="关于" ryBase={-12} />
-        <FloatCard file={SHOTS.home} x={1500} y={420} w={330} baseBeat={12} label="主页" ryBase={14} />
-      </Camera>
-    </AbsoluteFill>
-  );
-};
-
-// ---------- 11) MONTAGE (beats 276-288) rapid fire ----------
+// ---------- 11) MONTAGE (beats 260-288) rapid fire ----------
 const Montage: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const all = Object.values(SHOTS);
@@ -563,9 +531,8 @@ const Outro: React.FC<{base: number; total: number}> = ({base, total}) => {
           <div style={{marginTop: 12}}><Sub delay={4} size={32} color={COLOR.dim}>把复杂留给启动器，把时间留给游戏。</Sub></div>
         </div>
 
-        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={220} y={285} delay={6} size={165} />
-        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={720} y={285} delay={9} size={165} />
-        <QRCard file="blog.png" title="作者博客" url={LINKS.blog} x={1220} y={285} delay={12} size={165} />
+        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={450} y={285} delay={6} size={165} />
+        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={950} y={285} delay={10} size={165} />
 
         <div style={{position: 'absolute', left: 100, right: 100, bottom: 138, padding: '20px 26px', borderRadius: 18, background: 'rgba(20,20,22,0.76)', border: `1px solid ${COLOR.line}`, opacity: interpolate(l, [18, 28], [0, 1], clamp), transform: `translateY(${interpolate(l, [18, 28], [30, 0], clamp)}px)`}}>
           <div style={{fontFamily: FONT, fontSize: 21, color: COLOR.ink, fontWeight: 700, marginBottom: 8}}>视频声明 · 制作人员 · 致谢名单 · 版权解释</div>
@@ -574,7 +541,6 @@ const Outro: React.FC<{base: number; total: number}> = ({base, total}) => {
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>致谢名单：</span>Modrinth 内容平台与社区作者 · Campfire 联机组件 · .NET / Windows App SDK / WinUI 3 · Mojang 官方版本与资源生态</div>
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>配乐与素材：</span>“3 Strikes” — Terror Jr（来源：Bilibili BV1tek2YsEYY，本片仅作展示） · 画面为 SalmonLauncher 2.0.13 真实界面截图（全新默认状态，云母默认关闭，无个人使用痕迹）</div>
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>项目许可：</span>GPL-3.0-or-later（开源免费，Windows x64）　官网 {LINKS.siteFull}　GitHub {LINKS.githubFull}</div>
-            <div style={{color: COLOR.accent, fontWeight: 600, marginTop: 4}}>作者博客：{LINKS.blogFull} —— 可阅读 SalmonLauncher 相关文章、在文章下留言提建议，也可通过博客联系作者。</div>
             <div style={{marginTop: 6, fontSize: 15, color: 'rgba(134,134,139,0.95)'}}>版权与声明：Minecraft 为 Mojang Studios / Microsoft 的商标，本项目与 Mojang/Microsoft 无官方关联；Modrinth、Campfire 等名称与服务归各自权利人所有。本视频仅用于 SalmonLauncher 产品展示与介绍，不构成对第三方商标或内容的授权声明。</div>
           </div>
         </div>
@@ -599,8 +565,7 @@ export const Film: React.FC = () => {
     content: seg(176, 32),
     online: seg(208, 24),
     tools: seg(232, 28),
-    blog: seg(260, 16),
-    montage: seg(276, 12),
+    montage: seg(260, 28),
   };
   const outroFrom = BF(288);
   const outroDur = Math.max(1, toF(FILM.duration) - outroFrom);
@@ -628,7 +593,6 @@ export const Film: React.FC = () => {
       <Sequence from={S.content.from} durationInFrames={S.content.dur}><Content base={S.content.from} /></Sequence>
       <Sequence from={S.online.from} durationInFrames={S.online.dur}><Online base={S.online.from} /></Sequence>
       <Sequence from={S.tools.from} durationInFrames={S.tools.dur}><ToolsSettings base={S.tools.from} /></Sequence>
-      <Sequence from={S.blog.from} durationInFrames={S.blog.dur}><Blog base={S.blog.from} /></Sequence>
       <Sequence from={S.montage.from} durationInFrames={S.montage.dur}><Montage base={S.montage.from} /></Sequence>
       <Sequence from={outroFrom} durationInFrames={outroDur}><Outro base={outroFrom} total={outroDur} /></Sequence>
 
