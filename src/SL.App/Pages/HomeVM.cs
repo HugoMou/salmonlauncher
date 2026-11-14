@@ -267,7 +267,20 @@ public sealed class HomeVM : VmBase
             {
                 AppLog.Info("Launch", "启动失败:" + result.Error);
                 AppServices.Notify.Publish(NotifyKind.Error, Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因")));
-                StatusText = Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因")) + Loc.T(" · 可到「系统 → 崩溃诊断」分析日志");
+                StatusText = Loc.T("启动失败:") + (result.Error ?? Loc.T("未知原因"));
+
+                // A failed launch is the moment diagnostics matter most: offer the jump instead of
+                // making the user find the page themselves.
+                var diagnose = await AppServices.Dialogs.ConfirmAsync(
+                    Loc.T("启动失败"),
+                    (result.Error ?? Loc.T("未知原因"))
+                    + "\n\n" + Loc.T("要打开崩溃诊断分析日志吗？"),
+                    MsgMark.Question,
+                    Loc.T("打开诊断"),
+                    Loc.T("关闭")).ConfigureAwait(true);
+
+                if (diagnose)
+                    AppServices.Nav.Navigate("tools.diag");
             }
         }
         catch (Exception ex)

@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -144,11 +144,18 @@ public sealed partial class SkinStationPage : Page
 
     private async void OnUserChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (UserList.SelectedItem is not SkinUserRow row)
-            return;
-        _currentUser = row;
-        LoadSkins();
-        await Task.CompletedTask;
+        try
+        {
+            if (UserList.SelectedItem is not SkinUserRow row)
+                return;
+            _currentUser = row;
+            LoadSkins();
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Error("UI", ex);
+        }
     }
 
     private async void OnSkinChanged(object sender, SelectionChangedEventArgs e)

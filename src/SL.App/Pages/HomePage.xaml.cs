@@ -38,6 +38,31 @@ public sealed partial class HomePage : Page
             SL.App.Instances.InstanceContext.Select(row.Id);
     }
 
+    /// <summary>Open the selected instance's folder in Explorer; jumps to the instances root when none is selected.</summary>
+    private void OnOpenInstanceFolder(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var root = SL.Core.Boot.Runtime.InstancesDir;
+            var target = _vm.SelectedInstance is { } row
+                ? SL.Core.Instances.InstanceRegistry.InstanceDirOf(row.Id)
+                : root;
+
+            if (!Directory.Exists(target))
+                target = root;
+
+            Directory.CreateDirectory(target);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{target}\"")
+            {
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Home", "打开实例目录失败:" + ex.Message);
+        }
+    }
+
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
