@@ -33,8 +33,9 @@ export const Stage: React.FC<{children?: React.ReactNode; energy?: number}> = ({
       <AbsoluteFill style={{background: `radial-gradient(ellipse 80% 50% at 50% 110%, rgba(126,217,87,${0.08 * energy}), transparent 60%)`}} />
       <AbsoluteFill style={{background: 'radial-gradient(ellipse 88% 78% at 50% 50%, transparent 30%, rgba(0,0,0,0.62) 100%)'}} />
       <AbsoluteFill style={{
-        opacity: 0.035, mixBlendMode: 'overlay', pointerEvents: 'none',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='${(Math.floor(f / 3) % 7) + 1}'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E")`,
+        opacity: 0.03, mixBlendMode: 'overlay', pointerEvents: 'none',
+        backgroundImage: 'radial-gradient(rgba(255,255,255,0.08) 0.5px, transparent 0.5px)',
+        backgroundSize: '3px 3px',
       }} />
       {children}
     </AbsoluteFill>
