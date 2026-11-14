@@ -24,13 +24,13 @@
     xmlns:themes="using:SL.App.Themes">
 
     <Grid>
-        <Grid.RowDefinitions>
-            <!-- Row 0 is intentionally left empty so the title bar (window drag area) stays visible and usable -->
-            <RowDefinition Height="48" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <Border Grid.Row="1" Background="{ThemeResource Brush.PageBg}">
+        <!--
+          This view is laid over the whole window including the title bar (MainWindow gives it
+          RowSpan=2), so it must not reserve a second band for the title bar: doing that pushed
+          the header down and left a blank strip above the wordmark. The drag area is kept clear
+          with padding instead, which does not create an empty row.
+        -->
+        <Border Background="{ThemeResource Brush.PageBg}">
             <!-- Soft accent wash behind the wizard so first launch does not look like a blank form -->
             <Grid>
                 <Border IsHitTestVisible="False" Opacity="0.55">
@@ -46,7 +46,7 @@
                           HorizontalScrollBarVisibility="Disabled"
                           HorizontalScrollMode="Disabled">
                 <StackPanel MaxWidth="760"
-                            Margin="60,26,60,84"
+                            Margin="60,60,60,84"
                             HorizontalAlignment="Center"
                             Spacing="14">
 
@@ -418,23 +418,37 @@
                         BorderBrush="{ThemeResource Brush.Border}"
                         BorderThickness="0,1,0,0"
                         Padding="60,12">
-                    <Grid MaxWidth="760" HorizontalAlignment="Center">
+                    <Grid MaxWidth="760" HorizontalAlignment="Center" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <Button x:Name="BackBtn"
                                 Content="上一步"
                                 Click="OnBack"
-                                HorizontalAlignment="Left" />
-                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+                                MinWidth="96"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="2"
+                                    Orientation="Horizontal"
+                                    Spacing="10"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
                             <HyperlinkButton x:Name="SkipBtn"
                                              Content="跳过"
                                              Click="OnNext"
                                              Visibility="Collapsed"
+                                             MinWidth="56"
                                              VerticalAlignment="Center" />
                             <Button x:Name="NextBtn"
                                     Content="下一步"
+                                    MinWidth="96"
                                     Style="{ThemeResource AccentButtonStyle}"
                                     Click="OnNext" />
                             <Button x:Name="StartBtn"
                                     Content="开始使用"
+                                    MinWidth="110"
                                     Style="{ThemeResource AccentButtonStyle}"
                                     Click="OnStart"
                                     Visibility="Collapsed" />

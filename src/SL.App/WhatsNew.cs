@@ -25,10 +25,16 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.10";
+    public const string Version = "2.0.11";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE7C4",
+            Loc.T("修复欢迎页布局"),
+            Loc.T("欢迎页顶部原本多出一条空白横条，把标题往下顶；现在标题直接贴顶，内容整体上移。")),
+        new("\uE73E",
+            Loc.T("修复欢迎页最后一步"),
+            Loc.T("第 5 步原本仍显示「下一步」，点击后进入一个没有明确出口的完成页，按钮还会与「跳过」重叠。现在最后一步直接显示「开始使用」，点一次即可完成引导。")),
         new("\uE74E",
             Loc.T("新增实例健康检查"),
             Loc.T("在实例概览点「检查实例」，会检查核心文件是否完整、是否缺少 Fabric API、是否存在重复模组，并给出处理建议。")),
