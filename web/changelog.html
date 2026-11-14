@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.11 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.11: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.11 的欢迎页修复，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.11: onboarding fixes, plus the 2.0 series feature changes and earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
-<link rel="stylesheet" href="assets/css/site.css?v=20261107">
+<link rel="stylesheet" href="assets/css/site.css?v=20261114">
 <link rel="canonical" href="https://sl.hugomou.com/changelog.html">
 </head>
 <body>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.11">Get 2.0.11</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.12">Get 2.0.12</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.11</div>
+      <div>LATEST v2.0.12</div>
     </div>
   </section>
 
@@ -73,14 +73,29 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.11</h2>
+          <h2>v2.0.12</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
-          <time datetime="2026-11-13">2026-11-13</time>
+          <time datetime="2026-11-14">2026-11-14</time>
+        </div>
+        <p class="lede" data-zh="仓库页新增热门推荐，并修复无实例时打开概览会卡死的问题。">Popular picks in repository pages, plus a fix for the instance overview freezing when no instance is installed.</p>
+        <ul>
+          <li data-zh="模组、光影、资源包仓库在搜索框为空时，会按 Modrinth 下载量展示热门内容；可点「换一批」查看更多。输入关键词后切换为相关性搜索，清空搜索框自动回到推荐。">When the search box is empty, the mod, shader and resource-pack repositories now show popular content sorted by Modrinth downloads. “Another set” pages through more picks; typing switches to relevance search, and clearing the box returns to recommendations.</li>
+          <li data-zh="修复仓库页切换分类时可能串显示上一类结果的问题；热门内容按分类分别加载。">Fixed repository pages sometimes showing results from the previously opened category; each category now loads its own picks.</li>
+          <li data-zh="修复未安装任何实例时打开「实例概览」会导致界面线程死循环并卡住的问题；新用户现在能正常看到空状态。">Fixed a UI-thread hang when opening Instance Overview with no instances installed (an always-true change notification caused an infinite reload). New users now see the empty state correctly.</li>
+          <li data-zh="欢迎页迁移步骤新增「选择数据文件夹」，可手动指定旧启动器或 .minecraft 数据目录进行识别与导入。">The migration step in the welcome flow can now pick a launcher or .minecraft data folder manually.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.11</h2>
+          <time datetime="2026-11-14">2026-11-14</time>
         </div>
         <p class="lede" data-zh="修复欢迎页布局：顶部空白横条与最后一步无法完成。">Welcome page layout fixed: the blank strip above the title and the last step that could not be finished.</p>
         <ul>
           <li data-zh="修复欢迎页顶部空白：原本为标题栏预留了一整行 48px，但窗口已经把欢迎页铺满整个窗口，等于留了两次，标题被向下顶出一条空白。现在标题直接贴顶。">Blank strip above the title fixed: a 48px row was reserved for the title bar, but the window already overlays the welcome page across the full window — so it was reserved twice and pushed the title down.</li>
-          <li data-zh="修复最后一步：第 5 步原本仍显示「下一步」，点进去是一个没有明确出口的完成页，底部按钮还会与「跳过」重叠。现在最后一步直接显示「开始使用」，点一次即可完成引导。">Last step fixed: step 5 still showed “下一步” and led to a summary page with no clear way forward, with “跳过” overlapping the button. The last step now shows “开始使用” and finishes onboarding in one click.</li>
+          <li data-zh="修复最后一步：第 5 步原本仍显示「下一步」，点进去是一个没有明确出口的完成页，底部按钮还会与「跳过」重叠。现在最后一步直接显示「开始使用」，点一次即可完成引导。">Last step fixed: step 5 still showed “Next” and led to a summary page with no clear way forward, with “Skip” overlapping the button. The last step now shows “Start” and finishes onboarding in one click.</li>
           <li data-zh="底部按钮改用明确分栏与最小宽度，任何窗口尺寸下都不会重叠。">The footer uses explicit columns and minimum widths so the buttons cannot overlap at any window size.</li>
           <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
         </ul>
@@ -120,7 +135,7 @@
         </div>
         <p class="lede" data-zh="新增打开实例文件夹与一键诊断，并为所有页面操作补齐错误保护。">Instance folder shortcut, one-click diagnostics, and error protection for every page action.</p>
         <ul>
-          <li data-zh="新增「打开文件夹」：启动面板的实例选择旁可直接打开当前实例目录。">New “打开文件夹” link next to the instance picker opens the selected instance's folder.</li>
+          <li data-zh="新增「打开文件夹」：启动面板的实例选择旁可直接打开当前实例目录。">A new “Open folder” link next to the instance picker opens the selected instance's folder.</li>
           <li data-zh="启动失败可直接跳转诊断。">Failed launches offer to open the crash diagnostics page directly.</li>
           <li data-zh="全面加固：应用内 37 处事件处理都补上了错误保护，异常会记录并提示，不会让启动器退出。">Every event handler in the app (37 of them) is now guarded, so a failure is logged and reported instead of terminating the launcher.</li>
           <li data-zh="清除数据中途出错会明确告知部分数据可能已删除，并说明下次启动会继续完成。">A half-finished data purge is reported explicitly, including that the next start finishes the job.</li>
@@ -163,7 +178,7 @@
         <p class="lede" data-zh="修复没有实例时启动面板上的多处显示问题。">Fixed several problems on the launch panel when no instance is installed.</p>
         <ul>
           <li data-zh="修复启动按钮：没有可用实例时按钮原本仍可点击，只有点下去才提示。现在会直接置灰，并在按钮上说明原因。">Launch button fixed: with nothing to launch it stayed clickable and only explained itself afterwards. It is now disabled and states the reason on the button.</li>
-          <li data-zh="修复自相矛盾的状态：面板写着「就绪」而下方说明没有实例。现在显示「未就绪」。">Contradictory status fixed: the panel claimed “ready” while the summary said no instance was installed. It now reports 未就绪.</li>
+          <li data-zh="修复自相矛盾的状态：面板写着「就绪」而下方说明没有实例。现在显示「未就绪」。">Contradictory status fixed: the panel claimed “ready” while the summary said no instance was installed. It now reports “not ready”.</li>
           <li data-zh="修复重复文字与浅色主题下摘要看不清的问题。">Fixed the repeated sentence and the near-invisible summary in the light theme.</li>
           <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
         </ul>
@@ -216,7 +231,7 @@
         </div>
         <p class="lede" data-zh="清理无用文案，安装包更小；功能与 2.0.0 一致。">Dead translation entries removed, making the package smaller; features match 2.0.0.</p>
         <ul>
-          <li data-zh="移除约 500 条已不再使用的翻译词条（旧联机功能、旧版协议与过时措辞），每种语言从 990 条降至 728 条。">Removed 262 unused entries per language (relay, lobby, room codes, LAN scanning, companion-mod messages, obsolete terms text), dropping from 990 to 728 entries per language.</li>
+          <li data-zh="移除 262 条已不再使用的翻译词条（旧联机功能、旧版协议与过时措辞），每种语言从 990 条降至 728 条。">Removed 262 unused entries per language (relay, lobby, room codes, LAN scanning, companion-mod messages, obsolete terms text), dropping from 990 to 728 entries per language.</li>
           <li data-zh="界面显示的文字没有任何变化；残留词条此前已无引用，删除不会影响任何可见文案。">No displayed text changed: the removed entries were unreferenced, so deleting them cannot alter any visible string.</li>
           <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
         </ul>
@@ -286,8 +301,8 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.11 已可下载。">2.0.11 is ready.</h2>
-        <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
+        <h2 data-zh="2.0.12 已可下载。">2.0.12 is ready.</h2>
+        <p data-zh="安装包 60.6 MB，附 SHA-256。">A 60.6 MB installer with SHA-256.</p>
       </div>
       <div class="btn-row">
         <a class="btn btn-primary btn-lg" href="download.html" data-zh="前往下载">Download</a>
@@ -333,7 +348,7 @@
   </div>
 </footer>
 
-<script src="assets/js/i18n.js?v=20261107"></script>
-<script src="assets/js/site.js?v=20261107"></script>
+<script src="assets/js/i18n.js?v=20261114"></script>
+<script src="assets/js/site.js?v=20261114"></script>
 </body>
 </html>
