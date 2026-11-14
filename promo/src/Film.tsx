@@ -540,6 +540,8 @@ const Outro: React.FC<{base: number; total: number}> = ({base, total}) => {
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>制作人员：</span>Hugo Mou（产品设计 / 开发 / 维护）</div>
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>致谢名单：</span>Modrinth 内容平台与社区作者 · Campfire 联机组件 · .NET / Windows App SDK / WinUI 3 · Mojang 官方版本与资源生态</div>
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>配乐与素材：</span>“3 Strikes” — Terror Jr（来源：Bilibili BV1tek2YsEYY，本片仅作展示） · 画面为 SalmonLauncher 2.0.13 真实界面截图（全新默认状态，云母默认关闭，无个人使用痕迹）</div>
+            <div style={{color: COLOR.accent, fontWeight: 600, marginTop: 2}}>本软件由 AI 辅助开发制作</div>
+            <div style={{color: COLOR.accent, fontWeight: 600}}>本宣传片由 AI 生成制作</div>
             <div><span style={{color: COLOR.ink, fontWeight: 600}}>项目许可：</span>GPL-3.0-or-later（开源免费，Windows x64）　官网 {LINKS.siteFull}　GitHub {LINKS.githubFull}</div>
             <div style={{marginTop: 6, fontSize: 15, color: 'rgba(134,134,139,0.95)'}}>版权与声明：Minecraft 为 Mojang Studios / Microsoft 的商标，本项目与 Mojang/Microsoft 无官方关联；Modrinth、Campfire 等名称与服务归各自权利人所有。本视频仅用于 SalmonLauncher 产品展示与介绍，不构成对第三方商标或内容的授权声明。</div>
           </div>
