@@ -1,6 +1,6 @@
 // Film.tsx — SalmonLauncher promo, Apple-keynote energy, 355.2s tightly synced to "3 Strikes" played twice (108 BPM).
 // Apple keynote grammar: black stage with layered ambient glow, huge metal headline, ONE centered floating rotating 3D product card per chapter,
-// surround deco cards forming a product matrix, camera fly-in entry & define-then-punch hold, minimal copy, generous negative space.
+// bullet points fly in one by one, side deco card, camera fly-in entry & define-then-punch hold, more content per chapter.
 import React from 'react';
 import {AbsoluteFill, Audio, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {AUDIO_FILE, COLOR, CREDITS, FILM, FONT, LINKS, SHOTS, toF} from './spec';
@@ -53,6 +53,20 @@ const ClickPoint: React.FC<{x:number;y:number;at:number;label?:string}> = ({x,y,
   );
 };
 
+// 要点逐行飞入：每拍一行，左侧对齐，克制排版
+const Bullet: React.FC<{text:string;x:number;y:number;delay:number;accent?:boolean}> = ({text,x,y,delay,accent}) => {
+  const l = useCurrentFrame();
+  const {fps}=useVideoConfig();
+  const p = spring({frame:l-delay,fps,config:{damping:16,stiffness:150}});
+  const o = interpolate(l,[delay,delay+4],[0,1],clamp);
+  return (
+    <div style={{position:'absolute',left:x,top:y,opacity:o,transform:`translateX(${(1-p)*40}px)`}}>
+      <span style={{color:accent?COLOR.accent:COLOR.dim,fontWeight:accent?700:500,marginRight:10}}>▸</span>
+      <span style={{fontFamily:FONT,fontSize:22,color:COLOR.ink,fontWeight:accent?700:500}}>{text}</span>
+    </div>
+  );
+};
+
 // 浮动旋转 3D 剪贴图：作为环绕装饰，随拍点翻转与上下浮动
 const FloatCard: React.FC<{file:string;x:number;y:number;w:number;baseBeat:number;ryBase?:number;rxBase?:number;z?:number}> = ({file,x,y,w,baseBeat,ryBase=0,rxBase=5,z=0}) => {
   const l = useCurrentFrame();
@@ -65,23 +79,24 @@ const FloatCard: React.FC<{file:string;x:number;y:number;w:number;baseBeat:numbe
   return <Shot3D file={file} x={x} y={y + floatY} w={w} delay={0} ry={ry} rx={rx} z={tz} scale={punch} label={undefined} />;
 };
 
-// 章节入场动画：卡片从远处飞入并旋转定格，主标题随之弹出
-// entryMs 毫秒内完成飞入，之后进入静止旋转状态
+// 章节入场动画：缩短入场（4拍），卡片飞入旋转定格，主标题弹出
+// 之后展示要点列表（contentBullets）逐行飞入 + 副截图（sideFile）
 const Chapter: React.FC<{
   base: number; dur: number; head: string; sub?: string; file?: string;
   cardX?: number; cardY?: number; cardW?: number; cardRy?: number; cardRx?: number; cardZ?: number;
   camRy?: number; camRx?: number; camZ?: number; click?: {x:number;y:number;label:string;atRel:number};
   punch?: number; deco?: boolean; closeup?: boolean;
-}> = ({base, dur, head, sub, file, cardX=960, cardY=520, cardW=900, cardRy=-10, cardRx=6, cardZ=0, camRy=0, camRx=4, camZ=140, click, punch=0.04, deco=false, closeup=false}) => {
+  contentBullets?: string[]; sideFile?: string; sideX?: number; sideY?: number; sideW?: number;
+}> = ({base, dur, head, sub, file, cardX=960, cardY=520, cardW=900, cardRy=-10, cardRx=6, cardZ=0, camRy=0, camRx=4, camZ=140, click, punch=0.04, deco=false, closeup=false, contentBullets, sideFile, sideX=60, sideY=280, sideW=420}) => {
   const l = useCurrentFrame();
   const ls = l - base;
-  const entry = stepDur(8); // 8 beats entry fly-in
+  const entry = stepDur(4); // 4 beats entry fly-in (shorter = more content time)
   const entryP = interpolate(ls, [0, entry], [0, 1], clamp);
   // 相机：从远处拉近并环绕
   const camRyT = interpolate(ls, [0, entry, dur], [camRy - 20, camRy, camRy + 10], clamp);
   const camRxT = interpolate(ls, [0, entry, dur], [camRx + 8, camRx, camRx - 2], clamp);
   const camZT = interpolate(ls, [0, entry, dur], [camZ - 300, camZ + 20, camZ - 10], clamp);
-  // 主卡片：从远处飞入，旋转定格，随后轻微脉冲
+  // 主卡片：从远处飞入，旋转定格
   const cardEntryZ = interpolate(ls, [0, entry], [cardZ - 500, cardZ], clamp);
   const cardEntryRy = interpolate(ls, [0, entry], [cardRy + 40, cardRy], clamp);
   const cardEntryRx = interpolate(ls, [0, entry], [cardRx + 20, cardRx], clamp);
@@ -96,6 +111,8 @@ const Chapter: React.FC<{
   const closeupY = isCloseup ? cardY - 40 : cardY;
   const closeupZ = isCloseup ? cardZ - 120 : cardZ;
   const entryOpacity = interpolate(ls, [0, entry], [0, 1], clamp);
+  // 要点逐行飞入：每拍一行，从第 entry+2 拍开始
+  const bulletStart = entry + stepDur(2);
   return (
     <AbsoluteFill style={{opacity: entryOpacity}}>
       <Camera ry={camRyT} rx={camRxT} tz={camZT} scale={punchScale}>
@@ -114,8 +131,12 @@ const Chapter: React.FC<{
                 <FloatCard file={file} x={cardX + 300} y={cardY + 280} w={320} baseBeat={Math.floor(ls / stepDur(1)) + 9} ryBase={16} rxBase={-10} z={-130} />
               </>
             )}
+            {sideFile && <Shot3D key={sideFile + base} file={sideFile} x={sideX} y={sideY} w={sideW} delay={bulletStart} ry={ls < entry ? 0 : -12} rx={6} z={-100} floatAmp={8} scale={1.0} label={undefined} />}
           </>
         )}
+        {contentBullets && contentBullets.map((b, i) => (
+          <Bullet key={i} text={b} x={sideX} y={sideY + 440 + i * 56} delay={bulletStart + i * stepDur(1)} accent={i === 0} />
+        ))}
         {click && <ClickPoint x={click.x} y={click.y} at={base + click.atRel} label={click.label} />}
       </Camera>
     </AbsoluteFill>
@@ -160,7 +181,14 @@ const Hero: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base} dur={stepDur(30)} head="SalmonLauncher" sub="把复杂留给启动器，把时间留给游戏。"
       file={SHOTS.home} cardX={960} cardY={560} cardW={1000} cardRy={-14} cardRx={8} cardZ={-60}
-      camRy={0} camRx={5} camZ={140} deco={true} />
+      camRy={0} camRx={5} camZ={140} deco={true}
+      contentBullets={[
+        'Windows x64 原生启动器，.NET 10 / WinUI 3',
+        '默认普通背景，云母材质按需可选开启',
+        '无个人使用痕迹，全新默认状态',
+        '官网 sl.hugomou.com · GitHub 开源免费',
+      ]}
+      sideFile={SHOTS.tasks} sideX={60} sideY={420} sideW={440} />
   );
 };
 
@@ -169,19 +197,20 @@ const Onboarding: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const seg = stepDur(10);
   const steps = [
-    {file: SHOTS.wLang, head: '选择语言', sub: '简体中文 / 繁體中文 / English / 日本語，进入即选'},
-    {file: SHOTS.wTerms, head: '阅读并同意条款', sub: '用户协议与免责声明清晰展示，勾选后继续'},
-    {file: SHOTS.wMigrate, head: '迁移数据（可选）', sub: '可一键识别，也可手动选择旧启动器或 .minecraft 数据文件夹'},
-    {file: SHOTS.wAccount, head: '添加账户', sub: '离线账户 / 微软账号登录，之后可随时管理'},
-    {file: SHOTS.wTheme, head: '外观与配色', sub: '主题与强调色；默认普通背景，云母材质按需可选开启'},
-    {file: SHOTS.wDone, head: '完成引导', sub: '初始化完成，直接进入启动器开始使用'},
+    {file: SHOTS.wLang, head: '选择语言', sub: '简体中文 / 繁體中文 / English / 日本語，进入即选', side: SHOTS.wTerms, bullets: ['多语言界面一键切换', '进入即可选择语言', '支持简体 / 繁体 / 英文 / 日文']},
+    {file: SHOTS.wTerms, head: '阅读并同意条款', sub: '用户协议与免责声明清晰展示，勾选后继续', side: SHOTS.wMigrate, bullets: ['条款全文清晰可读', '勾选同意后继续', '无隐藏条款']},
+    {file: SHOTS.wMigrate, head: '迁移数据（可选）', sub: '可一键识别，也可手动选择旧启动器或 .minecraft 数据文件夹', side: SHOTS.wAccount, bullets: ['一键识别旧启动器', '手动选择 .minecraft 文件夹', '数据安全迁移']},
+    {file: SHOTS.wAccount, head: '添加账户', sub: '离线账户 / 微软账号登录，之后可随时管理', side: SHOTS.wTheme, bullets: ['离线账户支持', '微软账号登录', '随时切换管理']},
+    {file: SHOTS.wTheme, head: '外观与配色', sub: '主题与强调色；默认普通背景，云母材质按需可选开启', side: SHOTS.wDone, bullets: ['深浅色主题切换', '强调色自定义', '云母材质默认关闭']},
+    {file: SHOTS.wDone, head: '完成引导', sub: '初始化完成，直接进入启动器开始使用', side: SHOTS.home, bullets: ['初始化完成', '直接进入启动器', '开始使用']},
   ];
   const idx = Math.min(steps.length - 1, Math.floor(l / seg));
   const s = steps[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={950} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:720,label:s.head,atRel:stepDur(3)}} deco={true} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:720,label:s.head,atRel:stepDur(3)}} deco={true}
+      contentBullets={s.bullets} sideFile={s.side} sideX={60} sideY={420} sideW={440} />
   );
 };
 
@@ -190,17 +219,18 @@ const LaunchPlay: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const seg = stepDur(15);
   const phases = [
-    {file: SHOTS.home, head: '选择实例与账户', sub: '确认游戏版本与内存分配，点击“启动”'},
-    {file: SHOTS.tasks, head: '点击启动', sub: '启动器开始读取并校验游戏文件', click: {x:1500,y:720,label:'一键启动',atRel:stepDur(3)}},
-    {file: SHOTS.tasks, head: '资源校验中，请稍候…', sub: '启动器后台自动补全缺失文件，进度实时可见'},
-    {file: SHOTS.instLogs, head: '进入游戏 · 开始畅玩', sub: '游戏窗口打开，进入 Minecraft 主菜单'},
+    {file: SHOTS.home, head: '选择实例与账户', sub: '确认游戏版本与内存分配，点击“启动”', side: SHOTS.tasks, bullets: ['选择已创建实例', '确认游戏版本与内存', '选择登录账户', '点击“启动”'], click: {x:1500,y:720,label:'选择实例',atRel:stepDur(3)}},
+    {file: SHOTS.tasks, head: '点击启动', sub: '启动器开始读取并校验游戏文件', side: SHOTS.tasks, bullets: ['点击“启动”按钮', '读取游戏文件', '开始自动校验', '进度实时可见']},
+    {file: SHOTS.tasks, head: '资源校验中，请稍候…', sub: '启动器后台自动补全缺失文件', side: SHOTS.instLogs, bullets: ['资源校验中，请稍候…', '后台自动补全缺失文件', '下载进度与速度可见', '无需手动干预']},
+    {file: SHOTS.instLogs, head: '进入游戏 · 开始畅玩', sub: '游戏窗口打开，进入 Minecraft 主菜单', side: SHOTS.instLogs, bullets: ['游戏窗口打开', '进入 Minecraft 主菜单', '开始畅玩', '全程启动器可见进度']},
   ];
   const idx = Math.min(phases.length - 1, Math.floor(l / seg));
   const p = phases[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={p.head} sub={p.sub}
       file={p.file} cardX={960} cardY={540} cardW={1000} cardRy={idx % 2 ? 16 : -16} cardRx={6} cardZ={60}
-      camRy={idx % 2 ? 10 : -10} camRx={5} camZ={100} click={p.click} deco={true} />
+      camRy={idx % 2 ? 10 : -10} camRx={5} camZ={100} click={p.click} deco={true}
+      contentBullets={p.bullets} sideFile={p.side} sideX={60} sideY={420} sideW={440} />
   );
 };
 
@@ -209,17 +239,18 @@ const Install: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const seg = stepDur(20);
   const stages = [
-    {file: SHOTS.versions, head: '选择游戏版本', sub: '正式版 / 快照，版本清单完整，一键选择'},
-    {file: SHOTS.loaders, head: '选择加载器', sub: 'Fabric / Quilt / Forge / NeoForge，适配模组生态'},
-    {file: SHOTS.install, head: '确认安装选项', sub: '实例名称、版本、加载器、参数一屏确认后开始安装', click: {x:1500,y:720,label:'一键安装',atRel:stepDur(5)}},
-    {file: SHOTS.tasks, head: '下载与安装任务', sub: '多线程分段下载、镜像自动回退、断点续传，实时速度与进度可见'},
+    {file: SHOTS.versions, head: '选择游戏版本', sub: '正式版 / 快照，版本清单完整，一键选择', side: SHOTS.loaders, bullets: ['正式版 / 快照完整列表', '版本清单一目了然', '一键选择游戏版本', '创建实例'], click: {x:1500,y:720,label:'选择版本',atRel:stepDur(5)}},
+    {file: SHOTS.loaders, head: '选择加载器', sub: 'Fabric / Quilt / Forge / NeoForge，适配模组生态', side: SHOTS.install, bullets: ['Fabric / Quilt / Forge / NeoForge', '适配模组生态', '自由组合加载器', '一步配齐']},
+    {file: SHOTS.install, head: '确认安装选项', sub: '实例名称、版本、加载器、参数一屏确认后开始安装', side: SHOTS.tasks, bullets: ['实例名称设置', '版本与加载器组合', '安装参数确认', '一键安装']},
+    {file: SHOTS.tasks, head: '下载与安装任务', sub: '多线程分段下载、镜像自动回退、断点续传，实时速度与进度可见', side: SHOTS.versions, bullets: ['多线程分段下载', '镜像自动回退', '断点续传', '实时速度与进度']},
   ];
   const idx = Math.min(stages.length - 1, Math.floor(l / seg));
   const s = stages[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={1000} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={s.click} deco={true} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={s.click} deco={true}
+      contentBullets={s.bullets} sideFile={s.side} sideX={60} sideY={420} sideW={440} />
   );
 };
 
@@ -228,18 +259,19 @@ const Instances: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const seg = stepDur(16);
   const stages = [
-    {file: SHOTS.overview, head: '实例概览', sub: '版本、加载器、状态一目了然，支持快速切换与启动'},
-    {file: SHOTS.mods, head: '模组管理', sub: 'Modrinth 浏览、搜索、安装模组，支持版本筛选与依赖检查'},
-    {file: SHOTS.saves, head: '存档管理', sub: '备份、恢复、重命名存档，自定义存档路径，数据安全无忧'},
-    {file: SHOTS.instCfg, head: '实例设置', sub: '实例名称、游戏目录、Java 路径、启动参数等详细配置'},
-    {file: SHOTS.instLogs, head: '实例日志', sub: '实时读取启动日志与崩溃报告，关键词过滤，问题定位更精准'},
+    {file: SHOTS.overview, head: '实例概览', sub: '版本、加载器、状态一目了然，支持快速切换与启动', side: SHOTS.mods, bullets: ['所有实例一览', '版本 / 加载器 / 状态', '快速切换与启动', '一目了然']},
+    {file: SHOTS.mods, head: '模组管理', sub: 'Modrinth 浏览、搜索、安装模组，支持版本筛选与依赖检查', side: SHOTS.saves, bullets: ['Modrinth 浏览搜索', '安装模组', '版本筛选', '依赖检查']},
+    {file: SHOTS.saves, head: '存档管理', sub: '备份、恢复、重命名存档，自定义存档路径，数据安全无忧', side: SHOTS.instCfg, bullets: ['一键备份', '存档恢复', '重命名存档', '自定义存档路径']},
+    {file: SHOTS.instCfg, head: '实例设置', sub: '实例名称、游戏目录、Java 路径、启动参数等详细配置', side: SHOTS.instLogs, bullets: ['实例名称设置', '游戏目录配置', 'Java 路径设置', '启动参数配置']},
+    {file: SHOTS.instLogs, head: '实例日志', sub: '实时读取启动日志与崩溃报告，关键词过滤，问题定位更精准', side: SHOTS.overview, bullets: ['日志实时读取', '崩溃报告分析', '关键词过滤', '问题定位精准']},
   ];
   const idx = Math.min(stages.length - 1, Math.floor(l / seg));
   const s = stages[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={540} cardW={1000} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:660,label:s.head,atRel:stepDur(4)}} deco={true} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:660,label:s.head,atRel:stepDur(4)}} deco={true}
+      contentBullets={s.bullets} sideFile={s.side} sideX={60} sideY={420} sideW={440} />
   );
 };
 
@@ -248,17 +280,18 @@ const Content: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const seg = stepDur(20);
   const stages = [
-    {file: SHOTS.repoMods, head: '模组仓库', sub: 'Modrinth 模组仓库集成，搜索、筛选、安装模组，支持版本与依赖管理'},
-    {file: SHOTS.repoShaders, head: '光影与材质', sub: '光影包与材质包预览与安装，让游戏画面更出彩'},
-    {file: SHOTS.repoPacks, head: '资源包管理', sub: '资源包浏览与切换，自定义游戏纹理与音效'},
-    {file: SHOTS.instPacks, head: '实例内容', sub: '在实例内统一管理已安装的模组、光影、资源包与数据包'},
+    {file: SHOTS.repoMods, head: '模组仓库', sub: 'Modrinth 模组仓库集成，搜索、筛选、安装模组，支持版本与依赖管理', side: SHOTS.repoShaders, bullets: ['Modrinth 模组仓库', '搜索、筛选、安装', '版本管理', '依赖检查']},
+    {file: SHOTS.repoShaders, head: '光影与材质', sub: '光影包与材质包预览与安装，让游戏画面更出彩', side: SHOTS.repoPacks, bullets: ['光影包预览', '材质包预览', '一键安装', '画质提升']},
+    {file: SHOTS.repoPacks, head: '资源包管理', sub: '资源包浏览与切换，自定义游戏纹理与音效', side: SHOTS.instPacks, bullets: ['资源包浏览', '一键切换', '自定义纹理', '自定义音效']},
+    {file: SHOTS.instPacks, head: '实例内容', sub: '在实例内统一管理已安装的模组、光影、资源包与数据包', side: SHOTS.repoMods, bullets: ['实例内容统一管理', '启用 / 禁用', '版本控制', '一应俱全']},
   ];
   const idx = Math.min(stages.length - 1, Math.floor(l / seg));
   const s = stages[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={1050} cardRy={idx % 2 ? -16 : 16} cardRx={6} cardZ={50}
-      camRy={idx % 2 ? -14 : 14} camRx={6} camZ={130} click={{x:1500,y:680,label:s.head,atRel:stepDur(5)}} deco={true} closeup={idx === 2} />
+      camRy={idx % 2 ? -14 : 14} camRx={6} camZ={130} click={{x:1500,y:680,label:s.head,atRel:stepDur(5)}} deco={true} closeup={idx === 2}
+      contentBullets={s.bullets} sideFile={s.side} sideX={60} sideY={420} sideW={460} />
   );
 };
 
@@ -271,13 +304,15 @@ const Online: React.FC<{base: number}> = ({base}) => {
     return (
       <Chapter base={base} dur={half} head="联机 · Campfire" sub="把世界开给朋友。集成在启动器内"
         file={SHOTS.online} cardX={960} cardY={560} cardW={1050} cardRy={-14} cardRx={6} cardZ={50}
-        camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'创建房间',atRel:stepDur(8)}} deco={true} />
+        camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'创建房间',atRel:stepDur(8)}} deco={true}
+        contentBullets={['一键创建房间', '生成邀请码', '好友输入加入', 'Campfire 集成']} sideFile={SHOTS.skins} sideX={60} sideY={420} sideW={460} />
     );
   }
   return (
     <Chapter base={base + half} dur={half} head="皮肤站与 3D 预览" sub="皮肤站集成与 3D 皮肤预览，外观所见即所得"
       file={SHOTS.skins} cardX={960} cardY={560} cardW={1050} cardRy={14} cardRx={6} cardZ={50}
-      camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'更换皮肤',atRel:stepDur(8)}} deco={true} closeup={true} />
+      camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'更换皮肤',atRel:stepDur(8)}} deco={true} closeup={true}
+      contentBullets={['皮肤站集成', '3D 皮肤预览', '外观所见即所得', '一键更换']} sideFile={SHOTS.online} sideX={60} sideY={420} sideW={460} />
   );
 };
 
@@ -286,21 +321,22 @@ const ToolsSettings: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const seg = stepDur(10);
   const items = [
-    {file: SHOTS.diag, head: '崩溃诊断', sub: '解析崩溃报告并给出建议，启动失败可一键直达诊断'},
-    {file: SHOTS.appLog, head: '应用日志', sub: '日志尾部实时读取、关键词过滤，问题可追踪可定位'},
-    {file: SHOTS.global, head: '全局设置', sub: '内存分配、Java、下载源与镜像等全局参数，即时生效'},
-    {file: SHOTS.launchSet, head: '启动设置', sub: '游戏窗口大小、JVM 参数与启动行为按需配置'},
-    {file: SHOTS.theme, head: '主题与外观', sub: '深浅色/强调色/主题工坊配色；云母材质默认关闭，可选开启'},
-    {file: SHOTS.about, head: '关于与更新', sub: '版本信息、开源许可、检查启动器更新'},
-    {file: SHOTS.terms, head: '协议与条款', sub: '用户协议与免责声明完整可查'},
-    {file: SHOTS.wLang, head: '语言设置', sub: '多语言界面切换，支持简体/繁体中文、英文、日文'},
+    {file: SHOTS.diag, head: '崩溃诊断', sub: '解析崩溃报告并给出建议，启动失败可一键直达诊断', bullets: ['解析崩溃报告', '给出修复建议', '启动失败直达', '一键诊断']},
+    {file: SHOTS.appLog, head: '应用日志', sub: '日志尾部实时读取、关键词过滤，问题可追踪可定位', bullets: ['日志尾部实时读取', '关键词过滤', '问题可追踪', '可定位']},
+    {file: SHOTS.global, head: '全局设置', sub: '内存分配、Java、下载源与镜像等全局参数，即时生效', bullets: ['内存分配', 'Java 配置', '下载源与镜像', '即时生效']},
+    {file: SHOTS.launchSet, head: '启动设置', sub: '游戏窗口大小、JVM 参数与启动行为按需配置', bullets: ['游戏窗口大小', 'JVM 参数', '启动行为', '按需配置']},
+    {file: SHOTS.theme, head: '主题与外观', sub: '深浅色/强调色/主题工坊配色；云母材质默认关闭，可选开启', bullets: ['深浅色主题', '强调色自定义', '主题工坊配色', '云母默认关闭']},
+    {file: SHOTS.about, head: '关于与更新', sub: '版本信息、开源许可、检查启动器更新', bullets: ['版本信息', '开源许可', '检查更新', 'GPL-3.0']},
+    {file: SHOTS.terms, head: '协议与条款', sub: '用户协议与免责声明完整可查', bullets: ['用户协议', '免责声明', '完整可查', '透明公开']},
+    {file: SHOTS.wLang, head: '语言设置', sub: '多语言界面切换，支持简体 / 繁体中文、英文、日文', bullets: ['多语言界面', '简体 / 繁体中文', '英文 / 日文', '一键切换']},
   ];
   const idx = Math.min(items.length - 1, Math.floor(l / seg));
   const it = items[idx];
   return (
     <Chapter base={base + idx * seg} dur={seg} head={it.head} sub={it.sub}
       file={it.file} cardX={960} cardY={560} cardW={1000} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:680,label:it.head,atRel:stepDur(3)}} deco={true} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:680,label:it.head,atRel:stepDur(3)}} deco={true}
+      contentBullets={it.bullets} sideFile={SHOTS.home} sideX={60} sideY={420} sideW={440} />
   );
 };
 
