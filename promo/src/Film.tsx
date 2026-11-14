@@ -72,14 +72,15 @@ const Chapter: React.FC<{
   base: number; dur: number; head: string; sub?: string; file?: string;
   cardX?: number; cardY?: number; cardW?: number; cardRy?: number; cardRx?: number; cardZ?: number;
   camRy?: number; camRx?: number; camZ?: number; click?: {x:number;y:number;label:string;atRel:number};
-  punch?: number;
-}> = ({base, dur, head, sub, file, cardX=960, cardY=520, cardW=900, cardRy=-10, cardRx=6, cardZ=0, camRy=0, camRx=4, camZ=140, click, punch=0.04}) => {
+  punch?: number; deco?: boolean;
+}> = ({base, dur, head, sub, file, cardX=960, cardY=520, cardW=900, cardRy=-10, cardRx=6, cardZ=0, camRy=0, camRx=4, camZ=140, click, punch=0.04, deco=false}) => {
   const l = useCurrentFrame();
   const ls = l - base;
-  const camRyT = interpolate(ls, [0, dur], [camRy - 8, camRy + 8], clamp);
-  const camRxT = interpolate(ls, [0, dur], [camRx + 2, camRx - 2], clamp);
-  const camZT = interpolate(ls, [0, dur / 2, dur], [camZ - 40, camZ + 20, camZ - 10], clamp);
-  const cardRyT = interpolate(ls, [0, dur], [cardRy - 10, cardRy + 10], clamp);
+  const camRyT = interpolate(ls, [0, dur], [camRy - 12, camRy + 12], clamp);
+  const camRxT = interpolate(ls, [0, dur], [camRx + 3, camRx - 3], clamp);
+  const camZT = interpolate(ls, [0, dur / 2, dur], [camZ - 60, camZ + 40, camZ - 20], clamp);
+  const cardRyT = interpolate(ls, [0, dur], [cardRy - 14, cardRy + 14], clamp);
+  const cardRxT = interpolate(ls, [0, dur], [cardRx - 3, cardRx + 3], clamp);
   const punchScale = beatPunch(ls, FILM.fps, PERIOD, punch);
   return (
     <AbsoluteFill>
@@ -88,7 +89,19 @@ const Chapter: React.FC<{
           <MetalText size={106} delay={0} from="scale" tint="silver">{head}</MetalText>
           {sub && <div style={{marginTop: 14}}><Sub delay={4} size={30} color={COLOR.dim} maxWidth={700}>{sub}</Sub></div>}
         </div>
-        {file && <Shot3D key={file + base} file={file} x={cardX} y={cardY} w={cardW} delay={0} ry={cardRyT} rx={cardRx} z={cardZ} floatAmp={10} scale={1.02} label={undefined} />}
+        {file && (
+          <>
+            <Shot3D key={file + base + '-main'} file={file} x={cardX} y={cardY} w={cardW} delay={0} ry={cardRyT} rx={cardRxT} z={cardZ} floatAmp={14} scale={1.03} label={undefined} />
+            {deco && (
+              <>
+                <FloatCard file={file} x={cardX - 420} y={cardY - 220} w={300} baseBeat={Math.floor(ls / stepDur(1))} ryBase={-20} rxBase={8} z={-120} />
+                <FloatCard file={file} x={cardX + 420} y={cardY - 220} w={280} baseBeat={Math.floor(ls / stepDur(1)) + 3} ryBase={22} rxBase={-6} z={-100} />
+                <FloatCard file={file} x={cardX - 260} y={cardY + 260} w={320} baseBeat={Math.floor(ls / stepDur(1)) + 6} ryBase={-10} rxBase={12} z={-140} />
+                <FloatCard file={file} x={cardX + 260} y={cardY + 260} w={300} baseBeat={Math.floor(ls / stepDur(1)) + 9} ryBase={14} rxBase={-8} z={-110} />
+              </>
+            )}
+          </>
+        )}
         {click && <ClickPoint x={click.x} y={click.y} at={base + click.atRel} label={click.label} />}
       </Camera>
     </AbsoluteFill>
@@ -134,7 +147,7 @@ const Hero: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base} dur={stepDur(30)} head="SalmonLauncher" sub="把复杂留给启动器，把时间留给游戏。"
       file={SHOTS.home} cardX={960} cardY={560} cardW={1000} cardRy={-14} cardRx={8} cardZ={-60}
-      camRy={0} camRx={5} camZ={140} />
+      camRy={0} camRx={5} camZ={140} deco={true} />
   );
 };
 
@@ -156,7 +169,7 @@ const Onboarding: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={950} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:720,label:s.head,atRel:stepDur(3)}} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:720,label:s.head,atRel:stepDur(3)}} deco={true} />
   );
 };
 
@@ -175,7 +188,7 @@ const LaunchPlay: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={p.head} sub={p.sub}
       file={p.file} cardX={960} cardY={540} cardW={1000} cardRy={idx % 2 ? 16 : -16} cardRx={6} cardZ={60}
-      camRy={idx % 2 ? 10 : -10} camRx={5} camZ={100} click={p.click} />
+      camRy={idx % 2 ? 10 : -10} camRx={5} camZ={100} click={p.click} deco={true} />
   );
 };
 
@@ -194,7 +207,7 @@ const Install: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={1000} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={s.click} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={s.click} deco={true} />
   );
 };
 
@@ -214,7 +227,7 @@ const Instances: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={540} cardW={1000} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:660,label:s.head,atRel:stepDur(4)}} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:660,label:s.head,atRel:stepDur(4)}} deco={true} />
   );
 };
 
@@ -233,7 +246,7 @@ const Content: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={s.head} sub={s.sub}
       file={s.file} cardX={960} cardY={560} cardW={1050} cardRy={idx % 2 ? -16 : 16} cardRx={6} cardZ={50}
-      camRy={idx % 2 ? -14 : 14} camRx={6} camZ={130} click={{x:1500,y:680,label:s.head,atRel:stepDur(5)}} />
+      camRy={idx % 2 ? -14 : 14} camRx={6} camZ={130} click={{x:1500,y:680,label:s.head,atRel:stepDur(5)}} deco={true} />
   );
 };
 
@@ -247,13 +260,13 @@ const Online: React.FC<{base: number}> = ({base}) => {
     return (
       <Chapter base={base} dur={half} head="联机 · Campfire" sub="把世界开给朋友。集成在启动器内"
         file={SHOTS.online} cardX={960} cardY={560} cardW={1050} cardRy={-14} cardRx={6} cardZ={50}
-        camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'创建房间',atRel:stepDur(8)}} />
+        camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'创建房间',atRel:stepDur(8)}} deco={true} />
     );
   }
   return (
     <Chapter base={base + half} dur={half} head="皮肤站与 3D 预览" sub="皮肤站集成与 3D 皮肤预览，外观所见即所得"
       file={SHOTS.skins} cardX={960} cardY={560} cardW={1050} cardRy={14} cardRx={6} cardZ={50}
-      camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'更换皮肤',atRel:stepDur(8)}} />
+      camRy={0} camRx={5} camZ={130} click={{x:1500,y:680,label:'更换皮肤',atRel:stepDur(8)}} deco={true} />
   );
 };
 
@@ -276,7 +289,7 @@ const ToolsSettings: React.FC<{base: number}> = ({base}) => {
   return (
     <Chapter base={base + idx * seg} dur={seg} head={it.head} sub={it.sub}
       file={it.file} cardX={960} cardY={560} cardW={1000} cardRy={idx % 2 ? 14 : -14} cardRx={6} cardZ={40}
-      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:680,label:it.head,atRel:stepDur(3)}} />
+      camRy={idx % 2 ? 12 : -12} camRx={6} camZ={120} click={{x:1500,y:680,label:it.head,atRel:stepDur(3)}} deco={true} />
   );
 };
 
