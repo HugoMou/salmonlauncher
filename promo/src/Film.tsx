@@ -72,6 +72,35 @@ const Bullet: React.FC<{text: string; x: number; y: number; delay: number; accen
   );
 };
 
+// 用户真实点击按钮：光标移动到按钮 + 点击光环 + 闪光，全程保持 3D 镜头语境
+const ClickPoint: React.FC<{x:number;y:number;at:number;label?:string}> = ({x,y,at,label}) => {
+  const l = useCurrentFrame();
+  const t = l - at;
+  if (t < 0 || t > 36) return null;
+  const flash = interpolate(t, [0, 6, 12], [0, 0.35, 0], clamp);
+  return (
+    <AbsoluteFill>
+      <AbsoluteFill style={{position:'absolute',left:0,top:0,width:'100%',height:'100%',backgroundColor:'#fff',opacity:flash,mixBlendMode:'screen',pointerEvents:'none'}} />
+      <Cursor x1={x-130} y1={y-70} x2={x} y2={y} at={at} dur={stepDur(1)} />
+      <ClickFx x={x} y={y} at={at+stepDur(1)} label={label} size={1.15} />
+      <Pulse x={x} y={y} at={at+stepDur(2)} />
+    </AbsoluteFill>
+  );
+};
+
+// 浮动 3D 剪贴图：每拍翻转角度并轻微上下浮动，作为装饰性 3D 动画，与主截图一起出镜
+const FloatCard: React.FC<{file:string;x:number;y:number;w:number;baseBeat:number;label?:string;ryBase?:number}> = ({file,x,y,w,baseBeat,label,ryBase=0}) => {
+  const l = useCurrentFrame();
+  const b = Math.floor(l / stepDur(1)) - baseBeat;
+  const bp = (l % stepDur(1)) / stepDur(1);
+  const ry = ryBase + (b % 2 === 0 ? 14 : -14) * (0.7 + 0.3 * Math.sin(b));
+  const rx = (b % 3 === 0 ? 4 : -3) + 6 * Math.sin(bp * Math.PI);
+  const tz = 40 + (b % 2 === 0 ? 50 : 0);
+  const floatY = Math.sin((l + baseBeat * 7) / 20) * 12;
+  const punch = 1 + 0.05 * Math.max(0, 1 - bp * 2) ** 2;
+  return <Shot3D file={file} x={x} y={y + floatY} w={w} delay={0} ry={ry} rx={rx} z={tz} scale={punch} label={label} />;
+};
+
 // 3D rotating shot that changes angle on every beat
 const BeatShot: React.FC<{file: string; x: number; y: number; w: number; baseBeat: number; beats: number; label?: string; ryBase?: number; rxBase?: number; z?: number}> =
 ({file, x, y, w, baseBeat, beats, label, ryBase = 0, rxBase = 4, z = 0}) => {
@@ -141,6 +170,9 @@ const Hero: React.FC<{base: number}> = ({base}) => {
         <Shot3D file={SHOTS.about} x={640} y={560} w={380} delay={6} ry={14} rx={-4} z={160} label="关于" />
         <Shot3D file={SHOTS.tasks} x={1040} y={600} w={360} delay={8} ry={-6} rx={-3} z={140} label="任务中心" />
         <Shot3D file={SHOTS.theme} x={1160} y={540} w={350} delay={7} ry={12} rx={-4} z={150} label="主题预览 · 云母默认关闭，可选开启" />
+        <FloatCard file={SHOTS.tasks} x={1260} y={600} w={320} baseBeat={4} label="任务中心" ryBase={-12} />
+        <FloatCard file={SHOTS.about} x={740} y={620} w={300} baseBeat={8} label="关于" ryBase={14} />
+        <ClickPoint x={1460} y={760} at={stepDur(10)} label="点击启动" />
       </Camera>
       <div style={{position: 'absolute', left: 110, bottom: 120, display: 'flex', gap: 14}}>
         <Tag text={LINKS.siteFull} delay={10} accent size={20} />
@@ -192,6 +224,9 @@ const Onboarding: React.FC<{base: number}> = ({base}) => {
         </Panel>
         <Cursor x1={1100} y1={480} x2={1460} y2={760} at={idx * seg + stepDur(2)} dur={stepDur(1)} />
         <Pulse x={1460} y={760} at={idx * seg + stepDur(3)} />
+        <ClickPoint x={1460} y={760} at={idx * seg + stepDur(4)} label={s.title} />
+        <FloatCard file={SHOTS.wTheme} x={1260} y={620} w={330} baseBeat={idx * 4} label="外观" ryBase={-10} />
+        <FloatCard file={SHOTS.wDone} x={740} y={660} w={310} baseBeat={idx * 4 + 2} label="完成" ryBase={12} />
       </Camera>
     </AbsoluteFill>
   );
@@ -216,8 +251,10 @@ const LaunchPlay: React.FC<{base: number}> = ({base}) => {
         <Shot3D file={SHOTS.home} x={720} y={100} w={1100} delay={0} ry={phase === 0 ? -12 : -6} rx={5} z={phase === 0 ? 80 : 30} label="启动面板" />
         {phase >= 1 && <Cursor x1={1200} y1={520} x2={1500} y2={720} at={stepDur(6)} dur={stepDur(2)} />}
         {phase >= 1 && <Pulse x={1500} y={720} at={stepDur(8)} />}
-        {phase >= 1 && <ClickFx x={1500} y={720} at={stepDur(8)} label="一键启动" />}
+        {phase >= 1 && <ClickPoint x={1500} y={720} at={stepDur(6)} label="一键启动" />}
         {phase >= 2 && <Shot3D file={SHOTS.tasks} x={560} y={520} w={520} delay={stepDur(12)} ry={12} rx={-3} z={160} label="任务实时进度" enter="bottom" />}
+        <FloatCard file={SHOTS.versions} x={1260} y={500} w={330} baseBeat={phase * 6} label="版本" ryBase={-12} />
+        <FloatCard file={SHOTS.loaders} x={740} y={620} w={310} baseBeat={phase * 6 + 3} label="加载器" ryBase={14} />
         {phase >= 2 && <Bar x={600} y={880} w={440} at={stepDur(13)} dur={stepDur(8)} label="准备资源 / 检查依赖 / 补全文件…" done={phase >= 3 ? '✓ 准备完成，正在启动游戏' : undefined} />}
         {phase >= 3 && <Panel x={1180} y={620} w={520} delay={stepDur(19)}><div style={{fontFamily: FONT, fontSize: 34, color: COLOR.accent, fontWeight: 700}}>已进入 Minecraft，开始畅玩</div><div style={{fontFamily: FONT, fontSize: 22, color: COLOR.dim, marginTop: 8}}>启动器全程可见进度与状态，出错可直达诊断</div></Panel>}
         <Panel x={90} y={360} w={520} delay={1}>
@@ -253,7 +290,11 @@ const Install: React.FC<{base: number}> = ({base}) => {
         </div>
         <Shot3D key={st.file + idx} file={st.file} x={700} y={130} w={1120} delay={idx * seg} ry={-14 + idx * 6} rx={6} z={80} label={st.t} enter={idx % 2 ? 'right' : 'left'} />
         {idx === 3 && <Bar x={760} y={820} w={980} at={idx * seg + 2} dur={stepDur(3)} label="下载游戏资源 · 多连接加速 · 镜像自动回退" done="✓ 安装完成，实例已就绪" />}
+        {idx === 2 && <ClickPoint x={1300} y={700} at={idx * seg + stepDur(2)} label="一键安装" />}
+        {idx === 3 && <ClickPoint x={1300} y={700} at={idx * seg + stepDur(4)} label="开始下载" />}
         <Pulse x={1300} y={700} at={idx * seg + stepDur(2)} />
+        <FloatCard file={SHOTS.versions} x={1260} y={520} w={330} baseBeat={idx * 4} label="版本" ryBase={-12} />
+        <FloatCard file={SHOTS.loaders} x={740} y={620} w={310} baseBeat={idx * 4 + 2} label="加载器" ryBase={14} />
         <div style={{position: 'absolute', left: 90, bottom: 110}}><Big size={36} delay={4} align="left" color={COLOR.accent}>{st.accent}</Big></div>
       </Camera>
       <div style={{position: 'absolute', right: 80, bottom: 110, display: 'flex', gap: 10}}>{stages.map((s, i) => <Tag key={s.t} text={`${i + 1}`} delay={0} accent={i === idx} />)}</div>
@@ -286,6 +327,13 @@ const Instances: React.FC<{base: number}> = ({base}) => {
         <Shot3D key={st.file + idx} file={st.file} x={700} y={120} w={1120} delay={idx * seg} ry={idx % 2 ? 14 : -14} rx={6} z={70} label={st.t} enter={idx % 2 ? 'left' : 'right'} />
         {st.bullets.map((b, i) => <Bullet key={b} text={b} x={90} y={420 + i * 54} delay={idx * seg + 2 + i} accent={i === 0} />)}
         <Pulse x={1280} y={620} at={stepDur(5)} />
+        {idx === 0 && <ClickPoint x={1280} y={520} at={idx * seg + stepDur(2)} label="健康检查" />}
+        {idx === 1 && <ClickPoint x={1280} y={560} at={idx * seg + stepDur(2)} label="启用模组" />}
+        {idx === 2 && <ClickPoint x={1280} y={620} at={idx * seg + stepDur(2)} label="备份存档" />}
+        {idx === 3 && <ClickPoint x={1280} y={660} at={idx * seg + stepDur(2)} label="打开目录" />}
+        {idx === 4 && <ClickPoint x={1280} y={560} at={idx * seg + stepDur(2)} label="查看日志" />}
+        <FloatCard file={SHOTS.mods} x={1260} y={520} w={330} baseBeat={idx * 4} label="模组" ryBase={-12} />
+        <FloatCard file={SHOTS.saves} x={740} y={620} w={310} baseBeat={idx * 4 + 2} label="存档" ryBase={14} />
       </Camera>
     </AbsoluteFill>
   );
@@ -314,8 +362,14 @@ const Content: React.FC<{base: number}> = ({base}) => {
         </div>
         <Shot3D key={st.file + idx} file={st.file} x={360} y={290} w={1200} delay={idx * seg} ry={idx % 2 ? -18 : 18} rx={6} z={90} label={st.t} />
         {st.alt && <Shot3D file={st.alt} x={80} y={520} w={440} delay={idx * seg + stepDur(2)} ry={22} rx={-5} z={180} label="实例内光影" enter="left" />}
+        {idx === 0 && <ClickPoint x={1200} y={520} at={idx * seg + stepDur(2)} label="安装模组" />}
+        {idx === 1 && <ClickPoint x={1200} y={520} at={idx * seg + stepDur(2)} label="安装光影" />}
+        {idx === 2 && <ClickPoint x={1200} y={520} at={idx * seg + stepDur(2)} label="安装资源包" />}
+        {idx === 3 && <ClickPoint x={1200} y={620} at={idx * seg + stepDur(2)} label="开关资源包" />}
         <div style={{position: 'absolute', left: 0, right: 0, bottom: 115, textAlign: 'center'}}><Big size={40} delay={4} color={COLOR.accent}>{st.extra}</Big></div>
         <Pulse x={1200} y={420} at={idx * seg + stepDur(2)} />
+        <FloatCard file={SHOTS.repoMods} x={1260} y={420} w={330} baseBeat={idx * 4} label="仓库" ryBase={-12} />
+        <FloatCard file={SHOTS.instPacks} x={740} y={620} w={310} baseBeat={idx * 4 + 2} label="实例内容" ryBase={14} />
       </Camera>
     </AbsoluteFill>
   );
@@ -341,6 +395,8 @@ const Online: React.FC<{base: number}> = ({base}) => {
             <Bullet text="一键创建房间 / 生成邀请码" x={90} y={430} delay={4} accent />
             <Bullet text="复制邀请码分享给好友加入" x={90} y={484} delay={6} />
             <Bullet text="支持检查与更新 Campfire" x={90} y={538} delay={8} />
+            <ClickPoint x={1260} y={430} at={stepDur(4)} label="创建房间" />
+            <ClickPoint x={1260} y={484} at={stepDur(6)} label="复制邀请码" />
             <Pulse x={1260} y={560} at={stepDur(3)} />
           </>
         ) : (
@@ -353,6 +409,7 @@ const Online: React.FC<{base: number}> = ({base}) => {
             <Shot3D file={SHOTS.skins} x={680} y={100} w={1140} delay={half} ry={14} rx={6} z={80} label="皮肤站 · 3D 预览" />
             <Bullet text="皮肤站账号与皮肤管理" x={90} y={420} delay={4} accent />
             <Bullet text="3D 实时预览皮肤效果" x={90} y={474} delay={6} />
+            <ClickPoint x={1260} y={520} at={stepDur(4)} label="更换皮肤" />
           </>
         )}
       </Camera>
@@ -389,7 +446,16 @@ const ToolsSettings: React.FC<{base: number}> = ({base}) => {
           <div style={{marginTop: 18, fontFamily: FONT, fontSize: 22, color: COLOR.accent, fontWeight: 600}}>{idx + 1} / {items.length} 功能页</div>
         </div>
         <Shot3D key={it.file + idx} file={it.file} x={690} y={130} w={1140} delay={idx * seg} ry={idx % 2 ? 16 : -16} rx={6} z={80} label={it.t} enter={idx % 2 ? 'right' : 'left'} />
+        {idx === 0 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="扫描诊断" />}
+        {idx === 1 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="打开日志" />}
+        {idx === 2 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="应用设置" />}
+        {idx === 3 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="启动参数" />}
+        {idx === 4 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="切换主题" />}
+        {idx === 5 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="检查更新" />}
+        {idx === 6 && <ClickPoint x={1300} y={520} at={idx * seg + stepDur(1)} label="阅读条款" />}
         <Pulse x={1300} y={620} at={stepDur(1)} />
+        <FloatCard file={SHOTS.diag} x={1260} y={560} w={330} baseBeat={idx * 2} label="诊断" ryBase={-12} />
+        <FloatCard file={SHOTS.theme} x={740} y={620} w={310} baseBeat={idx * 2 + 1} label="外观" ryBase={14} />
       </Camera>
     </AbsoluteFill>
   );
@@ -413,10 +479,15 @@ const Blog: React.FC<{base: number}> = ({base}) => {
             <Tag text={LINKS.siteFull} delay={10} accent />
             <Tag text={LINKS.githubFull} delay={11} accent />
             <Tag text={LINKS.blogFull} delay={12} accent />
+            <ClickPoint x={620} y={470} at={stepDur(12)} label="官网" />
+            <ClickPoint x={960} y={470} at={stepDur(14)} label="GitHub" />
+            <ClickPoint x={1300} y={470} at={stepDur(16)} label="博客" />
           </div>
         </AbsoluteFill>
         <Shot3D file={SHOTS.about} x={70} y={240} w={430} delay={2} ry={22} rx={7} z={-40} floatAmp={6} label="关于" />
         <Shot3D file={SHOTS.home} x={1420} y={240} w={430} delay={3} ry={-22} rx={7} z={-40} floatAmp={6} label="启动面板" />
+        <FloatCard file={SHOTS.about} x={100} y={420} w={330} baseBeat={8} label="关于" ryBase={-12} />
+        <FloatCard file={SHOTS.home} x={1500} y={420} w={330} baseBeat={12} label="主页" ryBase={14} />
       </Camera>
     </AbsoluteFill>
   );
