@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -70,6 +70,33 @@ public sealed partial class MainWindow : Window
         {
             AppServices.Dialogs.Attach(RootGrid.XamlRoot);
             Loc.ApplyTo(RootGrid);
+
+            // Documentation screenshot pass: render every page and quit. Kept ahead of the normal
+            // startup dialogs so the frames show pages, not a changelog overlay.
+            if (Diagnostics.ScreenCapture.IsEnabled)
+            {
+                await Task.Delay(600);
+
+                var target = Diagnostics.ScreenCapture.RequestedPage;
+                if (target is not null
+                    && target.StartsWith("onboard-", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(target["onboard-".Length..], out var step))
+                {
+                    Onboarding.ShowStepForCapture(step);
+                    await Task.Delay(1200);
+                    await Diagnostics.ScreenCapture.CaptureAsync(
+                        RootGrid,
+                        Path.Combine(Diagnostics.ScreenCapture.RequestedFolder!, $"onboard-{step}.png"));
+                }
+                else
+                {
+                    await Diagnostics.ScreenCapture.RunAsync(RootGrid, Diagnostics.ScreenCapture.RequestedFolder!);
+                }
+
+                Application.Current.Exit();
+                return;
+            }
+
             if (AppServices.Settings.Current.OnboardingCompleted)
             {
                 await EnsureTermsAsync();

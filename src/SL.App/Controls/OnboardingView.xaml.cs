@@ -143,7 +143,55 @@ public sealed partial class OnboardingView : UserControl
     {
         try
         {
-            var sources = MigrationDetector.ScanAll();
+            RenderSources(MigrationDetector.ScanAll());
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Onboarding.Migration", ex);
+            MigrateHint.Text = Loc.T("迁移检测出错,可以跳过这一步。");
+        }
+    }
+
+    /// <summary>Let the user point at a portable install or a Minecraft folder outside the usual places.</summary>
+    private async void OnPickMigrateFolder(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var picker = new Windows.Storage.Pickers.FolderPicker();
+            WinRT.Interop.InitializeWithWindow.Initialize(picker,
+                WinRT.Interop.WindowNative.GetWindowHandle(App.Window));
+            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.ComputerFolder;
+            picker.FileTypeFilter.Add("*");
+
+            var folder = await picker.PickSingleFolderAsync();
+            if (folder is null)
+                return;
+
+            var sources = MigrationDetector.ScanPath(folder.Path);
+            if (sources.Count == 0)
+            {
+                MigrateHint.Text = string.Format(
+                    Loc.T("在 {0} 中没有找到可导入的启动器数据。请选择包含 .minecraft、versions 或 instances 的文件夹。"),
+                    folder.Path);
+                return;
+            }
+
+            MigrateHint.Text = string.Format(
+                Loc.T("已从所选文件夹识别到 {0} 个来源,选择要导入的:"), sources.Count);
+            RenderSources(sources);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Onboarding.Migration", ex);
+            MigrateHint.Text = Loc.T("选择文件夹失败,可以跳过这一步。");
+        }
+    }
+
+    /// <summary>Draws the detected import sources; shared by the automatic scan and the folder picker.</summary>
+    private void RenderSources(IReadOnlyList<MigrationSource> sources)
+    {
+        try
+        {
             MigrateList.Children.Clear();
 
             if (sources.Count == 0)
@@ -359,6 +407,17 @@ public sealed partial class OnboardingView : UserControl
         AppLog.Info("Onboarding", "五步初始化完成,进入主界面");
         Visibility = Visibility.Collapsed;
         Completed?.Invoke();
+    }
+
+    /// <summary>
+    /// Documentation capture support: reveal a given wizard page without walking the flow.
+    /// Only called from the screenshot pass; normal use advances through OnNext.
+    /// </summary>
+    internal void ShowStepForCapture(int step)
+    {
+        Visibility = Visibility.Visible;
+        _reached = Math.Max(_reached, Math.Clamp(step, 0, StepCount));
+        ShowStep(Math.Clamp(step, 0, StepCount));
     }
 
     private void ShowStep(int step)

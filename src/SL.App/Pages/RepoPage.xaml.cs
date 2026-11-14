@@ -24,6 +24,9 @@ public sealed partial class RepoPage : Page
 {
     private readonly RepoVM _vm = new();
 
+    /// <summary>Exposed for compiled x:Bind in the search bar.</summary>
+    public RepoVM VM => _vm;
+
     public RepoPage()
     {
         InitializeComponent();
@@ -42,7 +45,25 @@ public sealed partial class RepoPage : Page
     {
         if (e.Key != Windows.System.VirtualKey.Enter)
             return;
-        _vm.Keyword = SearchBox.Text;
+        SubmitSearch();
+    }
+
+    /// <summary>Commit the box text and run a search; empty text falls back to popular picks.</summary>
+    private void SubmitSearch()
+    {
+        _vm.Keyword = SearchBox.Text ?? "";
         _vm.SearchCommand.Execute(null);
     }
+
+    /// <summary>When the user clears the box, return to popular picks without requiring Enter.</summary>
+    private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(SearchBox.Text))
+            return;
+
+        // Sync the empty state so the section header flips immediately, then reload popular picks.
+        _ = _vm.ResetToBrowseAsync();
+    }
+
+    private void OnSearchClicked(object sender, Microsoft.UI.Xaml.RoutedEventArgs e) => SubmitSearch();
 }

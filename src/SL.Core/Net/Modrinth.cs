@@ -31,9 +31,21 @@ public enum ModrinthCategory
     ResourcePacks,
 }
 
+/// <summary>How Modrinth orders search results.</summary>
+public enum ModrinthSort
+{
+    /// <summary>Best text match — used when the user typed a query.</summary>
+    Relevance,
+    /// <summary>Most downloaded first — used to show popular picks when the search box is empty.</summary>
+    Downloads,
+}
+
 /// <summary>Stage 4: Modrinth v2 search (the mod repository page). Every call is real HTTP.</summary>
 public static class Modrinth
 {
+    /// <summary>Results per page. Also the step used by the "show me another set" button.</summary>
+    public const int PageSize = 20;
+
     private static readonly HttpClient Client = CreateClient();
 
     private static HttpClient CreateClient()
@@ -112,10 +124,19 @@ public static class Modrinth
     }
 
     /// <summary>Search with custom facets (shaders/resource packs pass ["project_type:..."], without game_versions filtering).</summary>
-    public static async Task<IReadOnlyList<ProjectHit>> SearchByFacetsAsync(
+    public static Task<IReadOnlyList<ProjectHit>> SearchByFacetsAsync(
         string query, string facets, CancellationToken cancellation)
+        => SearchByFacetsAsync(query, facets, ModrinthSort.Relevance, 0, cancellation);
+
+    /// <summary>
+    /// Search with an explicit ordering. An empty query with <see cref="ModrinthSort.Downloads"/> is
+    /// how the repository pages show popular picks before the user has typed anything.
+    /// </summary>
+    public static async Task<IReadOnlyList<ProjectHit>> SearchByFacetsAsync(
+        string query, string facets, ModrinthSort sort, int offset, CancellationToken cancellation)
     {
-        var url = "/search?limit=20&index=relevance&display=irrelevant"
+        var index = sort == ModrinthSort.Downloads ? "downloads" : "relevance";
+        var url = $"/search?limit={PageSize}&index={index}&offset={Math.Max(0, offset)}&display=irrelevant"
                   + $"&query={Uri.EscapeDataString(query)}&facets={Uri.EscapeDataString(facets)}";
 
         using var doc = await GetJsonAsync(url, cancellation).ConfigureAwait(false);

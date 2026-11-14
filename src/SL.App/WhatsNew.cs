@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -25,10 +25,19 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.11";
+    public const string Version = "2.0.12";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE721",
+            Loc.T("仓库页新增热门推荐"),
+            Loc.T("模组、光影、资源包仓库在搜索框为空时会按下载量展示热门内容，并支持「换一批」查看更多；输入关键词后切换为搜索结果，清空搜索框可回到推荐。")),
+        new("\uE7BA",
+            Loc.T("修复无实例时打开概览会卡死"),
+            Loc.T("未安装任何实例时进入「实例概览」会触发界面线程死循环并卡住启动器；现已修复，新用户可正常看到空状态。")),
+        new("\uE8B7",
+            Loc.T("迁移数据支持选择文件夹"),
+            Loc.T("欢迎页的迁移步骤新增「选择数据文件夹」，可手动指定旧启动器或 .minecraft 数据目录进行识别与导入。")),
         new("\uE7C4",
             Loc.T("修复欢迎页布局"),
             Loc.T("欢迎页顶部原本多出一条空白横条，把标题往下顶；现在标题直接贴顶，内容整体上移。")),

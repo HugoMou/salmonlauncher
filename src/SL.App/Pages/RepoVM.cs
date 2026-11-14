@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -53,22 +53,80 @@ public sealed class RepoVM : VmBase, IRefreshable
 {
     private readonly DispatcherQueue _ui = DispatcherQueue.GetForCurrentThread();
     private ModrinthCategory _category = ModrinthCategory.Mods;
-    private bool _loadedOnce;
+
+    /// <summary>Categories already fetched once, so each page loads its own results exactly once.</summary>
+    private readonly HashSet<ModrinthCategory> _loadedCategories = [];
+
+    /// <summary>How many popular entries to skip when browsing. Advanced by the "another set" button.</summary>
+    private int _browseOffset;
 
     public RepoVM()
     {
         SearchCommand = new RelayCommand(async () => await SearchAsync());
+        ClearCommand = new RelayCommand(async () =>
+        {
+            if (_keyword.Length == 0)
+                return;
+            Keyword = "";
+            _browseOffset = 0;
+            await SearchAsync();
+        });
+        ShuffleCommand = new RelayCommand(async () =>
+        {
+            _browseOffset += Modrinth.PageSize;
+            await SearchAsync();
+        });
     }
 
     public ObservableCollection<RepoRow> Rows { get; } = [];
 
     public RelayCommand SearchCommand { get; }
+    public RelayCommand ClearCommand { get; }
+    public RelayCommand ShuffleCommand { get; }
 
     private string _keyword = "";
+
+    /// <summary>The search text. Setting it only updates state — requests are sent on submit, never per keystroke.</summary>
     public string Keyword
     {
         get => _keyword;
-        set => Set(ref _keyword, value);
+        set
+        {
+            if (Set(ref _keyword, value))
+                OnBrowseState();
+        }
+    }
+
+    /// <summary>True when the box is empty (whitespace counts as empty): the page then shows popular picks.</summary>
+    public bool IsBrowsing => string.IsNullOrWhiteSpace(_keyword);
+
+    /// <summary>Heading above the result list.</summary>
+    public string SectionTitle => IsBrowsing ? Loc.T("热门推荐") : Loc.T("搜索结果");
+
+    /// <summary>Sub-heading under <see cref="SectionTitle"/>; empty while searching.</summary>
+    public string SectionHint => IsBrowsing ? Loc.T("按下载量排序 · 点「换一批」看更多") : "";
+
+    /// <summary>The "another set" button only makes sense while browsing.</summary>
+    public Visibility ShuffleVisibility => IsBrowsing ? Visibility.Visible : Visibility.Collapsed;
+
+    public string ShuffleText => Loc.T("换一批");
+    public string SearchLabel => Loc.T("搜索");
+
+    private void OnBrowseState()
+    {
+        On(nameof(IsBrowsing));
+        On(nameof(SectionTitle));
+        On(nameof(SectionHint));
+        On(nameof(ShuffleVisibility));
+    }
+
+    /// <summary>Back to popular picks from scratch (used when the search box is emptied).</summary>
+    public async Task ResetToBrowseAsync()
+    {
+        if (_keyword.Length != 0)
+            Keyword = "";
+        _browseOffset = 0;
+        await SearchAsync();
     }
 
     private string _title = Loc.T("模组仓库");
@@ -125,8 +183,11 @@ public sealed class RepoVM : VmBase, IRefreshable
             ModrinthCategory.Shaders => Loc.T("光影仓库"),
             _ => Loc.T("资源包仓库"),
         };
+        // A different category means a different result set: restart paging from the top.
+        _browseOffset = 0;
         On(nameof(SearchHint));
         On(nameof(TargetText));
+        OnBrowseState();
     }
 
     public void RefreshData()
@@ -139,9 +200,12 @@ public sealed class RepoVM : VmBase, IRefreshable
             : string.Format(Loc.T("安装目标:实例 {0}({1} · {2})→ {3}"), latest.InstanceId, _gameVersion, _loader, SubDir);
         On(nameof(TargetText));
 
-        if (!_loadedOnce)
+        // One load per category: switching mods → shaders → resource packs must fetch that
+        // category rather than keep showing whatever the previous page loaded.
+        if (!_loadedCategories.Contains(_category))
         {
-            _loadedOnce = true;
+            _loadedCategories.Add(_category);
+            _browseOffset = 0;
             _ = SearchAsync();
         }
     }
@@ -166,7 +230,13 @@ public sealed class RepoVM : VmBase, IRefreshable
         if (Busy)
             return;
         Busy = true;
-        Status = Loc.T("正在检索 Modrinth…");
+
+        // Empty box → popular picks ordered by downloads; typed text → best match.
+        var browsing = IsBrowsing;
+        var sort = browsing ? ModrinthSort.Downloads : ModrinthSort.Relevance;
+        var query = browsing ? "" : _keyword.Trim();
+
+        Status = browsing ? Loc.T("正在加载热门内容…") : Loc.T("正在检索 Modrinth…");
         try
         {
             var gameVersion = _gameVersion.Length > 0 ? _gameVersion : "1.21.4";
@@ -175,22 +245,31 @@ public sealed class RepoVM : VmBase, IRefreshable
             if (_category == ModrinthCategory.Mods)
             {
                 var facets = $"[[\"versions:{gameVersion}\"],[\"categories:{_loader}\"]]";
-                hits = await Modrinth.SearchByFacetsAsync(_keyword, facets, CancellationToken.None).ConfigureAwait(true);
+                hits = await Modrinth.SearchByFacetsAsync(query, facets, sort, _browseOffset, CancellationToken.None).ConfigureAwait(true);
             }
             else
             {
                 var type = _category == ModrinthCategory.Shaders ? "shader" : "resourcepack";
                 var facets = $"[[\"project_type:{type}\"],[\"versions:{gameVersion}\"]]";
-                hits = await Modrinth.SearchByFacetsAsync(_keyword, facets, CancellationToken.None).ConfigureAwait(true);
+                hits = await Modrinth.SearchByFacetsAsync(query, facets, sort, _browseOffset, CancellationToken.None).ConfigureAwait(true);
             }
 
             Rows.Clear();
             foreach (var hit in hits)
                 Rows.Add(new RepoRow(hit, this));
 
-            Status = hits.Count == 0
-                ? Loc.T("没有匹配结果 · 换个关键词或确认实例版本")
-                : string.Format(Loc.T("共 {0} 个结果 · {1} · {2}"), hits.Count, gameVersion, _loader);
+            if (hits.Count == 0)
+            {
+                Status = browsing
+                    ? Loc.T("暂时没有取到热门内容 · 稍后重试,或直接搜索关键词")
+                    : Loc.T("没有匹配结果 · 换个关键词或确认实例版本");
+            }
+            else
+            {
+                Status = string.Format(Loc.T("共 {0} 个结果 · {1} · {2}"), hits.Count, gameVersion, _loader);
+            }
+
+            OnBrowseState();
         }
         catch (Exception ex)
         {

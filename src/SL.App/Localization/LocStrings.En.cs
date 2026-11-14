@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -591,6 +591,12 @@ public static partial class Loc
         ["正在读取版本清单…"] = "Reading the version manifest…",
         ["正在读取版本元数据…"] = "Reading version metadata…",
         ["正在检索 Modrinth…"] = "Searching Modrinth…",
+        ["正在加载热门内容…"] = "Loading popular picks…",
+        ["热门推荐"] = "Popular picks",
+        ["搜索结果"] = "Search results",
+        ["按下载量排序 · 点「换一批」看更多"] = "Sorted by downloads · pick another set for more",
+        ["换一批"] = "Another set",
+        ["暂时没有取到热门内容 · 稍后重试,或直接搜索关键词"] = "Could not load popular picks · try again later, or search by keyword",
         ["正在解析 {0} 的最新文件…"] = "Resolving the latest file for {0}…",
         ["正在启动…"] = "Launching…",
         ["正在扫描 Java…"] = "Scanning for Java…",
@@ -907,6 +913,11 @@ public static partial class Loc
         ["1. 点上面的按钮打开 Campfire。\n2. 在 Campfire 里进入世界，它会自动把世界开放到局域网。\n3. 邀请码发给好友，好友粘贴后即可加入。"] = "1. Press the button above to open Campfire.\n2. Enter a world in Campfire; it opens to LAN automatically.\n3. Send the invite code to friends so they can paste it in and join.",
         ["1. 点「打开 Campfire」，它会以独立窗口运行。\n2. 在 Campfire 里进入一个世界，它会自动对局域网开放并生成邀请码。\n3. 把邀请码发给好友，好友在 Campfire 里粘贴即可加入；也可以在「联机大厅」里选择房间。\n4. 联机时游戏数据优先在玩家之间直接传输，只有建立连接所需的信令经过 Campfire 的服务器，启动器不参与任何联机通信。\n5. Campfire 会在新手引导结束后询问是否发送匿名使用统计，之后可在它的设置里修改。"] = "1. Press Open Campfire; it runs in its own window.\n2. Enter a world in Campfire; it opens to LAN and creates an invite code.\n3. Send the code to friends, who paste it in to join; rooms can also be picked from the lobby.\n4. Game data travels directly between players when possible; only the signalling needed to connect goes through Campfire's servers, and the launcher takes no part in multiplayer traffic.\n5. Campfire asks whether to send anonymous usage statistics after its onboarding; you can change that in its settings.",
 
+
+        ["选择数据文件夹…"] = "Choose a data folder…",
+        ["在 {0} 中没有找到可导入的启动器数据。请选择包含 .minecraft、versions 或 instances 的文件夹。"] = "No importable launcher data was found in {0}. Pick a folder that contains .minecraft, versions or instances.",
+        ["已从所选文件夹识别到 {0} 个来源,选择要导入的:"] = "Found {0} source(s) in that folder; choose what to import:",
+        ["选择文件夹失败,可以跳过这一步。"] = "Could not open the folder picker; you can skip this step.",
 
     };
 }

@@ -46,12 +46,20 @@ public static class InstanceContext
     {
         EnsureLoaded();
         var all = InstanceRegistry.List();
+
+        var previous = CurrentId;
         if (all.All(i => i.InstanceId != CurrentId))
-        {
             CurrentId = all.Count > 0 ? all[0].InstanceId : "";
+
+        // Notify only on a real change. Comparing against the assignment above is not enough:
+        // with no instances installed the raw condition is always true, so raising Changed every
+        // time made a page that reloads on Changed reload itself forever and lock the UI thread.
+        if (!string.Equals(previous, CurrentId, StringComparison.Ordinal))
+        {
             Persist();
             Changed?.Invoke();
         }
+
         return all;
     }
 

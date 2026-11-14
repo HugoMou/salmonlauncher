@@ -73,12 +73,44 @@ public sealed partial class InstanceOverviewPage : Page
     }
 
     /// <summary>Another page changed the shared instance: reload so both views stay consistent.</summary>
-    private void OnContextChanged() => _ui.TryEnqueue(() => Reload(selectCurrent: true));
+    private void OnContextChanged()
+    {
+        // Reload can itself raise the shared-instance notification; without this guard a reload
+        // triggered by that notification would queue another reload indefinitely.
+        if (_reloading)
+            return;
+
+        _ui.TryEnqueue(() =>
+        {
+            if (_reloading)
+                return;
+            Reload(selectCurrent: true);
+        });
+    }
+
+    /// <summary>True while Reload runs, so notification-driven reloads cannot nest.</summary>
+    private bool _reloading;
 
     private readonly Microsoft.UI.Dispatching.DispatcherQueue _ui =
         Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
     private void Reload(bool selectCurrent)
+    {
+        if (_reloading)
+            return;
+
+        _reloading = true;
+        try
+        {
+            ReloadCore(selectCurrent);
+        }
+        finally
+        {
+            _reloading = false;
+        }
+    }
+
+    private void ReloadCore(bool selectCurrent)
     {
         _syncing = true;
         var all = InstanceContext.Refresh();
