@@ -143,6 +143,32 @@ export const Shot3D: React.FC<{
   );
 };
 
+/** Prominent click/tap indicator: expanding rings + bright core + optional label. */
+export const ClickFx: React.FC<{x:number; y:number; at:number; label?:string; color?:string; size?:number}> =
+({x,y,at,label,color=COLOR.accent,size=1}) => {
+  const f = useCurrentFrame();
+  const t = f - at;
+  if (t < 0 || t > 28) return null;
+  const rings = [0, 5, 10];
+  return (
+    <div style={{position:'absolute', left:x, top:y, pointerEvents:'none', zIndex:50}}>
+      {rings.map((d, i) => {
+        const lt = t - d;
+        if (lt < 0 || lt > 22) return null;
+        const s = interpolate(lt,[0,20],[0.15, 2.2 + i*0.35],{extrapolateRight:'clamp', easing:easeOut});
+        const o = interpolate(lt,[0,3,20],[0,0.9-i*0.18,0],clamp);
+        return <div key={d} style={{position:'absolute', left:-42*size, top:-42*size, width:84*size, height:84*size, borderRadius:999,
+          border:`${4-i}px solid ${color}`, opacity:o, transform:`scale(${s})`, boxShadow:`0 0 30px ${color}`}} />;
+      })}
+      <div style={{position:'absolute', left:-13*size, top:-13*size, width:26*size, height:26*size, borderRadius:999,
+        background:color, opacity:interpolate(t,[0,2,12,22],[0,1,0.85,0],clamp), boxShadow:`0 0 32px ${color}, 0 0 64px ${color}`}} />
+      <div style={{position:'absolute', left:-5*size, top:-5*size, width:10*size, height:10*size, borderRadius:999, background:'#fff', opacity:interpolate(t,[0,2,10],[0,0.95,0],clamp)}} />
+      {label && <div style={{position:'absolute', left:34*size, top:-18, padding:'6px 14px', borderRadius:999, background:'rgba(20,20,22,0.92)', border:`1px solid ${color}`,
+        color, fontFamily:FONT, fontSize:20, fontWeight:700, whiteSpace:'nowrap', opacity:interpolate(t,[2,6,20,26],[0,1,1,0],clamp), transform:`translateY(${interpolate(t,[2,8],[10,0],clamp)}px)`}}>{label}</div>}
+    </div>
+  );
+};
+
 /** Glass pill/tag. */
 export const Tag: React.FC<{text: string; x?: number; y?: number; delay?: number; color?: string; accent?: boolean; size?: number}> =
 ({text, x, y, delay=0, color=COLOR.ink, accent, size=22}) => {

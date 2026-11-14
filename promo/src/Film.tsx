@@ -4,7 +4,7 @@ import React from 'react';
 import {AbsoluteFill, Audio, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {AUDIO_FILE, COLOR, CREDITS, FILM, FONT, LINKS, SHOTS, toF} from './spec';
 import {BEAT_COUNT, PERIOD, beatFrame, hit} from './lib/beats';
-import {Big, Camera, LegalStrip, MetalText, Panel, QRCard, ScanLine, Shot3D, Slam, Stage, Sub, Tag, beatPunch, clamp, easeOut, snap} from './lib/fx';
+import {Big, Camera, ClickFx, LegalStrip, MetalText, Panel, QRCard, ScanLine, Shot3D, Slam, Stage, Sub, Tag, beatPunch, clamp, easeOut, snap} from './lib/fx';
 
 const BF = (i: number) => beatFrame(i, FILM.fps);
 const stepDur = (beats: number) => Math.round(beats * PERIOD * FILM.fps);
@@ -16,10 +16,15 @@ const clickP = (l: number, startBeat: number, durBeats = 1) => interpolate(l, [s
 const Pulse: React.FC<{x: number; y: number; at: number; c?: string}> = ({x, y, at, c = COLOR.accent}) => {
   const l = useCurrentFrame();
   const t = l - at;
-  if (t < 0 || t > 18) return null;
-  const s = interpolate(t, [0, 16], [0.2, 2.0], {extrapolateRight: 'clamp', easing: easeOut});
-  const o = interpolate(t, [0, 3, 16], [0, 0.95, 0], clamp);
-  return <div style={{position: 'absolute', left: x - 28, top: y - 28, width: 56, height: 56, borderRadius: 999, border: `3px solid ${c}`, opacity: o, transform: `scale(${s})`, boxShadow: `0 0 36px ${c}`}} />;
+  if (t < 0 || t > 22) return null;
+  const s = interpolate(t, [0, 18], [0.2, 2.4], {extrapolateRight: 'clamp', easing: easeOut});
+  const o = interpolate(t, [0, 2, 18], [0, 1, 0], clamp);
+  const s2 = interpolate(t, [3, 20], [0.2, 1.8], {extrapolateRight: 'clamp', easing: easeOut});
+  const o2 = interpolate(t, [3, 6, 20], [0, 0.7, 0], clamp);
+  return <>
+    <div style={{position: 'absolute', left: x - 34, top: y - 34, width: 68, height: 68, borderRadius: 999, border: `4px solid ${c}`, opacity: o, transform: `scale(${s})`, boxShadow: `0 0 40px ${c}`}} />
+    <div style={{position: 'absolute', left: x - 34, top: y - 34, width: 68, height: 68, borderRadius: 999, border: `3px solid ${c}`, opacity: o2, transform: `scale(${s2})`}} />
+  </>;
 };
 
 const Cursor: React.FC<{x1: number; y1: number; x2: number; y2: number; at: number; dur: number}> = ({x1, y1, x2, y2, at, dur}) => {
@@ -27,8 +32,15 @@ const Cursor: React.FC<{x1: number; y1: number; x2: number; y2: number; at: numb
   const p = interpolate(l, [at, at + dur], [0, 1], {...clamp, easing: easeOut});
   const cx = x1 + (x2 - x1) * p;
   const cy = y1 + (y2 - y1) * p;
-  const o = interpolate(l, [at - 2, at, at + dur, at + dur + 8], [0, 1, 1, 0], clamp);
-  return <div style={{position: 'absolute', left: cx - 11, top: cy - 11, width: 22, height: 22, borderRadius: 999, background: COLOR.accent, opacity: o, boxShadow: `0 0 28px ${COLOR.accent}, 0 0 0 10px rgba(126,217,87,0.18)`}} />;
+  const o = interpolate(l, [at - 2, at, at + dur, at + dur + 10], [0, 1, 1, 0], clamp);
+  const click = l >= at + dur ? interpolate(l, [at + dur, at + dur + 3], [1, 0.85], clamp) : 1;
+  return (
+    <div style={{position: 'absolute', left: cx, top: cy, opacity: o, transform: `translate(-2px,-2px) scale(${click})`, filter: `drop-shadow(0 0 10px ${COLOR.accent})`}}>
+      <svg width="38" height="46" viewBox="0 0 38 46" fill="none">
+        <path d="M2 2L2 38L11 29L17 43L22 41L16 27L28 27L2 2Z" fill={COLOR.accent} stroke="#000" strokeWidth="2" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
 };
 
 const Bar: React.FC<{x: number; y: number; w: number; at: number; dur: number; label?: string; done?: string}> = ({x, y, w, at, dur, label, done}) => {
@@ -87,7 +99,12 @@ const Impact: React.FC<{base: number}> = () => {
         return <AbsoluteFill key={b} style={{backgroundColor: i % 2 ? COLOR.accent : '#fff', opacity: o, mixBlendMode: 'screen'}} />;
       })}
       <Camera tz={interpolate(l, [0, stepDur(16)], [-350, 120], clamp)} rx={interpolate(l, [0, stepDur(8)], [10, 0], clamp)} ry={interpolate(l, [0, stepDur(16)], [-8, 8], clamp)}>
-        {l >= BF(0) && l < BF(4) && <Slam delay={BF(0)} size={170} tint="silver">启动。</Slam>}
+        {l >= BF(0) && l < BF(4) && (
+          <>
+            <AbsoluteFill style={{backgroundColor:'#fff',opacity: interpolate(l,[BF(0),BF(0)+2,BF(0)+7],[0,0.4,0],clamp),mixBlendMode:'screen',pointerEvents:'none'}} />
+            <Slam delay={Math.max(0,BF(0)-8)} size={170} tint="silver">启动。</Slam>
+          </>
+        )}
         {l >= BF(4) && l < BF(8) && <Slam delay={BF(4)} size={170} tint="green">安装。</Slam>}
         {l >= BF(8) && l < BF(12) && <Slam delay={BF(8)} size={170} tint="blue">畅玩。</Slam>}
         {l >= BF(12) && l < BF(14) && <Slam delay={BF(12)} size={150} tint="gold">每一步。</Slam>}
@@ -123,6 +140,7 @@ const Hero: React.FC<{base: number}> = ({base}) => {
         <Shot3D file={SHOTS.home} x={820} y={110} w={1020} delay={2} ry={-18} rx={7} z={80} label="启动面板 · 真实使用画面" floatAmp={5} />
         <Shot3D file={SHOTS.about} x={640} y={560} w={380} delay={6} ry={14} rx={-4} z={160} label="关于" />
         <Shot3D file={SHOTS.tasks} x={1040} y={600} w={360} delay={8} ry={-6} rx={-3} z={140} label="任务中心" />
+        <Shot3D file={SHOTS.theme} x={1160} y={540} w={350} delay={7} ry={12} rx={-4} z={150} label="主题预览 · 云母默认关闭，可选开启" />
       </Camera>
       <div style={{position: 'absolute', left: 110, bottom: 120, display: 'flex', gap: 14}}>
         <Tag text={LINKS.siteFull} delay={10} accent size={20} />
@@ -198,6 +216,7 @@ const LaunchPlay: React.FC<{base: number}> = ({base}) => {
         <Shot3D file={SHOTS.home} x={720} y={100} w={1100} delay={0} ry={phase === 0 ? -12 : -6} rx={5} z={phase === 0 ? 80 : 30} label="启动面板" />
         {phase >= 1 && <Cursor x1={1200} y1={520} x2={1500} y2={720} at={stepDur(6)} dur={stepDur(2)} />}
         {phase >= 1 && <Pulse x={1500} y={720} at={stepDur(8)} />}
+        {phase >= 1 && <ClickFx x={1500} y={720} at={stepDur(8)} label="一键启动" />}
         {phase >= 2 && <Shot3D file={SHOTS.tasks} x={560} y={520} w={520} delay={stepDur(12)} ry={12} rx={-3} z={160} label="任务实时进度" enter="bottom" />}
         {phase >= 2 && <Bar x={600} y={880} w={440} at={stepDur(13)} dur={stepDur(8)} label="准备资源 / 检查依赖 / 补全文件…" done={phase >= 3 ? '✓ 准备完成，正在启动游戏' : undefined} />}
         {phase >= 3 && <Panel x={1180} y={620} w={520} delay={stepDur(19)}><div style={{fontFamily: FONT, fontSize: 34, color: COLOR.accent, fontWeight: 700}}>已进入 Minecraft，开始畅玩</div><div style={{fontFamily: FONT, fontSize: 22, color: COLOR.dim, marginTop: 8}}>启动器全程可见进度与状态，出错可直达诊断</div></Panel>}
@@ -341,7 +360,7 @@ const Online: React.FC<{base: number}> = ({base}) => {
   );
 };
 
-// ---------- 9) TOOLS & SETTINGS EVERY PAGE (beats 232-276, 44 beats ~ 4 beats each for 11 items) ----------
+// ---------- 9) TOOLS & SETTINGS EVERY PAGE (beats 232-260, 4 beats each for 7 items) ----------
 const ToolsSettings: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const items = [
@@ -376,7 +395,7 @@ const ToolsSettings: React.FC<{base: number}> = ({base}) => {
   );
 };
 
-// ---------- 10) BLOG & COMMUNITY (beats 276-292) ----------
+// ---------- 10) BLOG & COMMUNITY (beats 260-276) ----------
 const Blog: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   return (
@@ -403,7 +422,7 @@ const Blog: React.FC<{base: number}> = ({base}) => {
   );
 };
 
-// ---------- 11) MONTAGE (beats 292-304) rapid fire ----------
+// ---------- 11) MONTAGE (beats 276-288) rapid fire ----------
 const Montage: React.FC<{base: number}> = ({base}) => {
   const l = useCurrentFrame();
   const all = Object.values(SHOTS);
@@ -437,7 +456,7 @@ const Montage: React.FC<{base: number}> = ({base}) => {
   );
 };
 
-// ---------- 12) OUTRO + CREDITS (beats 304 - end) ----------
+// ---------- 12) OUTRO + CREDITS (beat 288 - end) ----------
 const Outro: React.FC<{base: number; total: number}> = ({base, total}) => {
   const l = useCurrentFrame();
   const {fps} = useVideoConfig();
