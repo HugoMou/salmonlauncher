@@ -391,25 +391,48 @@ public sealed partial class SettingsPage : Page
     /// <summary>Clear all data: choose the additional scope first, confirm after a 10-second cooling-off period, then clear and exit.</summary>
     private async void OnClearAllData(object sender, RoutedEventArgs e)
     {
-        // Step 1: choose what to clear in addition to launcher data (selecting nothing clears only launcher data)
-        var keep = await ShowScopeAsync().ConfigureAwait(true);
-        if (keep is null)
-            return;
-
-        // Step 2: 10-second cooling-off period; confirmation is blocked until the countdown ends
-        if (!await ShowCooldownAsync(keep).ConfigureAwait(true))
-            return;
-
-        var failed = SL.Core.Boot.DataReset.Purge(keep);
-        if (failed.Count > 0)
+        try
         {
-            await AppServices.Dialogs.AlertAsync(
-                Loc.T("部分文件被占用"),
-                string.Format(Loc.T("还有 {0} 项未能删除(通常是游戏或 Java 仍在运行)。\n这些残留会在下次启动时自动继续清除。"), failed.Count),
-                MsgMark.Warning).ConfigureAwait(true);
-        }
+            // Step 1: choose what to clear in addition to launcher data (selecting nothing clears only launcher data)
+            var keep = await ShowScopeAsync().ConfigureAwait(true);
+            if (keep is null)
+                return;
 
-        Application.Current.Exit();
+            // Step 2: 10-second cooling-off period; confirmation is blocked until the countdown ends
+            if (!await ShowCooldownAsync(keep).ConfigureAwait(true))
+                return;
+
+            List<string> failed;
+            try
+            {
+                failed = SL.Core.Boot.DataReset.Purge(keep);
+            }
+            catch (Exception ex)
+            {
+                // Half-deleted state must be reported: the marker makes the next start finish the job.
+                Core.Logging.AppLog.Error("Settings", ex);
+                await AppServices.Dialogs.AlertAsync(
+                    Loc.T("清除数据时出错"),
+                    Loc.T("部分数据可能已被删除。下次启动时启动器会继续完成清除；如仍有问题，请手动删除数据目录。")
+                    + "\n\n" + ex.Message,
+                    MsgMark.Error).ConfigureAwait(true);
+                return;
+            }
+
+            if (failed.Count > 0)
+            {
+                await AppServices.Dialogs.AlertAsync(
+                    Loc.T("部分文件被占用"),
+                    string.Format(Loc.T("还有 {0} 项未能删除(通常是游戏或 Java 仍在运行)。\n这些残留会在下次启动时自动继续清除。"), failed.Count),
+                    MsgMark.Warning).ConfigureAwait(true);
+            }
+
+            Application.Current.Exit();
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Error("Settings", ex);
+        }
     }
 
     /// <summary>Step 1: check the data to clear as well; returns the top-level entries to keep, or null if canceled.</summary>

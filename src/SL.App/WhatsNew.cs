@@ -25,10 +25,19 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.7";
+    public const string Version = "2.0.8";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE8B7",
+            Loc.T("新增「打开文件夹」"),
+            Loc.T("启动面板的实例选择旁可直接打开当前实例的文件夹，方便查看或手动管理文件。")),
+        new("\uE7BA",
+            Loc.T("启动失败可直接跳转诊断"),
+            Loc.T("启动失败时会询问是否打开崩溃诊断，不必再自己找入口。")),
+        new("\uE74D",
+            Loc.T("全面加固事件处理"),
+            Loc.T("所有页面操作都补上了错误保护，异常会记录到日志并提示，不会让启动器退出；清除数据中途出错也会明确告知。")),
         new("\uE895",
             Loc.T("更新公告只弹一次"),
             Loc.T("此前更新公告要等你关掉对话框才记录，未关掉就会每次启动重复弹出；现在启动时先记录再显示，只弹一次。想再看可在「关于」页点「查看本次更新」。")),

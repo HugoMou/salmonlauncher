@@ -1,4 +1,4 @@
-// SalmonLauncher (SL) — a Minecraft Java edition launcher
+﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -284,16 +284,30 @@ public sealed partial class OnboardingView : UserControl
 
     private async void OnThemeSceneClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is not WallpaperCard card)
-            return;
-        if (await ThemeApplier.ApplySceneAsync(card).ConfigureAwait(true))
-            RefreshThemeStatus();
+        try
+        {
+            if (e.ClickedItem is not WallpaperCard card)
+                return;
+            if (await ThemeApplier.ApplySceneAsync(card).ConfigureAwait(true))
+                RefreshThemeStatus();
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Error("UI", ex);
+        }
     }
 
     private async void OnThemePickImage(object sender, RoutedEventArgs e)
     {
-        if (await ThemeApplier.PickAndApplyAsync().ConfigureAwait(true))
-            RefreshThemeStatus();
+        try
+        {
+            if (await ThemeApplier.PickAndApplyAsync().ConfigureAwait(true))
+                RefreshThemeStatus();
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Error("UI", ex);
+        }
     }
 
     private void OnThemeClear(object sender, RoutedEventArgs e)

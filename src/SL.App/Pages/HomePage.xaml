@@ -110,7 +110,20 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Padding="28,24" Spacing="14">
-                        <TextBlock Text="游戏实例" Style="{StaticResource Style.SectionTitle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="游戏实例" Style="{StaticResource Style.SectionTitle}" />
+                            <HyperlinkButton Grid.Column="1"
+                                             x:Name="OpenInstanceFolderLink"
+                                             Content="打开文件夹"
+                                             Click="OnOpenInstanceFolder"
+                                             FontSize="11.5"
+                                             Padding="0"
+                                             VerticalAlignment="Center" />
+                        </Grid>
 
                         <ComboBox x:Name="InstanceBox"
                                   ItemsSource="{Binding Instances}"
