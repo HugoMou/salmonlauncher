@@ -25,10 +25,13 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.6";
+    public const string Version = "2.0.7";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE895",
+            Loc.T("更新公告只弹一次"),
+            Loc.T("此前更新公告要等你关掉对话框才记录，未关掉就会每次启动重复弹出；现在启动时先记录再显示，只弹一次。想再看可在「关于」页点「查看本次更新」。")),
         new("\uE8FD",
             Loc.T("列表不再显示空徽章"),
             Loc.T("版本列表与任务卡片此前会为空内容画出彩色徽章框；现在没有内容时不显示徽章。")),
@@ -76,10 +79,17 @@ public static class WhatsNew
             Loc.T("不提供便携版；安装包会保留已有用户数据。")),
     ];
 
-    /// <summary>Whether the announcement should be shown for the running version.</summary>
+    /// <summary>
+    /// Whether the announcement should be shown for the running version.
+    /// An empty value means the user has never seen one, in which case it is shown once.
+    /// </summary>
     public static bool ShouldShow(string lastSeenVersion)
         => !string.Equals(lastSeenVersion, Version, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Remember that this version's notes have been shown, so they never repeat.</summary>
     public static void MarkSeen()
         => AppServices.Settings.Update(c => c.LastSeenVersion = Version);
+
+    /// <summary>Version whose notes the user has already seen (empty when none).</summary>
+    public static string LastSeen => AppServices.Settings.Current.LastSeenVersion;
 }

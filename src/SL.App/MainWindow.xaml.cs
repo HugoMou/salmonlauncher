@@ -190,9 +190,12 @@ public sealed partial class MainWindow : Window
             if (!WhatsNew.ShouldShow(AppServices.Settings.Current.LastSeenVersion))
                 return;
 
+            // Record it before showing: if the window is closed while the dialog is open, or the
+            // user never dismisses it, the announcement must not appear again on every launch.
+            WhatsNew.MarkSeen();
+
             var dialog = new WhatsNewDialog(WhatsNew.Version, WhatsNew.Items);
             await AppServices.Dialogs.ShowCustomAsync(dialog);
-            WhatsNew.MarkSeen();
         }
         catch (Exception ex)
         {
