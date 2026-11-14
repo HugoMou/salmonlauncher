@@ -41,6 +41,12 @@ public sealed class VersionRow
     public string Badge { get; }
     public string Released { get; }
 
+    /// <summary>Hide the badge pill for stable releases, which carry no badge text.</summary>
+    public Microsoft.UI.Xaml.Visibility BadgeVisibility =>
+        string.IsNullOrWhiteSpace(Badge)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
     public override string ToString() => Id;
 }
 

@@ -25,10 +25,16 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.5";
+    public const string Version = "2.0.6";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE8FD",
+            Loc.T("列表不再显示空徽章"),
+            Loc.T("版本列表与任务卡片此前会为空内容画出彩色徽章框；现在没有内容时不显示徽章。")),
+        new("\uE713",
+            Loc.T("任务卡片只显示可用的操作"),
+            Loc.T("暂停、继续、重试、取消四个按钮此前始终并排显示、多数点不动；现在只显示当前状态下能用的那些。")),
         new("\uE7BA",
             Loc.T("没有实例时启动按钮会正确置灰"),
             Loc.T("此前没有可用实例时按钮仍可点击、只有点下去才弹出提示；现在会直接禁用，并在按钮上说明原因。")),
