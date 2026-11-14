@@ -25,10 +25,13 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.4";
+    public const string Version = "2.0.5";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE7BA",
+            Loc.T("没有实例时启动按钮会正确置灰"),
+            Loc.T("此前没有可用实例时按钮仍可点击、只有点下去才弹出提示；现在会直接禁用，并在按钮上说明原因。")),
         new("\uE790",
             Loc.T("支持 Mica 半透明背景"),
             Loc.T("未套用壁纸时，窗口背景改用 Windows 11 的 Mica 材质，能透出桌面；套用壁纸时仍以壁纸为准，旧版系统会自动回退为纯色。")),

@@ -49,7 +49,8 @@ public sealed class HomeVM : VmBase
 
     public HomeVM()
     {
-        LaunchCommand = new RelayCommand(async () => await LaunchAsync(), () => !Busy);
+        LaunchCommand = new RelayCommand(async () => await LaunchAsync(),
+            () => !Busy && SelectedInstance is not null);
         OpenDownloadCommand = new RelayCommand(() => AppServices.Nav.Navigate("dl.game"));
         OpenMultiplayerCommand = new RelayCommand(() => AppServices.Nav.Navigate("tools.online"));
         OpenDiagCommand = new RelayCommand(() => AppServices.Nav.Navigate("tools.diag"));
@@ -84,6 +85,10 @@ public sealed class HomeVM : VmBase
                 _lastSelectedId = value.Id;
                 SL.App.Instances.InstanceContext.Select(value.Id);
             }
+
+            // The launch button is only usable once an instance is selected.
+            LaunchCommand.NotifyCanExecuteChanged();
+            On(nameof(LaunchHint));
         }
     }
 
@@ -112,7 +117,11 @@ public sealed class HomeVM : VmBase
     private string _statusText = Loc.T("就绪");
     public string StatusText { get => _statusText; private set => Set(ref _statusText, value); }
 
-    public string LaunchHint => Busy ? Loc.T("正在启动,请稍候…") : Loc.T("点击开始游戏 · 使用所选实例与当前账户");
+    public string LaunchHint => Busy
+        ? Loc.T("正在启动,请稍候…")
+        : SelectedInstance is null
+            ? Loc.T("先安装或选择一个实例才能启动")
+            : Loc.T("点击开始游戏 · 使用所选实例与当前账户");
 
     private string _accountGlyph = "\uE77B";
     public string AccountGlyph { get => _accountGlyph; private set => Set(ref _accountGlyph, value); }
@@ -153,6 +162,15 @@ public sealed class HomeVM : VmBase
         InstanceSummary = fresh.Count == 0
             ? Loc.T("尚无实例 · 可前往「资源 → 游戏版本」安装")
             : string.Format(Loc.T("共 {0} 个实例 · 就绪"), fresh.Count);
+
+        // With no instance front and centre, "ready" is a lie. The summary on the right already
+        // explains what to do, so keep the left-hand line short to avoid printing it three times.
+        if (fresh.Count == 0 && !Busy)
+            StatusText = Loc.T("未就绪");
+
+        // Selection changes during the rebuild are suppressed, so refresh dependants once here.
+        LaunchCommand.NotifyCanExecuteChanged();
+        On(nameof(LaunchHint));
 
         RefreshAccount();
     }
