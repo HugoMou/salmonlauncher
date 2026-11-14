@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -174,6 +174,110 @@ public sealed partial class InstanceOverviewPage : Page
         if (_current is null)
             return;
         OpenPath(InstanceRegistry.InstanceDirOf(_current.InstanceId));
+    }
+
+    /// <summary>
+    /// Copy the current instance under a new name, so a mod setup can be tried without touching the
+    /// original. Version files are shared; mods, saves, config and options are copied.
+    /// </summary>
+    /// <summary>Run the instance health check and show every finding with its remedy.</summary>
+    private async void OnCheckHealth(object sender, RoutedEventArgs e)
+    {
+        if (_current is null)
+            return;
+
+        try
+        {
+            var findings = InstanceRegistry.CheckHealth(_current.InstanceId);
+
+            var panel = new StackPanel { Spacing = 12, MinWidth = 420 };
+            foreach (var f in findings)
+            {
+                var level = f.Level switch
+                {
+                    HealthLevel.Error => Loc.T("错误"),
+                    HealthLevel.Warning => Loc.T("警告"),
+                    _ => Loc.T("提示"),
+                };
+
+                var box = new StackPanel { Spacing = 3 };
+                box.Children.Add(new TextBlock
+                {
+                    Text = $"[{level}] {f.Title}",
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+                box.Children.Add(new TextBlock
+                {
+                    Text = f.Detail,
+                    FontSize = 12,
+                    Opacity = 0.8,
+                    TextWrapping = TextWrapping.Wrap,
+                });
+                box.Children.Add(new TextBlock
+                {
+                    Text = Loc.T("处理建议:") + f.Remedy,
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush?)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                });
+
+                panel.Children.Add(box);
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = string.Format(Loc.T("检查实例「{0}」"), _current.InstanceId),
+                Content = new ScrollViewer
+                {
+                    Content = panel,
+                    MaxHeight = 460,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                },
+                PrimaryButtonText = Loc.T("知道了"),
+                DefaultButton = ContentDialogButton.Primary,
+            };
+
+            await AppServices.Dialogs.ShowCustomAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("InstanceOverview", ex);
+            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("检查失败:") + ex.Message);
+        }
+    }
+
+    private async void OnDuplicateInstance(object sender, RoutedEventArgs e)
+    {
+        if (_current is null)
+            return;
+
+        try
+        {
+            var confirmed = await AppServices.Dialogs.ConfirmAsync(
+                Loc.T("复制实例"),
+                string.Format(Loc.T("将把实例「{0}」的模组、存档与配置复制到一个新实例。游戏版本文件是共享的，不会重复占用空间。是否继续？"), _current.InstanceId),
+                MsgMark.Question,
+                Loc.T("复制"),
+                Loc.T("取消")).ConfigureAwait(true);
+
+            if (!confirmed)
+                return;
+
+            StatusText.Text = Loc.T("正在复制实例…");
+
+            var created = await Task.Run(() => InstanceRegistry.DuplicateInstance(_current.InstanceId)).ConfigureAwait(true);
+
+            AppServices.Notify.Publish(NotifyKind.Success, string.Format(Loc.T("已复制为 {0}"), created));
+            InstanceContext.Select(created);
+            Reload(selectCurrent: true);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("InstanceOverview", ex);
+            AppServices.Notify.Publish(NotifyKind.Error, Loc.T("复制失败:") + ex.Message);
+            Reload(selectCurrent: true);
+        }
     }
 
     private async void OnBackupSaves(object sender, RoutedEventArgs e)

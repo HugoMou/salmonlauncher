@@ -114,6 +114,8 @@
                         </Button>
                         <Button Content="打开目录" Click="OnOpenDir" />
                         <Button Content="备份存档" Click="OnBackupSaves" />
+                        <Button Content="复制实例" Click="OnDuplicateInstance" />
+                        <Button Content="检查实例" Click="OnCheckHealth" />
                     </StackPanel>
                 </StackPanel>
             </Border>

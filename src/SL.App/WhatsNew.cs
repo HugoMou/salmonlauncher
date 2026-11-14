@@ -25,10 +25,19 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.9";
+    public const string Version = "2.0.10";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE74E",
+            Loc.T("新增实例健康检查"),
+            Loc.T("在实例概览点「检查实例」，会检查核心文件是否完整、是否缺少 Fabric API、是否存在重复模组，并给出处理建议。")),
+        new("\uE8B7",
+            Loc.T("新增还原备份"),
+            Loc.T("存档页新增「还原备份」：从历史备份中选一份覆盖当前存档，原存档会先移到 backups 目录，随时可以找回。")),
+        new("\uE710",
+            Loc.T("新增复制实例"),
+            Loc.T("实例概览可一键复制当前实例的模组、存档与配置；游戏版本文件共享，不会重复占用磁盘。")),
         new("\uE774",
             Loc.T("补齐英文与日文翻译"),
             Loc.T("此前约 110 条界面文案（条款正文、联机说明、更新公告等）在英文与日文界面下仍显示中文，现已全部补齐。")),

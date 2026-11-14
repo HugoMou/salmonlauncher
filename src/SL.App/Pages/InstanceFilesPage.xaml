@@ -57,6 +57,10 @@
                             Content="备份全部"
                             Click="OnBackup"
                             Visibility="Collapsed" />
+                    <Button x:Name="RestoreButton"
+                            Content="还原备份"
+                            Click="OnRestoreBackup"
+                            Visibility="Collapsed" />
                     <Button Content="刷新" Click="OnRefresh" />
                     <Button Content="打开目录" Click="OnOpenDir" />
                 </StackPanel>
