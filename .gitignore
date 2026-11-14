@@ -35,3 +35,10 @@ Thumbs.db
 Desktop.ini
 installer/certs/
 
+
+# ---------- Promo (video project, keep sources; ignore heavy/generated) ----------
+promo/node_modules/
+promo/.tmp/
+promo/out/
+promo/test-shots/
+.verify-shots*/

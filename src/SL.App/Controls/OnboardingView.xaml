@@ -222,7 +222,17 @@
                                         BorderThickness="1"
                                         CornerRadius="10"
                                         Padding="16">
-                                    <StackPanel x:Name="MigrateList" Spacing="10" />
+                                    <StackPanel Spacing="12">
+                                        <StackPanel x:Name="MigrateList" Spacing="10" />
+
+                                        <!-- Portable installs and Minecraft on another drive are not in a
+                                             standard location, so let the user point at the folder directly. -->
+                                        <Button x:Name="PickFolderBtn"
+                                                Content="选择数据文件夹…"
+                                                Click="OnPickMigrateFolder"
+                                                HorizontalAlignment="Left"
+                                                Padding="14,6" />
+                                    </StackPanel>
                                 </Border>
 
                                 <TextBlock x:Name="MigrateHint"

@@ -64,6 +64,62 @@ public static class MigrationDetector
         return results;
     }
 
+    /// <summary>
+    /// Detect an importable launcher at a folder the user picked themselves, for installs that do
+    /// not live in a standard location (portable HMCL, Minecraft on another drive, a backup).
+    /// Accepts the game folder itself or its parent, and returns an empty list when nothing matches.
+    /// </summary>
+    public static IReadOnlyList<MigrationSource> ScanPath(string folder)
+    {
+        var found = new List<MigrationSource>();
+        if (string.IsNullOrWhiteSpace(folder))
+            return found;
+
+        try
+        {
+            var root = Path.GetFullPath(folder.Trim().Trim('"'));
+
+            // Accept the .minecraft folder or its parent.
+            var mcRoot = LooksLikeMinecraft(root)
+                ? root
+                : Path.Combine(root, ".minecraft");
+
+            if (Directory.Exists(mcRoot))
+            {
+                var hmclJson = Path.Combine(mcRoot, "hmcl.json");
+                if (File.Exists(hmclJson) && DetectHMCL(mcRoot, hmclJson) is { } hmcl)
+                    found.Add(hmcl);
+
+                var profiles = Path.Combine(mcRoot, "launcher_profiles.json");
+                if (File.Exists(profiles) && DetectOfficial(mcRoot, profiles) is { } official)
+                    found.Add(official);
+
+                if (found.Count == 0 && Directory.Exists(Path.Combine(mcRoot, "versions"))
+                    && DetectGeneric(mcRoot, Path.Combine(mcRoot, "versions")) is { } generic)
+                {
+                    found.Add(generic);
+                }
+            }
+
+            // MultiMC / Prism layout: <root>/instances plus mmc-pack.json files.
+            if (Directory.Exists(Path.Combine(root, "instances")) && DetectMultiMC(root) is { } mmc)
+                found.Add(mmc);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Migration", ex);
+        }
+
+        return found;
+    }
+
+    /// <summary>True when the folder itself contains the parts of a Minecraft installation.</summary>
+    private static bool LooksLikeMinecraft(string dir)
+        => Directory.Exists(Path.Combine(dir, "versions"))
+           || Directory.Exists(Path.Combine(dir, "saves"))
+           || File.Exists(Path.Combine(dir, "launcher_profiles.json"))
+           || File.Exists(Path.Combine(dir, "hmcl.json"));
+
     private static IEnumerable<MigrationSource?> Candidates()
     {
         // Minecraft directory (shared by HMCL, official launcher, and many others)

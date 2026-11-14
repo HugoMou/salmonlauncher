@@ -30,6 +30,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Spacing="4">
@@ -59,11 +60,12 @@
                              PlaceholderText="{Binding SearchHint}"
                              MinWidth="180"
                              KeyDown="OnSearchKeyDown"
+                             TextChanged="OnSearchTextChanged"
                              VerticalAlignment="Center" />
                     <Button Grid.Column="1"
-                            Command="{Binding SearchCommand}"
+                            Click="OnSearchClicked"
                             Style="{ThemeResource AccentButtonStyle}"
-                            Content="搜索"
+                            Content="{x:Bind VM.SearchLabel, Mode=OneWay}"
                             VerticalAlignment="Center" />
                     <ProgressRing Grid.Column="2"
                                   IsActive="True"
@@ -81,7 +83,31 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="2"
+            <!-- Section heading: "popular picks" while the box is empty, "search results" otherwise. -->
+            <Grid Grid.Row="2" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding SectionTitle}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource Brush.Fg}" />
+                    <TextBlock Text="{Binding SectionHint}"
+                               FontSize="11.5"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource Brush.FgFaint}" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Padding="14,5"
+                        Content="{Binding ShuffleText}"
+                        Visibility="{Binding ShuffleVisibility}"
+                        Command="{Binding ShuffleCommand}" />
+            </Grid>
+
+            <Border Grid.Row="3"
                     Background="{ThemeResource Brush.Card}"
                     BorderBrush="{ThemeResource Brush.Border}"
                     BorderThickness="1"
