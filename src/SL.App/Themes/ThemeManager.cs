@@ -348,6 +348,11 @@ public static class ThemeManager
         Put(dark, "Brush.PageBgTrans", WithAlpha(pageDark, 0x7D));
         Put(light, "Brush.PageBgTrans", WithAlpha(pageLight, 0x8C));
 
+        // No wallpaper: keep the page surface mostly transparent so the Mica backdrop shows through,
+        // while a light tint still keeps text readable over whatever desktop sits behind the window.
+        Put(dark, "Brush.PageBgMica", WithAlpha(pageDark, 0x59));
+        Put(light, "Brush.PageBgMica", WithAlpha(pageLight, 0x66));
+
         // Softer scrim: the translucent page surface already tints the image, so the scrim only
         // removes the brightest highlights instead of flattening the picture
         Put(dark, "Brush.WallpaperScrim", Argb(0x33, 0, 0, 0));

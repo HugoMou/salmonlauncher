@@ -25,10 +25,16 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.3";
+    public const string Version = "2.0.4";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
+        new("\uE790",
+            Loc.T("支持 Mica 半透明背景"),
+            Loc.T("未套用壁纸时，窗口背景改用 Windows 11 的 Mica 材质，能透出桌面；套用壁纸时仍以壁纸为准，旧版系统会自动回退为纯色。")),
+        new("\uE7BA",
+            Loc.T("协议更新后会再次确认"),
+            Loc.T("以前只要同意过一次就不再提示；现在会校验条款版本，协议改版后会再次请你确认新内容。")),
         new("\uE74D",
             Loc.T("未处理的错误不再让启动器退出"),
             Loc.T("以前后台任务或界面事件里出现未预期错误时，启动器会直接消失；现在会记录下来、提示一次，并继续运行。")),
