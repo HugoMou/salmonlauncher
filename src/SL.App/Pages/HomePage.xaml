@@ -183,7 +183,8 @@
                             <TextBlock Grid.Column="1"
                                        Text="{Binding StatusText}"
                                        FontSize="11.5"
-                                       TextWrapping="Wrap"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
                                        Foreground="{ThemeResource Brush.FgDim}"
                                        VerticalAlignment="Center" />
                             <TextBlock Grid.Column="2"
@@ -192,7 +193,7 @@
                                        TextWrapping="Wrap"
                                        TextAlignment="Right"
                                        MaxWidth="360"
-                                       Foreground="{ThemeResource Brush.FgFaint}"
+                                       Foreground="{ThemeResource Brush.FgDim}"
                                        VerticalAlignment="Center" />
                         </Grid>
                     </StackPanel>
