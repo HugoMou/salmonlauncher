@@ -97,6 +97,7 @@
                                         <Border Background="{ThemeResource Brush.SuccessSoft}"
                                                 CornerRadius="6"
                                                 Padding="6,1"
+                                                Visibility="{Binding RunBadgeVisibility}"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="{Binding RunBadge}"
                                                        FontSize="10.5"
@@ -133,15 +134,20 @@
                                                    Foreground="{ThemeResource Brush.FgFaint}" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                                        <Button Command="{Binding PauseCommand}" Content="暂停" Padding="12,4" />
-                                        <Button Command="{Binding ResumeCommand}" Content="继续" Padding="12,4" />
-                                        <Button Command="{Binding RetryCommand}" Content="重试" Padding="12,4" />
-                                        <Button Command="{Binding CancelCommand}" Content="取消" Padding="12,4" />
+                                        <Button Command="{Binding PauseCommand}" Content="暂停" Padding="12,4"
+                                                Visibility="{Binding PauseVisibility}" />
+                                        <Button Command="{Binding ResumeCommand}" Content="继续" Padding="12,4"
+                                                Visibility="{Binding ResumeVisibility}" />
+                                        <Button Command="{Binding RetryCommand}" Content="重试" Padding="12,4"
+                                                Visibility="{Binding RetryVisibility}" />
+                                        <Button Command="{Binding CancelCommand}" Content="取消" Padding="12,4"
+                                                Visibility="{Binding CancelVisibility}" />
                                     </StackPanel>
                                 </Grid>
 
                                 <TextBlock Text="{Binding ErrorText}"
                                            FontSize="11.5"
+                                           Visibility="{Binding ErrorVisibility}"
                                            Foreground="{ThemeResource Brush.Danger}"
                                            TextWrapping="Wrap" />
 

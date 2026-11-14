@@ -139,6 +139,7 @@
                                         Background="{ThemeResource Brush.AccentSoft}"
                                         CornerRadius="6"
                                         Padding="7,1"
+                                        Visibility="{Binding BadgeVisibility}"
                                         VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Badge}"
                                                FontSize="10.5"

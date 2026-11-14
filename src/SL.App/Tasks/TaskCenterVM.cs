@@ -61,6 +61,12 @@ public sealed class TaskRowVM : VmBase
         On(nameof(SpeedText));
         On(nameof(RemainText));
         On(nameof(RunBadge));
+        On(nameof(RunBadgeVisibility));
+        On(nameof(ErrorVisibility));
+        On(nameof(PauseVisibility));
+        On(nameof(ResumeVisibility));
+        On(nameof(RetryVisibility));
+        On(nameof(CancelVisibility));
         PauseCommand.NotifyCanExecuteChanged();
         ResumeCommand.NotifyCanExecuteChanged();
         CancelCommand.NotifyCanExecuteChanged();
@@ -71,6 +77,34 @@ public sealed class TaskRowVM : VmBase
 
     /// <summary>Run badge next to the title: "Done" when completed, empty otherwise</summary>
     public string RunBadge => _snap.State == TransferState.Completed ? Loc.T("完成") : "";
+
+    /// <summary>Hide the badge pill entirely for tasks that are not finished.</summary>
+    public Microsoft.UI.Xaml.Visibility RunBadgeVisibility =>
+        _snap.State == TransferState.Completed
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    /// <summary>Only show the error line for failed tasks.</summary>
+    public Microsoft.UI.Xaml.Visibility ErrorVisibility =>
+        string.IsNullOrWhiteSpace(_snap.Error)
+            ? Microsoft.UI.Xaml.Visibility.Collapsed
+            : Microsoft.UI.Xaml.Visibility.Visible;
+
+    // Show only the action that applies to the current state, instead of four mostly-disabled buttons.
+    public Microsoft.UI.Xaml.Visibility PauseVisibility => Show(
+        _snap.State is TransferState.Queued or TransferState.Downloading or TransferState.Verifying);
+
+    public Microsoft.UI.Xaml.Visibility ResumeVisibility => Show(_snap.State == TransferState.Paused);
+
+    public Microsoft.UI.Xaml.Visibility RetryVisibility => Show(
+        _snap.State is TransferState.Failed or TransferState.Cancelled);
+
+    public Microsoft.UI.Xaml.Visibility CancelVisibility => Show(
+        _snap.State is TransferState.Queued or TransferState.Downloading or TransferState.Verifying
+            or TransferState.Paused);
+
+    private static Microsoft.UI.Xaml.Visibility Show(bool visible) =>
+        visible ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public string StateText => _snap.State switch
     {
