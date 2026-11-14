@@ -17,6 +17,7 @@ using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using SL.App.Dialogs;
 using SL.App.Localization;
 using SL.App.Infrastructure;
 using SL.Core.Boot;
@@ -52,6 +53,20 @@ public sealed partial class AboutPage : Page
     private void OnOpenLogs(object sender, RoutedEventArgs e) => OpenPath(Runtime.LogDir);
 
     private void OnOpenTerms(object sender, RoutedEventArgs e) => AppServices.Nav.Navigate("st.terms");
+
+    /// <summary>On-demand release notes, so the announcement does not have to appear on every launch.</summary>
+    private async void OnShowReleaseNotes(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dialog = new WhatsNewDialog(WhatsNew.Version, WhatsNew.Items);
+            await AppServices.Dialogs.ShowCustomAsync(dialog);
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("About", "打开更新公告失败:" + ex.Message);
+        }
+    }
 
     private static void OpenPath(string path)
     {
