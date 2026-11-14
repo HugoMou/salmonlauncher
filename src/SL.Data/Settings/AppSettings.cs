@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -76,6 +76,9 @@ public class AppSettings
 
     /// <summary>Currently selected instance, shared across pages</summary>
     public string? ActiveInstanceId { get; set; }
+
+    /// <summary>Use Windows 11 Mica window backdrop when available; default off (normal solid background).</summary>
+    public bool UseMicaBackdrop { get; set; } = false;
 }
 
 /// <summary>Read/write entry point for the settings file (atomic persistence).</summary>

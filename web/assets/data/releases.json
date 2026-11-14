@@ -1,7 +1,20 @@
 {
   "repo": "HugoMou/salmonlauncher",
-  "syncedAt": "2026-11-14T13:30:00Z",
+  "syncedAt": "2026-11-14T14:45:00Z",
   "releases": [
+    {
+      "tag": "v2.0.13",
+      "date": "2026-11-14",
+      "pre": false,
+      "assets": [
+        {
+          "name": "SL-Setup-2.0.13-win64.exe",
+          "size": 63517072,
+          "sha256": "B6CD0E46CFA6AF926D2BD5B35BFCD4ED08107DA7E2F760163CD873E1B6D3E88F",
+          "url": "downloads/v2.0.13/SL-Setup-2.0.13-win64.exe"
+        }
+      ]
+    },
     {
       "tag": "v2.0.12",
       "date": "2026-11-14",

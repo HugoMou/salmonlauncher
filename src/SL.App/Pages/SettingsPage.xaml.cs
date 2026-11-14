@@ -109,6 +109,7 @@ public sealed partial class SettingsPage : Page
             .Select(a => new AccentCardVM(a, c.Accent))
             .ToList();
 
+        MicaToggle.IsOn = c.UseMicaBackdrop;
         ConcurrencyBox.Value = c.TransferConcurrency;
         MirrorToggle.IsOn = c.ModrinthMirror;
         AutoUpdateToggle.IsOn = c.CheckLauncherUpdateOnStart;
@@ -216,6 +217,13 @@ public sealed partial class SettingsPage : Page
 
     private void OnOpenWorkshop(object sender, RoutedEventArgs e) => AppServices.Nav.Navigate("st.theme");
     private void OnOpenTerms(object sender, RoutedEventArgs e) => AppServices.Nav.Navigate("st.terms");
+
+    private void OnMicaToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading)
+            return;
+        AppServices.Settings.Update(c => c.UseMicaBackdrop = MicaToggle.IsOn);
+    }
 
     private void OnMirrorToggled(object sender, RoutedEventArgs e)
     {
