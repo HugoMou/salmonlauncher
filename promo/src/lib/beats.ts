@@ -1,11 +1,11 @@
 /**
- * beats.ts — beat grid and cut helpers for "3 Strikes" (177.6s), analyzed ~108 BPM.
+ * beats.ts — beat grid and cut helpers for "3 Strikes" played twice (355.2s), analyzed ~108 BPM.
  * Use these to snap motion/cuts to music. All times in seconds unless noted.
  */
 export const BPM = 108;
 export const PERIOD = 60 / BPM; // 0.555...
 export const PHASE = 0.4164;    // first beat anchor (s)
-export const DURATION = 177.6;
+export const DURATION = 355.2;  // two full playbacks of the track
 
 export const beatTime = (i: number) => PHASE + i * PERIOD;
 export const beatFrame = (i: number, fps: number) => Math.round(beatTime(i) * fps);

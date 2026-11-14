@@ -1,11 +1,11 @@
-// spec.ts — SalmonLauncher promo, Apple-keynote energy, 177.6s synced to "3 Strikes" (108 BPM).
+// spec.ts — SalmonLauncher promo, Apple-keynote energy, 355.2s synced to "3 Strikes" played twice (108 BPM).
 // Real launcher screenshots from clean default state (v2.0.13, Mica off, no personal traces).
 import {loadFont} from '@remotion/google-fonts/Inter';
 import {BEAT_COUNT, BPM, DURATION, PERIOD, PHASE} from './lib/beats';
 
 const inter = loadFont('normal', {weights: ['400','500','600','700','800','900'], subsets: ['latin']});
 
-export const AUDIO_FILE = 'audio/track.m4a';
+export const AUDIO_FILE = 'audio/track_double.m4a';
 export const AUDIO_DURATION = DURATION;
 export {BPM, PERIOD, PHASE, BEAT_COUNT};
 
