@@ -41,7 +41,7 @@ public sealed partial class MainWindow : Window
         Title = "SalmonLauncher";
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
-        SystemBackdrop = new MicaBackdrop();
+        TryEnableMica();
 
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         var scale = GetDpiForWindow(hwnd) / 96.0;
@@ -93,6 +93,30 @@ public sealed partial class MainWindow : Window
 
     // ---------------------------------------------------------- Window icon
 
+    /// <summary>
+    /// Enable a Mica backdrop when the OS supports it (Windows 11). On older Windows the
+    /// property is unavailable or throws, so the window falls back to its own background.
+    /// </summary>
+    private void TryEnableMica()
+    {
+        try
+        {
+            // Mica needs Windows 11 (build 22000+); constructing the backdrop on older builds
+            // throws, so probe the build and fall back to the window's own background.
+            if (Environment.OSVersion.Version.Build < 22000)
+            {
+                Core.Logging.AppLog.Info("Shell", "系统版本低于 Windows 11，Mica 不可用，使用纯色背景");
+                return;
+            }
+
+            SystemBackdrop = new MicaBackdrop();
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Shell", "启用 Mica 背景失败:" + ex.Message);
+        }
+    }
+
     /// <summary>Taskbar / Alt+Tab icon: bundled Assets\Logo.ico (with multiple sizes from 16 to 256).</summary>
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(IntPtr hwnd);
@@ -115,16 +139,29 @@ public sealed partial class MainWindow : Window
 
     private async Task EnsureTermsAsync()
     {
-        if (AppServices.Settings.Current.TermsAccepted)
+        var settings = AppServices.Settings.Current;
+
+        // Accepting an older revision of the agreement does not cover the current one, so ask again
+        // when the stored version is stale. An empty value means the user accepted before the
+        // version was recorded, which also needs confirming once.
+        var upToDate = settings.TermsAccepted
+                       && string.Equals(settings.TermsVersion, TermsPage.CurrentTermsVersion,
+                           StringComparison.OrdinalIgnoreCase);
+        if (upToDate)
             return;
+
+        var outdated = settings.TermsAccepted && !upToDate;
 
         var agreed = await AppServices.Dialogs.ConfirmAsync(
             Loc.T("用户协议与免责声明"),
-            Loc.T("SalmonLauncher 为第三方免费工具,与 Mojang Studios、Microsoft 无隶属或授权关系;Minecraft 是 Mojang Studios 的商标。")
+            (outdated
+                ? Loc.T("用户协议已更新，请阅读并确认新版本后继续使用。") + "\n\n"
+                : "")
+            + Loc.T("SalmonLauncher 为第三方免费工具,与 Mojang Studios、Microsoft 无隶属或授权关系;Minecraft 是 Mojang Studios 的商标。")
             + "\n\n"
             + Loc.T("本软件不含任何统计、埋点或广告组件,不会收集你的设备信息、游戏行为或个人信息。仅在排查问题时,你主动分享的日志文件会被读取。")
             + "\n\n"
-            + $"{Loc.T("版本")} {Core.Boot.Runtime.AppVersion} · {Loc.T("使用本软件即表示你已阅读并接受以下全部条款。")}",
+            + $"{Loc.T("版本")} {Core.Boot.Runtime.AppVersion} · {Loc.T("条款版本")} {TermsPage.CurrentTermsVersion} · {Loc.T("使用本软件即表示你已阅读并接受以下全部条款。")}",
             MsgMark.Info,
             Loc.T("同意并继续"),
             Loc.T("关闭")).ConfigureAwait(true);
@@ -285,7 +322,8 @@ public sealed partial class MainWindow : Window
         {
             WallpaperLayer.Visibility = Visibility.Collapsed;
             WallpaperBrush.ImageSource = null;
-            SetContentBackground(ThemedBrush("Brush.PageBg"));
+            // Transparent enough for the Mica backdrop to show; a wallpaper replaces it entirely.
+            SetContentBackground(ThemedBrush("Brush.PageBgMica"));
             return;
         }
 
@@ -303,7 +341,7 @@ public sealed partial class MainWindow : Window
         catch
         {
             WallpaperLayer.Visibility = Visibility.Collapsed;
-            SetContentBackground(ThemedBrush("Brush.PageBg"));
+            SetContentBackground(ThemedBrush("Brush.PageBgMica"));
         }
     }
 
