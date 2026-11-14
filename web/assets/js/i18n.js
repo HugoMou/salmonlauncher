@@ -550,4 +550,44 @@ window.SL_I18N = {"zh-hant":{"启动器官网":"啟動器官網","功能":"功�
     });
   });
 })();
+
+/* ---- 2026-11 v2.0.9: i18n coverage ---- */
+  /* ---- Traditional Chinese ---- */
+(function () {
+  var extra = {
+    "zh-hant": {
+      "补齐英文与日文翻译：此前约 110 条界面文案在英文/日文下仍显示中文。": "補齊英文與日文翻譯：先前約 110 條介面文案在英文／日文下仍顯示中文。",
+      "补齐英文与日文翻译": "Complete English and Japanese translation",
+      "审计发现 117 条界面文案没有英日翻译，包括整节用户协议、联机说明、更新公告词条、迁移步骤与多个提示框。": "稽核發現 117 條介面文案沒有英日翻譯，包括整節使用者協議、連線說明、更新公告詞條、移轉步驟與多個提示框。",
+      "现已全部补齐；用英文界面实测扫描，除产品名外不再出现中文。": "現已全部補齊；用英文介面實測掃描，除產品名外不再出現中文。"
+    }
+  };
+
+  Object.keys(extra).forEach(function (lang) {
+    var table = window.SL_I18N && window.SL_I18N[lang];
+    if (!table) return;
+    Object.keys(extra[lang]).forEach(function (key) {
+      table[key] = extra[lang][key];
+    });
+  });
+})();
+  /* ---- Japanese ---- */
+(function () {
+  var extra = {
+    "ja": {
+      "补齐英文与日文翻译：此前约 110 条界面文案在英文/日文下仍显示中文。": "英語と日本語の翻訳を補完: 以前は約 110 件の画面文言が英語・日本語でも中国語のまま表示されていました。",
+      "补齐英文与日文翻译": "英語と日本語の翻訳を補完",
+      "审计发现 117 条界面文案没有英日翻译，包括整节用户协议、联机说明、更新公告词条、迁移步骤与多个提示框。": "監査で 117 件の画面文言に英日訳がないことが判明しました。規約の全節、マルチプレイの説明、更新のお知らせ、移行手順、複数のダイアログが含まれます。",
+      "现已全部补齐；用英文界面实测扫描，除产品名外不再出现中文。": "すべて補完しました。英語画面で実際に走査した結果、製品名以外に中国語は残っていません。"
+    }
+  };
+
+  Object.keys(extra).forEach(function (lang) {
+    var table = window.SL_I18N && window.SL_I18N[lang];
+    if (!table) return;
+    Object.keys(extra[lang]).forEach(function (key) {
+      table[key] = extra[lang][key];
+    });
+  });
+})();
 })();
