@@ -72,6 +72,27 @@ const Bullet: React.FC<{text: string; x: number; y: number; delay: number; accen
   );
 };
 
+// 下载/安装等待详情：随进度条展示已下载大小、速度、预计剩余时间，给用户“正在安装，请稍候”的真实感觉
+const DownloadInfo: React.FC<{x:number;y:number;at:number;dur:number}> = ({x,y,at,dur}) => {
+  const l = useCurrentFrame();
+  const t = l - at;
+  if (t < 0 || t > dur) return null;
+  const p = Math.min(1, t / dur);
+  const mbps = 2.4 + Math.sin(p * Math.PI) * 0.7;
+  const total = 720;
+  const done = Math.round(total * p);
+  const remain = Math.round((total - done) / mbps);
+  const mm = String(Math.floor(remain / 60)).padStart(2, '0');
+  const ss = String(remain % 60).padStart(2, '0');
+  return (
+    <div style={{position:'absolute',left:x,top:y,fontFamily:FONT,fontSize:20,color:COLOR.dim,lineHeight:1.6,opacity:interpolate(l,[at,at+2,at+dur-2,at+dur],[0,1,1,0],clamp)}}>
+      <div style={{color:COLOR.accent,fontWeight:700,marginBottom:2}}>正在下载游戏资源，请稍候…</div>
+      <div>已下载 {done} MB / {total} MB</div>
+      <div>速度 {mbps.toFixed(1)} MB/s · 预计剩余 {mm}:{ss}</div>
+    </div>
+  );
+};
+
 // 用户真实点击按钮：光标移动到按钮 + 点击光环 + 闪光，全程保持 3D 镜头语境
 const ClickPoint: React.FC<{x:number;y:number;at:number;label?:string}> = ({x,y,at,label}) => {
   const l = useCurrentFrame();
@@ -256,6 +277,7 @@ const LaunchPlay: React.FC<{base: number}> = ({base}) => {
         <FloatCard file={SHOTS.versions} x={1260} y={500} w={330} baseBeat={phase * 6} label="版本" ryBase={-12} />
         <FloatCard file={SHOTS.loaders} x={740} y={620} w={310} baseBeat={phase * 6 + 3} label="加载器" ryBase={14} />
         {phase >= 2 && <Bar x={600} y={880} w={440} at={stepDur(13)} dur={stepDur(8)} label="准备资源 / 检查依赖 / 补全文件…" done={phase >= 3 ? '✓ 准备完成，正在启动游戏' : undefined} />}
+        {phase >= 2 && <div style={{position:'absolute',left:600,top:990,fontFamily:FONT,fontSize:18,color:COLOR.dim,opacity:interpolate(l,[stepDur(13),stepDur(13)+2,stepDur(21)-2,stepDur(21)],[0,1,1,0],clamp)}}>资源校验中，请稍候…</div>}
         {phase >= 3 && <Panel x={1180} y={620} w={520} delay={stepDur(19)}><div style={{fontFamily: FONT, fontSize: 34, color: COLOR.accent, fontWeight: 700}}>已进入 Minecraft，开始畅玩</div><div style={{fontFamily: FONT, fontSize: 22, color: COLOR.dim, marginTop: 8}}>启动器全程可见进度与状态，出错可直达诊断</div></Panel>}
         <Panel x={90} y={360} w={520} delay={1}>
           <div style={{fontFamily: FONT, fontSize: 20, color: COLOR.accent, fontWeight: 700, marginBottom: 10}}>步骤 {phase + 1} / 4 · {labels[phase]}</div>
@@ -289,8 +311,9 @@ const Install: React.FC<{base: number}> = ({base}) => {
           <div style={{marginTop: 18, display: 'flex', gap: 10, flexWrap: 'wrap', maxWidth: 520}}>{st.tags.map((tg, i) => <Tag key={tg} text={tg} delay={3 + i} accent={i === 0} size={20} />)}</div>
         </div>
         <Shot3D key={st.file + idx} file={st.file} x={700} y={130} w={1120} delay={idx * seg} ry={-14 + idx * 6} rx={6} z={80} label={st.t} enter={idx % 2 ? 'right' : 'left'} />
-        {idx === 3 && <Bar x={760} y={820} w={980} at={idx * seg + 2} dur={stepDur(3)} label="下载游戏资源 · 多连接加速 · 镜像自动回退" done="✓ 安装完成，实例已就绪" />}
+        <Bar x={760} y={820} w={980} at={idx * seg + 2} dur={stepDur(3.6)} label="下载游戏资源 · 多连接加速 · 镜像自动回退，请稍候…" done={idx === 3 ? '✓ 安装完成，实例已就绪' : undefined} />
         {idx === 2 && <ClickPoint x={1300} y={700} at={idx * seg + stepDur(2)} label="一键安装" />}
+        {idx === 3 && <DownloadInfo x={760} y={900} at={idx * seg + 2} dur={stepDur(3.6)} />}
         {idx === 3 && <ClickPoint x={1300} y={700} at={idx * seg + stepDur(4)} label="开始下载" />}
         <Pulse x={1300} y={700} at={idx * seg + stepDur(2)} />
         <FloatCard file={SHOTS.versions} x={1260} y={520} w={330} baseBeat={idx * 4} label="版本" ryBase={-12} />
