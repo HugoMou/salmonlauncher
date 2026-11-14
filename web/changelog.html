@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.5 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.5: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.6 的自我更新、Campfire 联机与协议重写，以及历史版本。" content="SalmonLauncher release notes for 2.0.6: self-update, Campfire multiplayer and rewritten terms, plus earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -42,7 +42,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.5">Get 2.0.5</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.6">Get 2.0.6</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -65,7 +65,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.5</div>
+      <div>LATEST v2.0.6</div>
     </div>
   </section>
 
@@ -73,16 +73,29 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.5</h2>
+          <h2>v2.0.6</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
           <time datetime="2026-11-13">2026-11-13</time>
         </div>
+        <p class="lede" data-zh="修复列表中的空徽章，以及任务卡片上一排点不动的按钮。">Fixed stray badges in lists and the row of unusable buttons on task cards.</p>
+        <ul>
+          <li data-zh="修复空徽章：版本列表与任务卡片在徽章没有文字时仍会画出彩色底框，稳定版和进行中的任务旁边会出现没有内容的小色块。现在没有内容就不显示徽章。">Stray badges fixed: the version list and task cards drew a coloured badge even when it had no text, leaving small empty blocks next to stable releases and running tasks. The badge is hidden when empty.</li>
+          <li data-zh="修复任务按钮：暂停、继续、重试、取消四个按钮此前始终并排显示，多数时候是灰的、点了也没反应。现在只显示当前状态下可用的操作。">Task buttons fixed: Pause, Resume, Retry and Cancel were always shown side by side, most of them greyed out and inert. Only the actions that apply to the current state are shown now.</li>
+          <li data-zh="修复失败提示占位：没有错误信息的任务不再预留一行空白。">Empty failure line fixed: tasks without an error no longer reserve a blank row.</li>
+          <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.5</h2>
+          <time datetime="2026-11-14">2026-11-14</time>
+        </div>
         <p class="lede" data-zh="修复没有实例时启动面板上的多处显示问题。">Fixed several problems on the launch panel when no instance is installed.</p>
         <ul>
-          <li data-zh="修复启动按钮：没有可用实例时按钮原本仍可点击，只有点下去才提示。现在会直接置灰，并在按钮上说明原因；实例列表或选择变化时状态会同步刷新。">Launch button fixed: with nothing to launch it stayed clickable and only explained itself afterwards. It is now disabled, states the reason on the button, and refreshes whenever the instance list or selection changes.</li>
+          <li data-zh="修复启动按钮：没有可用实例时按钮原本仍可点击，只有点下去才提示。现在会直接置灰，并在按钮上说明原因。">Launch button fixed: with nothing to launch it stayed clickable and only explained itself afterwards. It is now disabled and states the reason on the button.</li>
           <li data-zh="修复自相矛盾的状态：面板写着「就绪」而下方说明没有实例。现在显示「未就绪」。">Contradictory status fixed: the panel claimed “ready” while the summary said no instance was installed. It now reports 未就绪.</li>
-          <li data-zh="修复重复文字：同一句话出现三次并把状态挤成两行，现在状态改为单行短句。">Repeated text fixed: the same sentence appeared three times and wrapped onto two lines; the status is a single short line now.</li>
-          <li data-zh="修复浅色主题下实例摘要几乎看不见的问题，改用可读的次级文字色。">The instance summary was nearly invisible in the light theme; it uses the readable secondary colour.</li>
+          <li data-zh="修复重复文字与浅色主题下摘要看不清的问题。">Fixed the repeated sentence and the near-invisible summary in the light theme.</li>
           <li data-zh="此版本不提供便携版，仅提供安装包。">This release is installer-only; no portable build is provided.</li>
         </ul>
       </article>
@@ -204,7 +217,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.5 已可下载。">2.0.5 is ready.</h2>
+        <h2 data-zh="2.0.6 已可下载。">2.0.6 is ready.</h2>
         <p data-zh="安装包 59.5 MB，便携版 87 MB，均附 SHA-256。">59.5 MB installer, 87 MB portable, both with SHA-256.</p>
       </div>
       <div class="btn-row">
