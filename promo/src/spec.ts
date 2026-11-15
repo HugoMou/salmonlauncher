@@ -68,6 +68,32 @@ export const SHOTS = {
   terms: '30-terms.png',
 } as const;
 
+// 真实操作录屏（真实鼠标点击、下载进度、启动过程、游戏画面），按时间点剪辑进宣传片
+// src: 文件；start/end: 源视频内的秒数；用于 <VideoClip>
+export const CLIPS = {
+  onboarding: 'clips/01-onboarding.mp4',
+  install: 'clips/02-install.mp4',
+  launch: 'clips/03-launch.mp4',
+  game: 'clips/04-game.mp4',
+  tour: 'clips/05-tour.mp4',
+  tour2: 'clips/06-tour2.mp4',
+} as const;
+
+// 录屏关键时间点（秒），来自录制脚本的打点日志
+export const CLIP_MARKS = {
+  // 01 引导：选语言 2.2 / 条款 4.9 / 迁移 7.3 / 账户 9.6 / 主题 12.1 / 完成 16.1
+  onboarding: {lang: 1.6, terms: 4.4, migrate: 7.0, account: 9.3, theme: 11.8, done: 15.5},
+  // 02 安装：选版本 4.9 / 加载器 7.3 / 安装概览 9.6 / 开始安装 12.1（之后为真实下载进度）
+  install: {versions: 2.0, pick: 4.8, loaders: 7.3, plan: 9.6, downloading: 13.5, progress: 30.0},
+  // 03 启动：点击启动 2.1 / 定位 Java 与资源下载 / 66.4 游戏进程起来
+  launch: {click: 1.8, preparing: 6.0, downloading: 20.0, verifying: 52.0, started: 66.0},
+  // 04 游戏：主菜单光标移动
+  game: {menu: 1.0, move: 4.0},
+  // 05 巡览：各页面停留点（每页约 2.6 秒）
+  tour: {tasks: 1.6, overview: 6.8, mods: 9.4, saves: 12.0, cfg: 14.7, logs: 17.3, versions: 19.9, online: 50.8, global: 53.3, diag: 55.9, applog: 58.4, theme: 60.9, skins: 63.6, about: 66.1, terms: 68.7},
+  tour2: {loaders: 2.1, plan: 5.4, repoMods: 8.6, shaders: 12.0, packs: 15.4, instPacks: 18.8, instShaders: 22.0},
+} as const;
+
 export const CREDITS = {
   maker: '制作人员：Hugo Mou（产品设计 / 开发 / 维护）',
   thanks: '致谢名单：Modrinth 内容平台与社区作者 · Campfire 联机组件 · .NET / Windows App SDK / WinUI 3 · Mojang 官方版本与资源生态',

@@ -1,7 +1,7 @@
 // lib/fx.tsx — premium 3D/metal/glass primitives for beat-synced Apple-keynote motion.
 // All visuals are deterministic functions of frame/time.
 import React from 'react';
-import {AbsoluteFill, Easing, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, Easing, Img, OffthreadVideo, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {COLOR, FONT} from '../spec';
 import {hit} from './beats';
 
@@ -254,6 +254,84 @@ export const Panel: React.FC<{x:number;y:number;w:number;children:React.ReactNod
       background:'rgba(20,20,22,0.92)', border:`1px solid ${COLOR.line}`,
       boxShadow:'0 30px 80px rgba(0,0,0,0.5)', opacity:o, transform:`translateY(${(1-p)*40}px) scale(${0.96+p*0.04})`}}>
       {children}
+    </div>
+  );
+};
+
+/**
+ * VideoClip — 在金属边框 3D 屏里播放真实录屏片段。
+ * src: CLIPS 中的文件名；start: 源视频起始秒；delay: 入场延时（帧）。
+ * 真实鼠标光标与下载进度都来自录屏本身，因此观众能看到真实操作过程。
+ */
+export const VideoClip: React.FC<{
+  src: string; x: number; y: number; w: number; h?: number; start?: number; delay?: number;
+  rx?: number; ry?: number; rz?: number; z?: number; scale?: number; label?: string; op?: number;
+  floatAmp?: number; enter?: 'bottom'|'left'|'right'|'back'; mute?: boolean;
+}> = ({src, x, y, w, h, start=0, delay=0, rx=0, ry=0, rz=0, z=0, scale=1, label, op=1, floatAmp=0, enter='back', mute=true}) => {
+  const f = useCurrentFrame(); const {fps} = useVideoConfig();
+  const p = spring({frame: f - delay, fps, config:{damping:14, mass:0.75, stiffness:120}});
+  const o = interpolate(f,[delay,delay+5],[0,1],clamp);
+  const enterZ = enter==='back' ? interpolate(p,[0,1],[-700,0]) : 0;
+  const enterY = enter==='bottom' ? interpolate(p,[0,1],[140,0]) : interpolate(p,[0,1],[60,0]);
+  const enterX = enter==='left' ? interpolate(p,[0,1],[-160,0]) : enter==='right' ? interpolate(p,[0,1],[160,0]) : 0;
+  const enterRx = interpolate(p,[0,1],[26,0]);
+  const floatY = floatAmp ? Math.sin((f-delay)/28) * floatAmp : 0;
+  const shine = interpolate(f-delay,[0,28],[ -50, 150],{...clamp, easing:easeOut});
+  const hh = h ?? Math.round(w * 0.72);
+  return (
+    <div style={{
+      position:'absolute', left:x, top:y, width:w, height:hh, transformStyle:'preserve-3d',
+      transform:`translate3d(${enterX}px,${enterY+floatY}px,${z+enterZ}px) rotateX(${rx+enterRx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${scale*(0.88+p*0.12)})`,
+      opacity: o*op,
+    }}>
+      <div style={{
+        position:'absolute', inset:-3, borderRadius:26,
+        background:'linear-gradient(135deg,#FFFFFF 0%,#AEAEB2 22%,#F5F5F7 45%,#636366 70%,#E5E5EA 100%)',
+        boxShadow:'0 60px 140px rgba(0,0,0,0.85), 0 2px 0 rgba(255,255,255,0.2) inset',
+      }}/>
+      <div style={{position:'absolute', inset:0, borderRadius:23, overflow:'hidden', background:'#111', border:'1px solid rgba(0,0,0,0.55)'}}>
+        <OffthreadVideo
+          src={staticFile(src)}
+          startFrom={Math.round(start * fps)}
+          muted={mute}
+          style={{width:'100%', height:'100%', objectFit:'cover', objectPosition:'top left'}}
+        />
+        <div style={{position:'absolute', inset:0, background:`linear-gradient(118deg, transparent ${shine-28}%, rgba(255,255,255,0.18) ${shine}%, transparent ${shine+28}%)`, mixBlendMode:'screen', pointerEvents:'none'}}/>
+        <div style={{position:'absolute', inset:0, boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 -40px 80px rgba(0,0,0,0.18)', pointerEvents:'none'}}/>
+      </div>
+      {label && <div style={{
+        position:'absolute', left:20, bottom:-16, padding:'8px 18px', borderRadius:999,
+        background:'rgba(28,28,30,0.94)', border:`1px solid ${COLOR.line}`,
+        color:COLOR.ink, fontFamily:FONT, fontSize:18, fontWeight:600, boxShadow:'0 10px 34px rgba(0,0,0,0.45)',
+      }}>{label}</div>}
+    </div>
+  );
+};
+
+/**
+ * RealProgress — 跟随录屏节奏的进度条（用于强调下载/校验过程）。
+ * pct 由调用方按帧算出；随拍点脉冲。
+ */
+export const RealProgress: React.FC<{
+  x: number; y: number; w: number; pct: number; label: string; detail?: string; delay?: number; color?: string;
+}> = ({x, y, w, pct, label, detail, delay=0, color=COLOR.accent}) => {
+  const f = useCurrentFrame(); const {fps} = useVideoConfig();
+  const p = spring({frame:f-delay, fps, config:{damping:18, stiffness:140}});
+  const o = interpolate(f,[delay,delay+6],[0,1],clamp);
+  const punch = beatPunch(f, fps, 60/108, 0.02);
+  const shown = Math.max(0, Math.min(1, pct));
+  return (
+    <div style={{position:'absolute', left:x, top:y, width:w, opacity:o, transform:`translateY(${(1-p)*24}px)`}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+        <span style={{fontFamily:FONT, fontSize:24, fontWeight:700, color:COLOR.ink}}>{label}</span>
+        <span style={{fontFamily:FONT, fontSize:24, fontWeight:800, color, fontVariantNumeric:'tabular-nums'}}>{Math.round(shown*100)}%</span>
+      </div>
+      <div style={{height:14, borderRadius:999, background:'rgba(255,255,255,0.10)', border:`1px solid ${COLOR.line}`, overflow:'hidden', transform:`scaleY(${punch})`}}>
+        <div style={{height:'100%', width:`${shown*100}%`, borderRadius:999,
+          background:`linear-gradient(90deg,${COLOR.accent2},${color},#FFFFFF)`,
+          boxShadow:`0 0 26px ${color}`}}/>
+      </div>
+      {detail && <div style={{fontFamily:FONT, fontSize:19, color:COLOR.dim, marginTop:9}}>{detail}</div>}
     </div>
   );
 };
