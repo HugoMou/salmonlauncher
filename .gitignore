@@ -42,3 +42,7 @@ promo/.tmp/
 promo/out/
 promo/test-shots/
 .verify-shots*/
+
+# ---------- Promo capture workspaces (heavy, regenerable) ----------
+.promo-profile-backup/
+.record-state-backup/
