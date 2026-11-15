@@ -91,6 +91,7 @@ public static class NavGroups
         ]),
         new("设置", [
             new("st.launch", "外观与设置", "\uE713"),
+            new("st.theme", "主题工坊", "\uE790"),
             new("tools.skins", "皮肤站", "\uE77B"),
             new("st.about", "关于", "\uE946"),
             new("st.terms", "用户协议", "\uE8A5"),

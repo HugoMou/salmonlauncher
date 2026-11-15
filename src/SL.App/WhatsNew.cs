@@ -25,16 +25,13 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.13";
+    public const string Version = "2.0.14";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
         new("\uE790",
-            Loc.T("窗口背景默认改为普通样式"),
-            Loc.T("云母（Mica）半透明背景不再默认开启，默认使用普通配色背景；如需可在「外观与设置 → 外观」中手动开启。套用壁纸时仍以壁纸为准。")),
-        new("\uE713",
-            Loc.T("新增云母材质开关"),
-            Loc.T("在外观设置中可选择是否启用 Windows 11 云母材质，旧版系统会自动回退为普通背景。")),
+            Loc.T("找回「主题工坊」入口"),
+            Loc.T("主题工坊重新出现在侧边栏「设置」分组中。此前导航分组调整时入口被误删，页面功能本身完好：壁纸取色、内置场景与整套配色应用均可正常使用。")),
     ];
 
     /// <summary>
