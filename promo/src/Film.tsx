@@ -356,6 +356,22 @@ const Tools: React.FC<{base:number}> = ({base}) => {
   );
 };
 
+// ---------- 7b) 主题工坊（新增录屏：滚动侧边栏 → 点击入口 → 应用主题）----------
+const Theme: React.FC<{base:number}> = ({base}) => {
+  const l = useCurrentFrame();
+  const seg = stepDur(20);
+  const m = CLIP_MARKS.theme;
+  return (
+    <Chapter base={base} dur={seg} head="主题工坊" sub="从 Minecraft 风格画面取色，整套配色与壁纸一键应用"
+      clip={{src:CLIPS.theme, start:m.scroll}}
+      cardX={960} cardY={470} cardW={1080} cardRy={-10} cardRx={6} cardZ={40}
+      camRy={0} camRx={6} camZ={120}
+      click={{x:188,y:622,label:'主题工坊',atRel:stepDur(3)}}
+      bullets={['滚动侧边栏到底部','点击「主题工坊」入口','选择场景卡片，应用整套主题']}
+      progress={{pct:interpolate(l,[stepDur(4),seg-6],[0.05,1],clamp),label:'主题工坊操作演示',detail:'真实录屏 · 侧边栏滚动 + 点击 + 套用壁纸',atRel:3,x:70,y:640,w:1320}} deco/>
+  );
+};
+
 // ---------- 8) 功能全景快剪（真实截图矩阵 + 卡点）----------
 const Montage: React.FC<{base:number}> = ({base}) => {
   const l = useCurrentFrame();
@@ -438,9 +454,10 @@ export const Film: React.FC = () => {
     instance: seg(220,80),   // 80  实例 5 段
     content:  seg(300,90),   // 90  内容 5 段
     tools:    seg(390,112),  // 112 工具与设置 8 项
-    montage:  seg(502,44),   // 44  功能全景快剪
+    theme:    seg(502,20),   // 20  主题工坊（新增录屏）
+    montage:  seg(522,44),   // 44  功能全景快剪
   };
-  const outroFrom = BF(546);
+  const outroFrom = BF(566);
   const outroDur = Math.max(1, toF(FILM.duration) - outroFrom);
 
   const f = useCurrentFrame();
@@ -463,7 +480,8 @@ export const Film: React.FC = () => {
       <Sequence from={S.instance.from} durationInFrames={S.instance.dur}><Instances base={0}/></Sequence>
       <Sequence from={S.content.from}  durationInFrames={S.content.dur}><Content base={0}/></Sequence>
       <Sequence from={S.tools.from}    durationInFrames={S.tools.dur}><Tools base={0}/></Sequence>
-      <Sequence from={S.montage.from}  durationInFrames={S.montage.dur}><Montage base={0}/></Sequence>
+      <Sequence from={S.theme.from}     durationInFrames={S.theme.dur}><Theme base={0}/></Sequence>
+      <Sequence from={S.montage.from}   durationInFrames={S.montage.dur}><Montage base={0}/></Sequence>
       <Sequence from={outroFrom}       durationInFrames={outroDur}><Outro base={0} total={outroDur}/></Sequence>
 
       {flash > 0.001 && <AbsoluteFill style={{backgroundColor:'#fff',opacity:flash*0.28,mixBlendMode:'screen',pointerEvents:'none'}}/>}

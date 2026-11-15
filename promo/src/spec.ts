@@ -77,6 +77,7 @@ export const CLIPS = {
   game: 'clips/04-game.mp4',
   tour: 'clips/05-tour.mp4',
   tour2: 'clips/06-tour2.mp4',
+  theme: 'clips/07-theme.mp4',
 } as const;
 
 // 录屏关键时间点（秒），来自录制脚本的打点日志
@@ -92,6 +93,8 @@ export const CLIP_MARKS = {
   // 05 巡览：各页面停留点（每页约 2.6 秒）
   tour: {tasks: 1.6, overview: 6.8, mods: 9.4, saves: 12.0, cfg: 14.7, logs: 17.3, versions: 19.9, online: 50.8, global: 53.3, diag: 55.9, applog: 58.4, theme: 60.9, skins: 63.6, about: 66.1, terms: 68.7},
   tour2: {loaders: 2.1, plan: 5.4, repoMods: 8.6, shaders: 12.0, packs: 15.4, instPacks: 18.8, instShaders: 22.0},
+  // 06 主题工坊：滚动侧边栏 0.9 / 点击入口 2.8 / 鼠标扫过场景 9.2 / 应用草原清晨 10.5
+  theme: {scroll: 0.9, click: 2.8, hover: 9.2, apply: 10.5},
 } as const;
 
 export const CREDITS = {
