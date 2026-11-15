@@ -7,6 +7,9 @@ $out = 'D:\SalmonLauncher\promo\public\clips\01-onboarding.mp4'
 # 引导各步最小高度不同，统一固定到最大高度，避免录制中窗口跳动
 $w = Set-SLWindow -X 0 -Y 0 -W 1770 -H 1106
 "client: $($w.X),$($w.Y) $($w.W)x$($w.H)"
+# 录屏抓的是屏幕像素：必须让启动器窗口置顶，否则会录到别的窗口
+[W]::SetForegroundWindow((Get-SLWindow)) | Out-Null
+Start-Sleep -Milliseconds 900
 
 # 起始画面停留，然后开始录
 Start-Sleep -Milliseconds 800
@@ -33,8 +36,10 @@ Click-UIName '下一步' -Exact -Mouse | Out-Null
 Start-Sleep -Milliseconds 1700
 
 # 4) 账户：添加离线账户
+[W]::SetForegroundWindow((Get-SLWindow)) | Out-Null
 Click-UIName '添加离线账户' -Mouse | Out-Null
 Start-Sleep -Milliseconds 1200
+[W]::SetForegroundWindow((Get-SLWindow)) | Out-Null
 Set-FirstEditValue 'Steve' | Out-Null
 Start-Sleep -Milliseconds 800
 Click-UIName '确定' -Exact -Mouse | Out-Null

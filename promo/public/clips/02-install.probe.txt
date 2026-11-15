@@ -1,0 +1,1 @@
+﻿t=22.8 :: Non Client Input Sink Window | AppWindow Custom Title Bar | Minimize | Maximize | Close | 任务中心 | 任务中心 | 共 70 项 | 全部暂停 | 全部继续 | 清除已完成 | 元数据 1.21.11.json | 完成 | 已完成 | 41.2 KB | 游戏核心 1.21.11.jar | 完成 | 已完成 | 29.7 MB / 29.7 MB | 库 lz4-java-1.8.1.jar | 完成 | 已完成 | 667.1 KB / 667.1 KB

@@ -1,10 +1,13 @@
-# rec-tour.ps1 — 录制功能页面巡览
+﻿# rec-tour.ps1 — 录制功能页面巡览
 # 侧边栏为可滚动列表：上半部分直接可见，其余需滚动到底部后点击
 param([int]$Seconds = 130)
 $ErrorActionPreference = 'Continue'
 . "$PSScriptRoot\ui.ps1"
 
 $out = 'D:\SalmonLauncher\promo\public\clips\05-tour.mp4'
+$w0 = Set-SLWindow -X 0 -Y 0 -W 1770 -H 984
+[W]::SetForegroundWindow((Get-SLWindow)) | Out-Null
+Start-Sleep -Milliseconds 800
 $cr = Get-SLClientRect
 "client: $($cr.X),$($cr.Y) $($cr.W)x$($cr.H)"
 

@@ -1,4 +1,4 @@
-# rec-launch.ps1 — 录制「选择实例 → 点击启动 → 资源下载/校验 → 进入游戏」
+﻿# rec-launch.ps1 — 录制「选择实例 → 点击启动 → 资源下载/校验 → 进入游戏」
 param([int]$Seconds = 240)
 $ErrorActionPreference = 'Continue'
 . "$PSScriptRoot\ui.ps1"

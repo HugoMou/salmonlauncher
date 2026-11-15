@@ -1,9 +1,12 @@
-# rec-install.ps1 — 录制安装与下载进度（干净状态：无引导遮罩）
+﻿# rec-install.ps1 — 录制安装与下载进度（干净状态：无引导遮罩）
 param([int]$Seconds = 110, [string]$Version = '1.21.11')
 $ErrorActionPreference = 'Continue'
 . "$PSScriptRoot\ui.ps1"
 
 $out = 'D:\SalmonLauncher\promo\public\clips\02-install.mp4'
+$w = Set-SLWindow -X 0 -Y 0 -W 1770 -H 984
+[W]::SetForegroundWindow((Get-SLWindow)) | Out-Null
+Start-Sleep -Milliseconds 800
 $cr = Get-SLClientRect
 "client: $($cr.X),$($cr.Y) $($cr.W)x$($cr.H)"
 if ($cr.H -gt 1010) { "WARN: 窗口过高，录屏会裁切底部" }

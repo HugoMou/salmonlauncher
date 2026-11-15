@@ -4,6 +4,9 @@ $ErrorActionPreference = 'Continue'
 . "$PSScriptRoot\ui.ps1"
 
 $out = 'D:\SalmonLauncher\promo\public\clips\06-tour2.mp4'
+$w0 = Set-SLWindow -X 0 -Y 0 -W 1770 -H 984
+[W]::SetForegroundWindow((Get-SLWindow)) | Out-Null
+Start-Sleep -Milliseconds 800
 $cr = Get-SLClientRect
 "client: $($cr.X),$($cr.Y) $($cr.W)x$($cr.H)"
 
