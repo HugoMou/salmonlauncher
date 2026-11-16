@@ -75,6 +75,12 @@ public sealed class AppConfig
     /// <summary>Launcher version whose release notes were last shown, so an update announcement appears once</summary>
     public string LastSeenVersion { get; set; } = "";
 
+    /// <summary>
+    /// Release tag already announced by the startup update check. Kept so a newer version is announced
+    /// once instead of on every launch.
+    /// </summary>
+    public string LastUpdateNoticeTag { get; set; } = "";
+
     /// <summary>Check the project's GitHub releases for a newer launcher build at startup</summary>
     public bool CheckLauncherUpdateOnStart { get; set; } = true;
 

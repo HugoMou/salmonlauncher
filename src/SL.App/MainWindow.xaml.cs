@@ -256,11 +256,20 @@ public sealed partial class MainWindow : Window
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
             var release = await LauncherUpdater.GetLatestAsync(timeout.Token);
-            if (LauncherUpdater.IsNewer(release))
-            {
-                AppServices.Notify.Publish(NotifyKind.Info,
-                    string.Format(Loc.T("发现新版本 {0}，可在「外观与设置 → 软件更新」中安装"), release.Tag));
-            }
+            if (!LauncherUpdater.IsNewer(release))
+                return;
+
+            // Announce a given release once. Without this the same "new version available" notice
+            // would pop up on every launch until the user installs it.
+            var tag = release.Tag ?? "";
+            if (string.IsNullOrWhiteSpace(tag))
+                return;
+            if (string.Equals(AppServices.Settings.Current.LastUpdateNoticeTag, tag, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            AppServices.Settings.Update(c => c.LastUpdateNoticeTag = tag);
+            AppServices.Notify.Publish(NotifyKind.Info,
+                string.Format(Loc.T("发现新版本 {0}，可在「外观与设置 → 软件更新」中安装"), tag));
         }
         catch (Exception ex)
         {

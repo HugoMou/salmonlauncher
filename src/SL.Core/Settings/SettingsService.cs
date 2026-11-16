@@ -79,6 +79,7 @@ public sealed class SettingsService : ISettingsService
         Language = string.IsNullOrWhiteSpace(s.Language) ? "auto" : s.Language,
         OnboardingCompleted = s.OnboardingCompleted,
         LastSeenVersion = s.LastSeenVersion ?? "",
+        LastUpdateNoticeTag = s.LastUpdateNoticeTag ?? "",
         CheckLauncherUpdateOnStart = s.CheckLauncherUpdateOnStart,
         TermsVersion = s.TermsVersion ?? "",
         ActiveInstanceId = s.ActiveInstanceId ?? "",
@@ -108,6 +109,7 @@ public sealed class SettingsService : ISettingsService
         Language = c.Language,
         OnboardingCompleted = c.OnboardingCompleted,
         LastSeenVersion = c.LastSeenVersion,
+        LastUpdateNoticeTag = c.LastUpdateNoticeTag,
         CheckLauncherUpdateOnStart = c.CheckLauncherUpdateOnStart,
         TermsVersion = c.TermsVersion,
         ActiveInstanceId = c.ActiveInstanceId,
@@ -133,6 +135,7 @@ public sealed class SettingsService : ISettingsService
         Language = c.Language,
         OnboardingCompleted = c.OnboardingCompleted,
         LastSeenVersion = c.LastSeenVersion,
+        LastUpdateNoticeTag = c.LastUpdateNoticeTag,
         CheckLauncherUpdateOnStart = c.CheckLauncherUpdateOnStart,
         TermsVersion = c.TermsVersion,
         ActiveInstanceId = c.ActiveInstanceId,
@@ -157,6 +160,7 @@ public sealed class SettingsService : ISettingsService
            && a.Language == b.Language
            && a.OnboardingCompleted == b.OnboardingCompleted
            && a.LastSeenVersion == b.LastSeenVersion
+           && a.LastUpdateNoticeTag == b.LastUpdateNoticeTag
            && a.CheckLauncherUpdateOnStart == b.CheckLauncherUpdateOnStart
            && a.TermsVersion == b.TermsVersion
            && a.ActiveInstanceId == b.ActiveInstanceId

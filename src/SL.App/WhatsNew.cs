@@ -25,13 +25,13 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.14";
+    public const string Version = "2.0.15";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
-        new("\uE790",
-            Loc.T("找回「主题工坊」入口"),
-            Loc.T("主题工坊重新出现在侧边栏「设置」分组中。此前导航分组调整时入口被误删，页面功能本身完好：壁纸取色、内置场景与整套配色应用均可正常使用。")),
+        new("\uE895",
+            Loc.T("更新提示不再反复弹出"),
+            Loc.T("启动时的「发现新版本」提示现在只提醒一次：同一版本提醒过后不再重复，安装新版后才会提示下一个新版本。")),
     ];
 
     /// <summary>

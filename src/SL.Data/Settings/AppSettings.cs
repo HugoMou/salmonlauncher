@@ -68,6 +68,12 @@ public class AppSettings
     /// <summary>Launcher version whose release notes were last shown</summary>
     public string? LastSeenVersion { get; set; }
 
+    /// <summary>
+    /// Release tag already announced by the startup update check, so the same version is never
+    /// announced again on every launch.
+    /// </summary>
+    public string? LastUpdateNoticeTag { get; set; }
+
     /// <summary>Check GitHub releases for a newer launcher build at startup</summary>
     public bool CheckLauncherUpdateOnStart { get; set; } = true;
 
