@@ -130,7 +130,7 @@ export const Shot3D: React.FC<{
         boxShadow:'0 60px 140px rgba(0,0,0,0.85), 0 2px 0 rgba(255,255,255,0.2) inset',
       }}/>
       <div style={{position:'absolute', inset:0, borderRadius:23, overflow:'hidden', background:'#111', border:'1px solid rgba(0,0,0,0.55)'}}>
-        <Img src={staticFile(`shots/${file}`)} style={{width:'100%', height:'100%', objectFit:'cover', objectPosition:'top left'}} />
+        <Img src={staticFile(`shots-v3/${file}`)} style={{width:'100%', height:'100%', objectFit:'cover', objectPosition:'top left'}} />
         {sweep && <div style={{position:'absolute', inset:0, background:`linear-gradient(118deg, transparent ${shine-28}%, rgba(255,255,255,0.22) ${shine}%, transparent ${shine+28}%)`, mixBlendMode:'screen'}}/>}
         <div style={{position:'absolute', inset:0, boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 -40px 80px rgba(0,0,0,0.18)'}}/>
       </div>

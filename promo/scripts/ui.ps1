@@ -269,3 +269,10 @@ function Wait-SLRecord($Rec) {
     Remove-Job $Rec.Job -Force -ErrorAction SilentlyContinue
     $out | Select-Object -Last 3
 }
+# 录制期间置顶，避免被其他窗口遮挡（录完用 -On:$false 取消）
+function Set-SLTopMost([bool]$On) {
+    $h = Get-SLWindow
+    if ($h -eq [IntPtr]::Zero) { return }
+    $flag = if ($On) { [IntPtr](-1) } else { [IntPtr](-2) }   # HWND_TOPMOST / HWND_NOTOPMOST
+    [W]::SetWindowPos($h, $flag, 0, 0, 0, 0, 0x0003) | Out-Null  # NOSIZE|NOMOVE
+}

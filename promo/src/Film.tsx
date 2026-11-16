@@ -353,7 +353,7 @@ const Montage: React.FC<{dur: number}> = ({dur}) => {
               opacity: interpolate(l, [d, d + 3], [0, 1], clamp)}}>
               <div style={{width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden',
                 border: `1px solid ${COLOR.line}`, boxShadow: '0 22px 60px rgba(0,0,0,0.78)'}}>
-                <Img src={staticFile(`shots/${file}`)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
+                <Img src={staticFile(`shots-v3/${file}`)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
               </div>
             </div>
           );
