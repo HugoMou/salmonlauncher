@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
-<link rel="stylesheet" href="assets/css/site.css?v=202611151">
+<link rel="stylesheet" href="assets/css/site.css?v=202611161">
 <link rel="canonical" href="https://sl.hugomou.com/docs.html">
 <link rel="preload" as="image" href="assets/img/logo.png">
 <meta property="og:type" content="website">
@@ -84,7 +84,7 @@
     <div class="phead-aside">
       <div><b>SL</b> / DOCS</div>
       <div>9 SECTIONS</div>
-      <div>UPDATED 2026-11-14</div>
+      <div>UPDATED 2026-11-15</div>
     </div>
   </section>
 
@@ -263,8 +263,8 @@ Get-ChildItem "$root\cache\meta"
             <p data-zh="游戏运行时日志被 log4j 持有。启动器用共享读写方式读取，所以应用内查看不会冲突；用其他编辑器中打开时请选择允许共享读取的工具。">The game holds the log open through log4j. The launcher reads it with shared access, so its viewer is fine; other editors must allow shared reads.</p>
           </details>
           <details>
-            <summary data-zh="为什么没有便携版">Why is there no portable build</summary>
-            <p data-zh="2.0 系列使用 Windows App SDK，需要在系统中注册运行时与开始菜单快捷方式；目前只提供安装包，升级会保留设置、账户、实例与存档。">The 2.0 series uses the Windows App SDK, which needs registered runtimes and Start menu integration. Only an installer is provided; upgrades keep settings, accounts, instances and saves.</p>
+            <summary data-zh="便携版怎么用">How do I use the portable build</summary>
+            <p data-zh="2.0.14 起同时提供便携版压缩包，解压后直接运行，不需要安装；升级时替换程序文件即可，设置、账户、实例与存档都会保留。">Since 2.0.14 a portable ZIP is available too: unzip and run, no installation needed. Upgrading just replaces the program files and keeps settings, accounts, instances and saves.</p>
           </details>
         </div>
       </section>
@@ -308,7 +308,7 @@ Get-ChildItem "$root\cache\meta"
   </div>
 </footer>
 
-<script src="assets/js/i18n.js?v=202611151"></script>
-<script src="assets/js/site.js?v=202611151"></script>
+<script src="assets/js/i18n.js?v=202611161"></script>
+<script src="assets/js/site.js?v=202611161"></script>
 </body>
 </html>
