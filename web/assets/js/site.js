@@ -300,6 +300,72 @@
     });
   }
 
+  /* ---------- hero parallax ---------- */
+  function initHeroParallax() {
+    var hero = document.querySelector(".hero");
+    if (!hero) return;
+    if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var r = hero.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var p = Math.min(1, Math.max(0, -r.top / r.height));
+      hero.style.setProperty("--hero-py", (p * 34).toFixed(1) + "px");
+    }
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+  }
+
+  /* ---------- ticker loop ---------- */
+  function initTicker() {
+    document.querySelectorAll(".ticker-track").forEach(function (track) {
+      var set = track.querySelector(".ticker-set");
+      if (!set || track.children.length > 1) return;
+      var clone = set.cloneNode(true);
+      clone.setAttribute("aria-hidden", "true");
+      track.appendChild(clone);
+      track.setAttribute("data-loop", "on");
+    });
+  }
+
+  /* ---------- magnetic buttons ---------- */
+  function initMagnetic() {
+    if (!window.matchMedia) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    document.querySelectorAll(".btn-primary").forEach(function (btn) {
+      btn.addEventListener(
+        "pointermove",
+        function (e) {
+          var r = btn.getBoundingClientRect();
+          var x = (e.clientX - r.left) / r.width - 0.5;
+          var y = (e.clientY - r.top) / r.height - 0.5;
+          btn.style.setProperty("--tx", (x * 4).toFixed(2) + "px");
+          btn.style.setProperty("--ty", (y * 3).toFixed(2) + "px");
+        },
+        { passive: true }
+      );
+      btn.addEventListener("pointerleave", function () {
+        btn.style.setProperty("--tx", "0px");
+        btn.style.setProperty("--ty", "0px");
+      });
+    });
+  }
+
   /* ---------- copy to clipboard ---------- */
   function copyText(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -386,6 +452,9 @@
     initChrome();
     initSpotlight();
     initTilt();
+    initHeroParallax();
+    initTicker();
+    initMagnetic();
     initCopy();
     initMisc();
     initDocNav();
