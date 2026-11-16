@@ -68,8 +68,7 @@ export const SHOTS = {
   terms: '30-terms.png',
 } as const;
 
-// 真实操作录屏（真实鼠标点击、下载进度、启动过程、游戏画面），按时间点剪辑进宣传片
-// src: 文件；start/end: 源视频内的秒数；用于 <VideoClip>
+// 真实操作录屏（v2 素材，按时间点剪辑）
 export const CLIPS = {
   onboarding: 'clips/01-onboarding.mp4',
   install: 'clips/02-install.mp4',
@@ -78,6 +77,28 @@ export const CLIPS = {
   tour: 'clips/05-tour.mp4',
   tour2: 'clips/06-tour2.mp4',
   theme: 'clips/07-theme.mp4',
+} as const;
+
+// v3 新增动态演示素材（真实点击/滚动/安装/进度）
+export const CLIPS3 = {
+  shaderInstall: 'clips-v3/09-shader-install.mp4',
+  packsSwitch: 'clips-v3/12-packs-switch.mp4',
+  skin3d: 'clips-v3/14-skin3d.mp4',
+  multiplayer: 'clips-v3/15-room-create.mp4',
+  saves: 'clips-v3/16-saves-backup.mp4',
+  logs: 'clips-v3/17-logs-scroll.mp4',
+  overview: 'clips-v3/19-instance-toggles.mp4',
+} as const;
+
+// v3 片段打点（秒，来自录制脚本日志）
+export const MARKS3 = {
+  shaderInstall: {nav: 3.7, type: 6.0, search: 10.0, install: 10.7, wait: 23.4},
+  packsSwitch: {nav: 3.6, install: 6.6, wait: 19.3},
+  skin3d: {nav: 5.5, inspect: 8.1},
+  multiplayer: {nav: 3.0, click: 5.5, confirm: 7.4},
+  saves: {nav: 3.6, inspect: 6.4},
+  logs: {nav: 3.6, scrollDown: 6.8, scrollUp: 8.4},
+  overview: {nav: 3.7, inspect: 6.4},
 } as const;
 
 // 录屏关键时间点（秒），来自录制脚本的打点日志
