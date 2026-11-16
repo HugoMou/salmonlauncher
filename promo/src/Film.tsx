@@ -3,7 +3,7 @@
 //
 // 重点顺序（按用户要求重排）：
 //  1) 0-40 拍   HOOK      开场 20 秒直接抛出最惊艳画面：真实游戏画面、3D 卡片阵列、品牌三句
-//  2) 40-68 拍  BRAND     品牌气质：极简 / 无痕迹 / 云母默认关闭
+//  2) 40-68 拍  BRAND     品牌气质：极简 / 一键启动 / 开源免费
 //  3) 68-168 拍 ONE-CLICK 主线：打开 → 选实例 → 点击启动 → 校验 → 进游戏（真实录屏）
 //  4) 168-328   CONTENT   内容生态（主卖点，最长段落）：模组 / 光影 / 资源包 / 实例内容 / 3D 皮肤 / 联机
 //  5) 328-368   CHARACTER 主题工坊（壁纸取色整套主题）
@@ -190,17 +190,17 @@ const Hook: React.FC = () => {
         )}
         {b>=8 && b<12 && (
           <AbsoluteFill style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <MetalText size={132} delay={0} from="scale" tint="gold">极简。</MetalText>
+            <MetalText size={132} delay={0} from="scale" tint="gold">一键。</MetalText>
           </AbsoluteFill>
         )}
         {b>=12 && b<16 && (
           <AbsoluteFill style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <MetalText size={150} delay={0} from="scale" tint="blue">无痕迹。</MetalText>
+            <MetalText size={134} delay={0} from="scale" tint="blue">全部功能。</MetalText>
           </AbsoluteFill>
         )}
         {b>=16 && b<20 && (
           <AbsoluteFill style={{display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <MetalText size={124} delay={0} from="scale" tint="green">全部功能。</MetalText>
+            <MetalText size={140} delay={0} from="scale" tint="green">开源免费。</MetalText>
           </AbsoluteFill>
         )}
         {b>=20 && (
@@ -214,15 +214,15 @@ const Hook: React.FC = () => {
   );
 };
 
-// ---------- 2) BRAND：极简 / 无痕迹 / 云母默认关闭 ----------
+// ---------- 2) BRAND：极简 / 一键启动 / 开源免费 ----------
 const Brand: React.FC<{base:number; dur:number}> = ({dur}) => {
   const l = useCurrentFrame();
   const seg = stepDur(9);
   const idx = Math.min(2, Math.floor(l/seg));
   const shots = [
-    {file:SHOTS.home, head:'极简',  sub:'一个启动面板，选好实例与账户，一键进入世界'},
-    {file:SHOTS.theme, head:'无痕迹', sub:'全新默认状态，无个人使用痕迹'},
-    {file:SHOTS.theme, head:'云母默认关闭', sub:'默认普通配色背景，云母材质按需开启'},
+    {file:SHOTS.home, head:'极简',  sub:'一个启动面板，选好实例与账户即可进入世界'},
+    {file:SHOTS.home, head:'一键启动', sub:'一个按钮完成启动、校验与进入游戏'},
+    {file:SHOTS.about, head:'开源免费', sub:'GPL-3.0-or-later 开源，Windows x64 免费使用'},
   ];
   const s = shots[idx];
   return (
@@ -388,7 +388,7 @@ const Close: React.FC<{base:number; dur:number}> = ({dur}) => {
   const l = useCurrentFrame();
   const seg = stepDur(18);
   const idx = Math.min(2, Math.floor(l/seg));
-  const lines = ['极简。','无痕迹。','全部功能。'];
+  const lines = ['极简。','一键启动。','全部功能。'];
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{background:'radial-gradient(ellipse 70% 50% at 50% 45%, rgba(126,217,87,0.16), transparent 70%)'}}/>
@@ -428,7 +428,7 @@ const Outro: React.FC<{total:number}> = ({total}) => {
           <div style={{fontFamily:FONT,fontSize:19,color:COLOR.ink,fontWeight:700,marginBottom:7}}>视频声明 · 制作人员 · 致谢名单 · 版权解释</div>
           <div style={{fontFamily:FONT,fontSize:15.5,color:COLOR.dim,lineHeight:1.62}}>
             <div><span style={{color:COLOR.ink,fontWeight:600}}>制作人员：</span>Hugo Mou（产品设计 / 开发 / 维护）　<span style={{color:COLOR.ink,fontWeight:600}}>致谢：</span>Modrinth 与社区作者 · Campfire 联机组件 · .NET / Windows App SDK / WinUI 3 · Mojang 官方版本与资源生态</div>
-            <div><span style={{color:COLOR.ink,fontWeight:600}}>配乐与素材：</span>“3 Strikes” — Terror Jr（Bilibili BV1tek2YsEYY，仅作展示） · 画面为 SalmonLauncher 2.0.14 真实录屏与界面截图（默认状态，云母默认关闭，无个人使用痕迹）</div>
+            <div><span style={{color:COLOR.ink,fontWeight:600}}>配乐与素材：</span>“3 Strikes” — Terror Jr（Bilibili BV1tek2YsEYY，仅作展示） · 画面为 SalmonLauncher 2.0.14 真实录屏与界面截图（默认状态，云母默认关闭）</div>
             <div><span style={{color:COLOR.accent,fontWeight:700}}>本软件由 AI 辅助开发制作　·　本宣传片由 AI 生成制作</span></div>
             <div><span style={{color:COLOR.ink,fontWeight:600}}>项目许可：</span>GPL-3.0-or-later（开源免费，Windows x64）　官网 {LINKS.siteFull}　GitHub {LINKS.githubFull}</div>
             <div style={{marginTop:5,fontSize:14,color:'rgba(134,134,139,0.92)'}}>版权与声明：Minecraft 为 Mojang Studios / Microsoft 的商标，本项目与 Mojang/Microsoft 无官方关联；Modrinth、Campfire 等名称与服务归各自权利人所有。本视频仅用于 SalmonLauncher 产品展示与介绍，不构成对第三方商标或内容的授权声明。</div>
