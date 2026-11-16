@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.14 找回主题工坊入口，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.14: the Theme workshop entry is restored, plus the 2.0 series feature changes and earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.15 更新提示只提醒一次，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.15: the update notice is now shown once, plus the 2.0 series feature changes and earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SalmonLauncher">
 <meta property="og:title" content="Changelog — SalmonLauncher">
-<meta property="og:description" content="SalmonLauncher release notes for 2.0.14: the Theme workshop entry is restored, plus the 2.0 series feature changes and earlier versions.">
+<meta property="og:description" content="SalmonLauncher release notes for 2.0.15: the update notice is now shown once, plus the 2.0 series feature changes and earlier versions.">
 <meta property="og:url" content="https://sl.hugomou.com/changelog.html">
 <meta property="og:image" content="https://sl.hugomou.com/assets/img/og.png">
 <meta property="og:image:width" content="1200">
@@ -25,7 +25,7 @@
 <meta property="og:locale:alternate" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Changelog — SalmonLauncher">
-<meta name="twitter:description" content="SalmonLauncher release notes for 2.0.14: the Theme workshop entry is restored, plus the 2.0 series feature changes and earlier versions.">
+<meta name="twitter:description" content="SalmonLauncher release notes for 2.0.15: the update notice is now shown once, plus the 2.0 series feature changes and earlier versions.">
 <meta name="twitter:image" content="https://sl.hugomou.com/assets/img/og.png">
 </head>
 <body>
@@ -60,7 +60,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.14">Get 2.0.14</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.15">Get 2.0.15</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -83,7 +83,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.14</div>
+      <div>LATEST v2.0.15</div>
     </div>
   </section>
 
@@ -91,8 +91,21 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.14</h2>
+          <h2>v2.0.15</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
+          <time datetime="2026-11-16">2026-11-16</time>
+        </div>
+        <p class="lede" data-zh="更新提示不再反复弹出。">The update notice no longer pops up on every launch.</p>
+        <ul>
+          <li data-zh="启动时的「发现新版本」提示此前只判断线上是否有更新版本，没有记录是否已经提示过；装上旧版而线上已有新版时，每次打开都会弹一次。">The startup "new version available" notice only checked whether a newer build existed online — it never recorded that the notice had already been shown. Anyone running an older build saw it on every launch.</li>
+          <li data-zh="现在会记录已提示过的发行版本：同一版本只提醒一次，安装新版后才会提示下一个新版本。">The already-announced release tag is now stored, so each version is announced once; a new notice only appears after a newer release ships.</li>
+          <li data-zh="本版本同时提供安装包与免安装便携版。">This release ships both the installer and a portable no-install build.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.14</h2>
           <time datetime="2026-11-15">2026-11-15</time>
         </div>
         <p class="lede" data-zh="找回被误删的「主题工坊」入口。">Brought back the “Theme workshop” entry that had been dropped from the sidebar.</p>
@@ -345,7 +358,7 @@
     <section class="cta-band reveal">
       <div>
         <span class="mono" data-zh="当前版本">Current release</span>
-        <h2 data-zh="2.0.14 已可下载。">2.0.14 is ready.</h2>
+        <h2 data-zh="2.0.15 已可下载。">2.0.15 is ready.</h2>
         <p data-zh="安装包 60.6 MB，附 SHA-256。">A 60.6 MB installer with SHA-256.</p>
       </div>
       <div class="btn-row">
