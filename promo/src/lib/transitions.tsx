@@ -88,13 +88,13 @@ export const GlowBands: React.FC<{speed?: number; opacity?: number}> = ({speed =
         position: 'absolute', left: x1, top: -200, width: 220, height: 1600,
         background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)',
         transform: 'rotate(18deg)',
-        filter: 'blur(26px)',
+        /* 用渐变柔边代替 blur，显著降低渲染开销 */
       }}/>
       <div style={{
         position: 'absolute', left: x2, top: -200, width: 140, height: 1600,
         background: `linear-gradient(90deg, transparent, ${COLOR.accent}88, transparent)`,
         transform: 'rotate(18deg)',
-        filter: 'blur(34px)',
+
       }}/>
     </AbsoluteFill>
   );
