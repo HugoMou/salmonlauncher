@@ -4,7 +4,7 @@
 // 重点顺序：一键启动→进入游戏 > 内容生态（模组/光影/资源包/皮肤/联机）> 实机 > 极简与开源免费
 // 全片无「无痕迹」表述。开头三词：一键。/ 全部功能。/ 开源免费。
 import React from 'react';
-import {AbsoluteFill, Audio, Img, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, Audio, Easing, Img, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {AUDIO_FILE, CLIP_MARKS, CLIPS, CLIPS3, COLOR, FILM, FONT, LINKS, MARKS3, SHOTS, toF} from './spec';
 import {BEAT_COUNT, PERIOD, beatFrame, hit} from './lib/beats';
 import {Camera, ClickFx, LegalStrip, QRCard, RealProgress, Shot3D, Stage, Sub, Tag, VideoClip, beatPunch, clamp, easeOut} from './lib/fx';
@@ -12,6 +12,11 @@ import {
   BokehVignette, CursorTrail, ExtrudeText, LightSweep, ParticleField, ReflectFloor, RippleGrid,
   SplitCompare, SwatchExtractor, ZoomLens,
 } from './lib/spectacle';
+import {ChromaticEdge, GlowBands, WhipPan, ZoomBurst} from './lib/transitions';
+
+// 缓动：让镜头运动带惯性，避免线性插值的生硬感
+const easeSmooth = Easing.bezier(0.65, 0, 0.35, 1);
+const easeSwoop = Easing.bezier(0.16, 1, 0.3, 1);
 
 const BF = (i: number) => beatFrame(i, FILM.fps);
 const stepDur = (beats: number) => Math.round(beats * PERIOD * FILM.fps);
@@ -71,16 +76,16 @@ const Scene: React.FC<{
       enterBars = 1, floor = true}) => {
   const l = useCurrentFrame();
   const entry = Math.max(6, stepDur(enterBars * 4));
-  const camRyT = interpolate(l, [0, entry, dur], [camRy - 24, camRy, camRy + 10], clamp);
-  const camRxT = interpolate(l, [0, entry, dur], [camRx + 9, camRx, camRx - 2], clamp);
-  const camZT = interpolate(l, [0, entry, dur], [camZ - 320, camZ + 16, camZ - 12], clamp);
-  const eZ = interpolate(l, [0, entry], [z - 540, z], clamp);
-  const eRy = interpolate(l, [0, entry], [ry + 42, ry], clamp);
-  const eRx = interpolate(l, [0, entry], [rx + 20, rx], clamp);
-  const eS = interpolate(l, [0, entry], [0.52, 1], clamp);
-  const ryT = interpolate(l, [entry, dur], [ry - 10, ry + 10], clamp);
-  const rxT = interpolate(l, [entry, dur], [rx - 3, rx + 3], clamp);
-  const punch = beatPunch(l, FILM.fps, PERIOD, 0.035);
+  const camRyT = interpolate(l, [0, entry, dur], [camRy - 42, camRy, camRy + 22], {...clamp, easing: easeSmooth});
+  const camRxT = interpolate(l, [0, entry, dur], [camRx + 16, camRx, camRx - 6], {...clamp, easing: easeSmooth});
+  const camZT = interpolate(l, [0, entry, dur], [camZ - 620, camZ + 40, camZ - 30], {...clamp, easing: easeSwoop});
+  const eZ = interpolate(l, [0, entry], [z - 900, z], {...clamp, easing: easeSwoop});
+  const eRy = interpolate(l, [0, entry], [ry + 72, ry], {...clamp, easing: easeSmooth});
+  const eRx = interpolate(l, [0, entry], [rx + 34, rx], {...clamp, easing: easeSmooth});
+  const eS = interpolate(l, [0, entry], [0.34, 1.06], {...clamp, easing: easeSwoop});
+  const ryT = interpolate(l, [entry, dur], [ry - 20, ry + 20], {...clamp, easing: easeSmooth});
+  const rxT = interpolate(l, [entry, dur], [rx - 7, rx + 7], {...clamp, easing: easeSmooth});
+  const punch = beatPunch(l, FILM.fps, PERIOD, 0.06);
   const isClose = closeup && l > dur * 0.55;
   const cw = isClose ? cardW * 1.24 : cardW;
   const cy = isClose ? cardY - 28 : cardY;
@@ -144,10 +149,10 @@ const Hook: React.FC<{dur: number}> = ({dur}) => {
   const g = CLIP_MARKS.game;
   return (
     <AbsoluteFill>
-      <Camera tz={interpolate(l, [0, dur], [-540, 180], clamp)}
-        ry={interpolate(l, [0, dur / 2, dur], [-14, 9, -12], clamp)}
-        rx={interpolate(l, [0, dur], [11, -4], clamp)}
-        scale={beatPunch(l, 30, PERIOD, 0.07)}>
+      <Camera tz={interpolate(l, [0, dur], [-900, 260], {...clamp, easing: easeSwoop})}
+        ry={interpolate(l, [0, dur / 2, dur], [-30, 18, -24], {...clamp, easing: easeSmooth})}
+        rx={interpolate(l, [0, dur], [22, -8], {...clamp, easing: easeSmooth})}
+        scale={beatPunch(l, FILM.fps, PERIOD, 0.12)}>
         {bar < 3 && (
           <>
             <ReflectFloor x={440} y={560} w={1040} h={200} opacity={0.6}/>
@@ -156,12 +161,12 @@ const Hook: React.FC<{dur: number}> = ({dur}) => {
         )}
         {bar >= 3 && bar < 5.5 && (
           <AbsoluteFill style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <ExtrudeText size={150} delay={0} tint="gold">一键。</ExtrudeText>
+            <ExtrudeText size={172} delay={0} tint="gold" depth={14} tilt={6}>一键。</ExtrudeText>
           </AbsoluteFill>
         )}
         {bar >= 5.5 && bar < 7.5 && (
           <AbsoluteFill style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <ExtrudeText size={136} delay={0} tint="blue">全部功能。</ExtrudeText>
+            <ExtrudeText size={156} delay={0} tint="blue" depth={14} tilt={6}>全部功能。</ExtrudeText>
           </AbsoluteFill>
         )}
         {(bar >= 1.5 && bar < 3) || (bar >= 7.5 && bar < 9) ? (
@@ -174,14 +179,14 @@ const Hook: React.FC<{dur: number}> = ({dur}) => {
             {x: 1320, y: 830, w: 280, f: SHOTS.instPacks},
           ].map((c, i) => (
             <div key={c.f} style={{position: 'absolute', left: c.x, top: c.y, width: c.w, transformStyle: 'preserve-3d',
-              transform: `translateZ(${-150 + Math.sin(l / 26 + i) * 80}px) rotateY(${Math.sin(l / 20 + i) * 24}deg) rotateX(${Math.cos(l / 24 + i) * 7}deg)`}}>
+              transform: `translateZ(${-220 + Math.sin(l / 18 + i) * 180}px) rotateY(${Math.sin(l / 14 + i) * 52}deg) rotateX(${Math.cos(l / 16 + i) * 16}deg) scale(${0.9 + Math.sin(l / 12 + i) * 0.16})`}}>
               <Shot3D file={c.f} x={0} y={0} w={c.w} delay={0} floatAmp={0} sweep/>
             </div>
           ))
         ) : null}
         {bar >= 9 && (
           <AbsoluteFill style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-            <ExtrudeText size={132} delay={0} tint="green">开源免费。</ExtrudeText>
+            <ExtrudeText size={152} delay={0} tint="green" depth={14} tilt={6}>开源免费。</ExtrudeText>
             <div style={{marginTop: 18}}><Sub delay={2} size={30} color={COLOR.dim}>GPL-3.0-or-later · Windows x64</Sub></div>
           </AbsoluteFill>
         )}
@@ -381,7 +386,7 @@ const Close: React.FC<{dur: number}> = ({dur}) => {
       <Camera tz={interpolate(l, [0, dur], [-280, 90], clamp)} rx={interpolate(l, [0, dur], [6, 0], clamp)}
         ry={interpolate(l, [0, dur], [-10, 10], clamp)} scale={beatPunch(l, 30, PERIOD, 0.05)}>
         <AbsoluteFill style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-          <ExtrudeText size={idx === 3 ? 104 : 138} delay={0} tint={cur.tint}>{cur.t}</ExtrudeText>
+          <ExtrudeText size={idx === 3 ? 118 : 168} delay={0} tint={cur.tint} depth={12} tilt={5}>{cur.t}</ExtrudeText>
         </AbsoluteFill>
         {idx === 3 && (
           <div style={{position: 'absolute', left: 0, right: 0, bottom: 170, textAlign: 'center'}}>
@@ -447,16 +452,21 @@ export const Film: React.FC = () => {
   let flash = 0;
   for (let i = 0; i < BEAT_COUNT; i += 1) {
     const down = i % 4 === 0;
-    const d = down ? 0.18 : i % 2 === 0 ? 0.09 : 0.045;
+    const d = down ? 0.26 : i % 2 === 0 ? 0.13 : 0.06;
     const w = down ? 0.1 : 0.06;
     flash = Math.max(flash, hit(t, i, w) * d);
   }
   const cuts = [S.brand.from, S.oneclick.from, S.content.from, S.character.from, S.coverage.from, S.montage.from, S.close.from, outroFrom];
+  // 每个切点的甩镜方向交替，制造「连续甩动」的流动感
+  const whipFrames = Math.round(FILM.fps * 0.18);
 
   return (
     <Stage>
       <Audio src={staticFile(AUDIO_FILE)}/>
-      <ParticleField count={200} energy={0.9}/>
+      {/* 背景：粒子 + 扫光带，让画面始终在动 */}
+      <ParticleField count={260} energy={1.1}/>
+      <GlowBands speed={1.4} opacity={0.2}/>
+
       <Sequence from={S.hook.from}      durationInFrames={S.hook.dur}><Hook dur={S.hook.dur}/></Sequence>
       <Sequence from={S.brand.from}     durationInFrames={S.brand.dur}><Brand dur={S.brand.dur}/></Sequence>
       <Sequence from={S.oneclick.from}  durationInFrames={S.oneclick.dur}><OneClick dur={S.oneclick.dur}/></Sequence>
@@ -467,10 +477,19 @@ export const Film: React.FC = () => {
       <Sequence from={S.close.from}     durationInFrames={S.close.dur}><Close dur={S.close.dur}/></Sequence>
       <Sequence from={outroFrom}        durationInFrames={outroDur}><Outro total={outroDur}/></Sequence>
 
-      <BokehVignette strength={0.9}/>
-      {flash > 0.001 && <AbsoluteFill style={{backgroundColor: '#fff', opacity: flash * 0.24, mixBlendMode: 'screen', pointerEvents: 'none'}}/>}
-      {cuts.map((c, i) => <RippleGrid key={i} x={960} y={540} at={c} count={2}/>)}
-      <AbsoluteFill style={{boxShadow: 'inset 0 0 200px rgba(0,0,0,0.55)', pointerEvents: 'none'}}/>
+      {/* 夸张转场：甩镜 + 推镜爆闪 + 涟漪，叠加在切点两侧 */}
+      {cuts.map((c, i) => (
+        <React.Fragment key={`cut-${i}`}>
+          <WhipPan at={c} frames={whipFrames} dir={i % 2 === 0 ? 1 : -1} strength={1.5}/>
+          <ZoomBurst at={c} frames={Math.round(FILM.fps * 0.2)} strength={1.2}/>
+          <RippleGrid x={960} y={540} at={c} count={3}/>
+        </React.Fragment>
+      ))}
+
+      <ChromaticEdge strength={1.2}/>
+      <BokehVignette strength={1.0}/>
+      {flash > 0.001 && <AbsoluteFill style={{backgroundColor: '#fff', opacity: flash * 0.3, mixBlendMode: 'screen', pointerEvents: 'none'}}/>}
+      <AbsoluteFill style={{boxShadow: 'inset 0 0 220px rgba(0,0,0,0.6)', pointerEvents: 'none'}}/>
       <LegalStrip/>
     </Stage>
   );

@@ -9,7 +9,7 @@ export const AUDIO_FILE = 'audio/track_double.m4a';
 export const AUDIO_DURATION = DURATION;
 export {BPM, PERIOD, PHASE, BEAT_COUNT};
 
-export const FILM = {duration: DURATION, fps: 30, width: 1920, height: 1080};
+export const FILM = {duration: DURATION, fps: 60, width: 1920, height: 1080};
 
 export const COLOR = {
   bg: '#000000',
