@@ -410,9 +410,9 @@ const Outro: React.FC<{total: number}> = ({total}) => {
           <ExtrudeText size={92} delay={0} tint="silver">SalmonLauncher</ExtrudeText>
           <div style={{marginTop: 8}}><Sub delay={3} size={29} color={COLOR.dim}>把复杂留给启动器，把时间留给游戏。</Sub></div>
         </div>
-        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={300} y={240} delay={4} size={168}/>
-        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={700} y={240} delay={7} size={168}/>
-        <QRCard file="blog.png" title="作者博客" url={LINKS.blog} x={1100} y={240} delay={10} size={168}/>
+        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={250} y={226} delay={4} size={200}/>
+        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={690} y={226} delay={7} size={200}/>
+        <QRCard file="blog.png" title="作者博客" url={LINKS.blog} x={1130} y={226} delay={10} size={200}/>
 
         <div style={{position: 'absolute', left: 90, right: 90, bottom: 92, padding: '15px 22px', borderRadius: 16,
           background: 'rgba(20,20,22,0.84)', border: `1px solid ${COLOR.line}`,
@@ -465,7 +465,7 @@ export const Film: React.FC = () => {
       <Audio src={staticFile(AUDIO_FILE)}/>
       {/* 背景：粒子 + 扫光带，让画面始终在动 */}
       <ParticleField count={260} energy={1.1}/>
-      <GlowBands speed={1.4} opacity={0.2}/>
+      <GlowBands speed={1.4} opacity={f >= outroFrom ? 0 : 0.2}/>
 
       <Sequence from={S.hook.from}      durationInFrames={S.hook.dur}><Hook dur={S.hook.dur}/></Sequence>
       <Sequence from={S.brand.from}     durationInFrames={S.brand.dur}><Brand dur={S.brand.dur}/></Sequence>
@@ -486,9 +486,9 @@ export const Film: React.FC = () => {
         </React.Fragment>
       ))}
 
-      <ChromaticEdge strength={1.2}/>
-      <BokehVignette strength={1.0}/>
-      {flash > 0.001 && <AbsoluteFill style={{backgroundColor: '#fff', opacity: flash * 0.3, mixBlendMode: 'screen', pointerEvents: 'none'}}/>}
+      <ChromaticEdge strength={f >= outroFrom ? 0 : 1.2}/>
+      <BokehVignette strength={f >= outroFrom ? 0.22 : 1.0}/>
+      {flash > 0.001 && f < outroFrom && <AbsoluteFill style={{backgroundColor: '#fff', opacity: flash * 0.3, mixBlendMode: 'screen', pointerEvents: 'none'}}/>}
       <AbsoluteFill style={{boxShadow: 'inset 0 0 220px rgba(0,0,0,0.6)', pointerEvents: 'none'}}/>
       <LegalStrip/>
     </Stage>

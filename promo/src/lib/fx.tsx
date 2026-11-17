@@ -233,13 +233,16 @@ export const QRCard: React.FC<{file: string; title: string; url: string; x: numb
   const o = interpolate(f,[delay,delay+6],[0,1],clamp);
   return (
     <div style={{position:'absolute', left:x, top:y, textAlign:'center', opacity:o, transform:`translateY(${(1-p)*60}px) translateZ(0) scale(${0.85+p*0.15}) rotateX(${(1-p)*18}deg)`, transformStyle:'preserve-3d'}}>
-      <div style={{padding:16, borderRadius:24, background:'rgba(255,255,255,0.05)', border:`1px solid ${COLOR.line}`, boxShadow:'0 40px 100px rgba(0,0,0,0.6)'}}>
-        <div style={{padding:10, borderRadius:14, background:'linear-gradient(135deg,#FFFFFF,#9A9AA0,#E5E5EA,#7C7C80)'}}>
-          <Img src={staticFile(`qr/${file}`)} style={{width:size, height:size, display:'block', borderRadius:8, background:'#fff'}} />
-        </div>
+      {/* 二维码必须完整、无圆角裁切、纯白底，否则定位块被破坏会扫不出来 */}
+      <div style={{
+        display:'inline-block', padding:14, borderRadius:18,
+        background:'#FFFFFF',
+        boxShadow:'0 0 0 3px rgba(255,255,255,0.9), 0 0 44px rgba(255,255,255,0.28), 0 30px 80px rgba(0,0,0,0.65)',
+      }}>
+        <Img src={staticFile(`qr/${file}`)} style={{width:size, height:size, display:'block', background:'#fff'}} />
       </div>
-      <div style={{fontFamily:FONT, fontSize:26, fontWeight:700, color:COLOR.ink, marginTop:16}}>{title}</div>
-      <div style={{fontFamily:FONT, fontSize:22, color:COLOR.accent, marginTop:4}}>{url}</div>
+      <div style={{fontFamily:FONT, fontSize:26, fontWeight:700, color:COLOR.ink, marginTop:16, textShadow:'0 2px 12px rgba(0,0,0,0.85)'}}>{title}</div>
+      <div style={{fontFamily:FONT, fontSize:22, color:COLOR.accent, marginTop:4, textShadow:'0 2px 12px rgba(0,0,0,0.85)'}}>{url}</div>
     </div>
   );
 };
