@@ -70,7 +70,7 @@ export const SHOTS = {
 } as const;
 
 // 截图所在目录（v3）
-export const SHOT_DIR = 'shots-v4';
+export const SHOT_DIR = 'shots-v5';
 
 // 真实操作录屏（v2 素材，按时间点剪辑）
 export const CLIPS = {
