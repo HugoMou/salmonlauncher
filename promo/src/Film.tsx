@@ -280,6 +280,37 @@ const Content: React.FC<{dur: number}> = ({dur}) => {
   );
 };
 
+// ---------- 4b) GAME HERO：全屏真实游戏画面（满幅 + 推镜 + 扫光） ----------
+const GameHero: React.FC<{dur: number}> = ({dur}) => {
+  const l = useCurrentFrame();
+  const g = CLIP_MARKS.game;
+  const scale = interpolate(l, [0, dur], [1.14, 1.0], {...clamp, easing: easeSwoop});
+  const drift = interpolate(l, [0, dur], [-18, 18], {...clamp, easing: easeSmooth});
+  const badgeOp = interpolate(l, [stepDur(1), stepDur(2)], [0, 1], clamp);
+  return (
+    <AbsoluteFill style={{overflow: 'hidden'}}>
+      {/* 满幅游戏画面：真实 Minecraft 主菜单录屏，缓慢推进形成镜头感 */}
+      <AbsoluteFill style={{transform: `scale(${scale}) translateX(${drift}px)`, transformOrigin: '50% 50%'}}>
+        <VideoClip src={CLIPS.game} start={g.menu} x={-140} y={-90} w={2200} h={1260} delay={0} floatAmp={0} mute/>
+      </AbsoluteFill>
+      {/* 影调收边，让满幅画面与舞台衔接 */}
+      <AbsoluteFill style={{background: 'linear-gradient(180deg, rgba(0,0,0,0.62) 0%, transparent 26%, transparent 62%, rgba(0,0,0,0.78) 100%)'}}/>
+      <LightSweep delay={0} periodBeats={6} strength={0.2}/>
+      <div style={{position: 'absolute', left: 96, bottom: 92, opacity: badgeOp}}>
+        <div style={{display: 'inline-flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderRadius: 999,
+          background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(4px)'}}>
+          <span style={{width: 10, height: 10, borderRadius: 999, background: '#FF3B30', boxShadow: '0 0 12px #FF3B30'}}/>
+          <span style={{fontFamily: FONT, fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: 0.6}}>真实游戏画面 · Minecraft 1.21.11</span>
+        </div>
+        <div style={{marginTop: 16}}>
+          <ExtrudeText size={84} delay={2} tint="silver" align="left">进去，就是世界。</ExtrudeText>
+        </div>
+      </div>
+      <AbsoluteFill style={{boxShadow: 'inset 0 0 220px rgba(0,0,0,0.55)', pointerEvents: 'none'}}/>
+    </AbsoluteFill>
+  );
+};
+
 // ---------- 5) CHARACTER：80–90 小节（主题工坊） ----------
 const Character: React.FC<{dur: number}> = ({dur}) => {
   const l = useCurrentFrame();
@@ -358,7 +389,7 @@ const Montage: React.FC<{dur: number}> = ({dur}) => {
               opacity: interpolate(l, [d, d + 3], [0, 1], clamp)}}>
               <div style={{width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden',
                 border: `1px solid ${COLOR.line}`, boxShadow: '0 22px 60px rgba(0,0,0,0.78)'}}>
-                <Img src={staticFile(`shots-v3/${file}`)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
+                <Img src={staticFile(`shots-v4/${file}`)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
               </div>
             </div>
           );
@@ -410,9 +441,9 @@ const Outro: React.FC<{total: number}> = ({total}) => {
           <ExtrudeText size={92} delay={0} tint="silver">SalmonLauncher</ExtrudeText>
           <div style={{marginTop: 8}}><Sub delay={3} size={29} color={COLOR.dim}>把复杂留给启动器，把时间留给游戏。</Sub></div>
         </div>
-        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={250} y={226} delay={4} size={200}/>
-        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={690} y={226} delay={7} size={200}/>
-        <QRCard file="blog.png" title="作者博客" url={LINKS.blog} x={1130} y={226} delay={10} size={200}/>
+        <QRCard file="site.png" title="官方网站" url={LINKS.site} x={418} y={226} delay={4} size={200} colW={340}/>
+        <QRCard file="github.png" title="GitHub 仓库" url={LINKS.github} x={790} y={226} delay={7} size={200} colW={340}/>
+        <QRCard file="blog.png" title="作者博客" url={LINKS.blog} x={1162} y={226} delay={10} size={200} colW={340}/>
 
         <div style={{position: 'absolute', left: 90, right: 90, bottom: 92, padding: '15px 22px', borderRadius: 16,
           background: 'rgba(20,20,22,0.84)', border: `1px solid ${COLOR.line}`,
@@ -438,13 +469,14 @@ export const Film: React.FC = () => {
     hook:      bars(0, 9),      // 0–9
     brand:     bars(9, 7),      // 9–16
     oneclick:  bars(16, 24),    // 16–40
-    content:   bars(40, 40),    // 40–80
-    character: bars(80, 10),    // 80–90
-    coverage:  bars(90, 36),    // 90–126
-    montage:   bars(126, 10),   // 126–136
-    close:     bars(136, 12),   // 136–148
+    gamehero:  bars(40, 4),     // 40–44   全屏真实游戏画面
+    content:   bars(44, 38),    // 44–82
+    character: bars(82, 10),    // 82–92
+    coverage:  bars(92, 32),    // 92–124
+    montage:   bars(124, 10),   // 124–134
+    close:     bars(134, 12),   // 134–146
   };
-  const outroFrom = BAR(148);
+  const outroFrom = BAR(146);
   const outroDur = Math.max(1, toF(FILM.duration) - outroFrom);
 
   const f = useCurrentFrame();
@@ -470,6 +502,7 @@ export const Film: React.FC = () => {
       <Sequence from={S.hook.from}      durationInFrames={S.hook.dur}><Hook dur={S.hook.dur}/></Sequence>
       <Sequence from={S.brand.from}     durationInFrames={S.brand.dur}><Brand dur={S.brand.dur}/></Sequence>
       <Sequence from={S.oneclick.from}  durationInFrames={S.oneclick.dur}><OneClick dur={S.oneclick.dur}/></Sequence>
+      <Sequence from={S.gamehero.from}  durationInFrames={S.gamehero.dur}><GameHero dur={S.gamehero.dur}/></Sequence>
       <Sequence from={S.content.from}   durationInFrames={S.content.dur}><Content dur={S.content.dur}/></Sequence>
       <Sequence from={S.character.from} durationInFrames={S.character.dur}><Character dur={S.character.dur}/></Sequence>
       <Sequence from={S.coverage.from}  durationInFrames={S.coverage.dur}><Coverage dur={S.coverage.dur}/></Sequence>

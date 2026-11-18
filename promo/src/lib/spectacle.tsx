@@ -155,9 +155,9 @@ export const SplitCompare: React.FC<{
   return (
     <div style={{position: 'absolute', left: x, top: y, width: w, height: h, overflow: 'hidden',
       borderRadius: 18, border: `1px solid ${COLOR.line}`, boxShadow: '0 40px 90px rgba(0,0,0,0.75)'}}>
-      <Img src={staticFile(`shots-v3/${leftFile}`)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
+      <Img src={staticFile(`shots-v4/${leftFile}`)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
       <div style={{position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - wipe}% 0 0)`}}>
-        <Img src={staticFile(`shots-v3/${rightFile}`)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
+        <Img src={staticFile(`shots-v4/${rightFile}`)} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left'}}/>
       </div>
       {/* 擦除线 */}
       <div style={{position: 'absolute', top: 0, bottom: 0, left: `${wipe}%`, width: 3,
@@ -325,7 +325,7 @@ export const FrameStack: React.FC<{
             boxShadow: '0 30px 70px rgba(0,0,0,0.7)',
             borderRadius: 14, overflow: 'hidden', border: `1px solid ${COLOR.line}`,
           }}>
-            <Img src={staticFile(`shots-v3/${file}`)} style={{width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top left'}}/>
+            <Img src={staticFile(`shots-v4/${file}`)} style={{width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top left'}}/>
           </div>
         );
       })}

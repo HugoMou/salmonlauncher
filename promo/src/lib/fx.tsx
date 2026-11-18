@@ -130,7 +130,7 @@ export const Shot3D: React.FC<{
         boxShadow:'0 60px 140px rgba(0,0,0,0.85), 0 2px 0 rgba(255,255,255,0.2) inset',
       }}/>
       <div style={{position:'absolute', inset:0, borderRadius:23, overflow:'hidden', background:'#111', border:'1px solid rgba(0,0,0,0.55)'}}>
-        <Img src={staticFile(`shots-v3/${file}`)} style={{width:'100%', height:'100%', objectFit:'cover', objectPosition:'top left'}} />
+        <Img src={staticFile(`shots-v4/${file}`)} style={{width:'100%', height:'100%', objectFit:'cover', objectPosition:'top left'}} />
         {sweep && <div style={{position:'absolute', inset:0, background:`linear-gradient(118deg, transparent ${shine-28}%, rgba(255,255,255,0.22) ${shine}%, transparent ${shine+28}%)`, mixBlendMode:'screen'}}/>}
         <div style={{position:'absolute', inset:0, boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.10), inset 0 -40px 80px rgba(0,0,0,0.18)'}}/>
       </div>
@@ -226,13 +226,15 @@ export const Camera: React.FC<{children: React.ReactNode; tx?: number; ty?: numb
 );
 
 /** QR card with metallic frame and label. */
-export const QRCard: React.FC<{file: string; title: string; url: string; x: number; y: number; delay?: number; size?: number}> =
-({file, title, url, x, y, delay=0, size=190}) => {
+export const QRCard: React.FC<{file: string; title: string; url: string; x: number; y: number; delay?: number; size?: number; colW?: number}> =
+({file, title, url, x, y, delay=0, size=190, colW=340}) => {
   const f = useCurrentFrame(); const {fps}=useVideoConfig();
   const p = spring({frame:f-delay,fps,config:{damping:14,stiffness:130}});
   const o = interpolate(f,[delay,delay+6],[0,1],clamp);
   return (
-    <div style={{position:'absolute', left:x, top:y, textAlign:'center', opacity:o, transform:`translateY(${(1-p)*60}px) translateZ(0) scale(${0.85+p*0.15}) rotateX(${(1-p)*18}deg)`, transformStyle:'preserve-3d'}}>
+    // 固定列宽：三张二维码按同一栅格排布，否则 URL 文字长度会改变卡片宽度、导致间距不齐
+    <div style={{position:'absolute', left:x, top:y, width:colW, textAlign:'center', opacity:o,
+      transform:`translateY(${(1-p)*60}px) translateZ(0) scale(${0.85+p*0.15}) rotateX(${(1-p)*18}deg)`, transformStyle:'preserve-3d'}}>
       {/* 二维码必须完整、无圆角裁切、纯白底，否则定位块被破坏会扫不出来 */}
       <div style={{
         display:'inline-block', padding:14, borderRadius:18,
@@ -241,8 +243,9 @@ export const QRCard: React.FC<{file: string; title: string; url: string; x: numb
       }}>
         <Img src={staticFile(`qr/${file}`)} style={{width:size, height:size, display:'block', background:'#fff'}} />
       </div>
-      <div style={{fontFamily:FONT, fontSize:26, fontWeight:700, color:COLOR.ink, marginTop:16, textShadow:'0 2px 12px rgba(0,0,0,0.85)'}}>{title}</div>
-      <div style={{fontFamily:FONT, fontSize:22, color:COLOR.accent, marginTop:4, textShadow:'0 2px 12px rgba(0,0,0,0.85)'}}>{url}</div>
+      <div style={{fontFamily:FONT, fontSize:25, fontWeight:700, color:COLOR.ink, marginTop:16, textShadow:'0 2px 12px rgba(0,0,0,0.85)'}}>{title}</div>
+      <div style={{fontFamily:FONT, fontSize:17, color:COLOR.accent, marginTop:4, lineHeight:1.32,
+        wordBreak:'break-word', padding:'0 8px', textShadow:'0 2px 12px rgba(0,0,0,0.85)'}}>{url}</div>
     </div>
   );
 };
