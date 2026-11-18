@@ -134,3 +134,37 @@ export const CREDITS = {
 };
 
 export const toF = (sec: number) => Math.round(sec * FILM.fps);
+
+// v5 重录素材（1920×1080 ddagrab，全部经 OCR 校验为干净画面）
+export const CLIPS5 = {
+  install: 'clips-v5/02-install.mp4',
+  launch: 'clips-v5/03-launch.mp4',
+  tour: 'clips-v5/05-tour.mp4',
+  tour2: 'clips-v5/06-tour2.mp4',
+  theme: 'clips-v5/07-theme.mp4',
+  shaders: 'clips-v5/08-shaders.mp4',
+  packs: 'clips-v5/09-packs.mp4',
+  skins: 'clips-v5/10-skins.mp4',
+  online: 'clips-v5/11-online.mp4',
+  saves: 'clips-v5/12-saves.mp4',
+  logs: 'clips-v5/13-logs.mp4',
+  overview: 'clips-v5/14-overview.mp4',
+  mods: 'clips-v5/15-mods.mp4',
+} as const;
+
+// v5 打点（秒，来自录制脚本日志；未打点的用页面稳定时间 3–5s）
+export const MARKS5 = {
+  install: {nav: 1.5, pick: 4.2, loaders: 6.0, plan: 8.0, start: 11.9},
+  launch: {nav: 2.0, click: 4.4},
+  tour: {tasks: 7.6, overview: 11.9, mods: 16.4, saves: 20.9, cfg: 25.6, logs: 30.4},
+  tour2: {versions: 3.2, loaders: 10.9, plan: 15.5, repoMods: 20.1, shaders: 24.8, packs: 30.0},
+  theme: {nav: 4.7, apply: 10.9},
+  shaders: {nav: 5.2, type: 7.3, search: 9.0, install: 12.0},
+  packs: {nav: 3.8, search: 7.3, install: 10.1},
+  skins: {nav: 4.0},
+  online: {nav: 4.0},
+  saves: {nav: 4.0},
+  logs: {nav: 3.6, scroll: 6.5},
+  overview: {nav: 4.0},
+  mods: {nav: 3.7, search: 7.4, install: 10.3},
+} as const;
