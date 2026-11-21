@@ -13,11 +13,16 @@
 // this program. If not, see <https://www.gnu.org/licenses/>.
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
+using SL.App.Pages;
+
 namespace SL.App.Navigation;
 
-/// <summary>Page registration entry: Key is the route, Title feeds the title bar and breadcrumbs, Hint is placeholder copy, PageType is used by Frame navigation.</summary>
-public sealed record PageSpec(string Key, string Title, string Hint, Type PageType);
+/// <summary>Page specification: key, title, description, and page type.</summary>
+public sealed record PageSpec(string Key, string Title, string Description, Type PageType);
 
+/// <summary>
+/// All page specifications. Keys are route identifiers; titles/descriptions are user-facing.
+/// </summary>
 public static class PageCatalog
 {
     public static IReadOnlyDictionary<string, PageSpec> All { get; } = new Dictionary<string, PageSpec>
@@ -30,6 +35,7 @@ public static class PageCatalog
         ["dl.pack"] = new("dl.pack", "模组仓库", "Modrinth 检索与下载,安装到当前实例 mods 目录。", typeof(SL.App.Pages.RepoPage)),
         ["dl.shaders"] = new("dl.shaders", "光影仓库", "Modrinth shader 分类检索,安装到 shaderpacks 目录。", typeof(SL.App.Pages.RepoPage)),
         ["dl.packs"] = new("dl.packs", "资源包仓库", "Modrinth resourcepack 分类检索,安装到 resourcepacks 目录。", typeof(SL.App.Pages.RepoPage)),
+        ["dl.modpacks"] = new("dl.modpacks", "整合包仓库", "Modrinth modpack 检索与下载,支持一键导入到实例。", typeof(SL.App.Pages.RepoPage)),
         ["st.launch"] = new("st.launch", "外观与设置", "账户(设备码正版登录/离线切换)、深浅色(含跟随系统)、4 套配色、5 种强调色与下载并发设置。", typeof(SL.App.Pages.SettingsPage)),
         ["st.global"] = new("st.global", "全局偏好", "内存分配、窗口尺寸、JVM 参数、下载源与数据目录位置。", typeof(SL.App.Pages.GlobalSettingsPage)),
         ["st.theme"] = new("st.theme", "主题工坊", "从 Minecraft 方块纹理取色,生成并应用整套界面配色。", typeof(SL.App.Pages.ThemeWorkshopPage)),
@@ -76,6 +82,7 @@ public static class NavGroups
             new("dl.loaders", "加载器选择", "\uE950"),
             new("dl.install", "安装概览", "\uE895"),
             new("dl.pack", "模组仓库", "\uE7B8"),
+            new("dl.modpacks", "整合包仓库", "\uE960"),
             new("dl.shaders", "光影仓库", "\uE706"),
             new("dl.packs", "资源包仓库", "\uE8F1"),
             new("inst.packs", "资源包", "\uE8F1"),
