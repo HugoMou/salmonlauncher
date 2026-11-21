@@ -1,4 +1,4 @@
-﻿// SalmonLauncher (SL) — a Minecraft Java edition launcher
+// SalmonLauncher (SL) — a Minecraft Java edition launcher
 // Copyright (C) 2026 Hugo Mou
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -24,6 +24,7 @@ using SL.App.Notify;
 using SL.App.Localization;
 using SL.Core.Boot;
 using SL.Core.Launch;
+using SL.Core.Net;
 
 namespace SL.App.Pages;
 
@@ -111,20 +112,21 @@ public sealed partial class LoaderListPage : Page
         var game = InstallWizard.VersionId;
         var vanillaJson = Path.Combine(Runtime.InstancesDir, game, "meta", game + ".json");
         var vanillaJar = Path.Combine(Runtime.InstancesDir, game, "versions", game + ".jar");
-        if (!File.Exists(vanillaJson) || !File.Exists(vanillaJar))
-        {
-            await AppServices.Dialogs.AlertAsync(
-                string.Format(Loc.T("请先安装原版 {0}"), game),
-                string.Format(Loc.T("加载器需要以原版 {0} 为基础。请先在「安装概览」完成原版安装,再回到本页添加 {1}。"), game, loader),
-                MsgMark.Info).ConfigureAwait(true);
-            return;
-        }
 
         _busy = true;
         var started = DateTimeOffset.Now;
-        SummaryText.Text = string.Format(Loc.T("正在准备 {0}…"), loader);
         try
         {
+            // 一键 = 原版缺什么先补齐,然后直接建加载器实例。用户不需要先手动装一遍原版。
+            if (!VanillaInstaller.IsReady(game))
+            {
+                SummaryText.Text = string.Format(Loc.T("正在补齐原版 {0}(首次需要下载)…"), game);
+                await VanillaInstaller.EnsureAsync(game, InstallWizard.VersionUrl, CancellationToken.None,
+                        step => _ui.TryEnqueue(() => SummaryText.Text = step))
+                    .ConfigureAwait(true);
+            }
+
+            SummaryText.Text = string.Format(Loc.T("正在准备 {0}…"), loader);
             var plan = await LoaderInstall.BuildPlanAsync(loader, game, null, vanillaJson, vanillaJar,
                     CancellationToken.None,
                     step => _ui.TryEnqueue(() => SummaryText.Text = step))

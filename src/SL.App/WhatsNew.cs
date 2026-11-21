@@ -25,13 +25,19 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.15";
+    public const string Version = "2.0.16";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
-        new("\uE895",
-            Loc.T("更新提示不再反复弹出"),
-            Loc.T("启动时的「发现新版本」提示现在只提醒一次：同一版本提醒过后不再重复，安装新版后才会提示下一个新版本。")),
+        new("\uE896",
+            Loc.T("整合包一键导入"),
+            Loc.T("「实例 → 模组管理」新增「导入整合包」：直接选 .mrpack 或 .zip，启动器会读取包内清单，把模组、配置、存档一次放到位，并逐文件校验；不需要手动解压再一个个导入。")),
+        new("\uE7B8",
+            Loc.T("加载器不用先装原版"),
+            Loc.T("在「加载器选择」里直接点 Fabric / Quilt / Forge / NeoForge 即可：启动器会自动补齐缺少的原版文件，再生成可启动的加载器实例，不用先绕去装一遍原版。")),
+        new("\uE768",
+            Loc.T("整合包自带实例"),
+            Loc.T("导入时如果整合包要求的版本或加载器与当前实例不一致，可以选择自动创建对应实例——原版下载、加载器合并、模组导入一次完成，导入完即可启动。")),
     ];
 
     /// <summary>

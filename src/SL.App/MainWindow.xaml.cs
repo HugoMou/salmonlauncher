@@ -72,6 +72,16 @@ public sealed partial class MainWindow : Window
             AppServices.Dialogs.Attach(RootGrid.XamlRoot);
             Loc.ApplyTo(RootGrid);
 
+            // Headless modpack import (scriptable + used to exercise the importer without the window).
+            if (Diagnostics.PackImportCli.IsEnabled)
+            {
+                await Task.Delay(300);
+                var code = await Diagnostics.PackImportCli.RunAsync();
+                Application.Current.Exit();
+                Environment.ExitCode = code;
+                return;
+            }
+
             // Documentation screenshot pass: render every page and quit. Kept ahead of the normal
             // startup dialogs so the frames show pages, not a changelog overlay.
             if (Diagnostics.ScreenCapture.IsEnabled)
