@@ -178,6 +178,21 @@
           <li data-zh="资源包 → instances\&lt;id&gt;\resourcepacks">Resource packs → instances\&lt;id&gt;\resourcepacks</li>
         </ul>
         <p data-zh="Modrinth 搜索页会先显示目标实例与目录，确认后才会下载。本地模组也可以直接导入，原文件保留不动。">The Modrinth view shows the target instance and folder before downloading. Local mods can also be imported directly, with the original file left untouched.</p>
+
+        <h3 data-zh="导入整合包">Importing a modpack</h3>
+        <ol class="steps">
+          <li data-zh="进入「实例 → 模组管理」，点右上角的「导入整合包」。">Go to Instance → Mods and press Import modpack in the top right.</li>
+          <li data-zh="选择压缩包。支持 Modrinth 的 .mrpack、CurseForge 导出的 zip，以及任何带 mods/ 目录的普通 zip。">Pick the archive: Modrinth .mrpack, a CurseForge export, or any plain zip that contains a mods/ folder.</li>
+          <li data-zh="启动器会读出包名、Minecraft 版本、所需加载器与文件数量，并提示版本或加载器是否与当前实例匹配。">The launcher reads the pack name, Minecraft version, required loader and file count, and tells you whether they match the current instance.</li>
+          <li data-zh="若版本或加载器不一致，可选择「自动创建对应实例并导入」：会先补齐原版文件、合并加载器 profile，再建立实例并导入模组。">If the version or loader differs, choose Create the matching instance and import: it fetches the vanilla files, merges the loader profile, builds the instance and imports the mods.</li>
+          <li data-zh="导入过程按目录放置文件（mods、config、saves、resourcepacks、shaderpacks），逐文件 SHA-1 校验；已存在且内容一致的文件会跳过。">Files are placed by folder (mods, config, saves, resourcepacks, shaderpacks) and verified by SHA-1; files that already match are skipped.</li>
+        </ol>
+        <div class="note">
+          <b data-zh="CurseForge 导出包：">CurseForge exports:</b>
+          <span data-zh="这类包只携带 projectID/fileID，下载模组本体需要 CurseForge 官方 API Key。启动器会先导入包内自带文件（配置、存档、资源包），模组本体请到「模组仓库」按名称补装。">These packs carry only projectID/fileID, and downloading the mods needs the official CurseForge API key. The launcher imports the bundled files (configs, saves, resource packs) first; install the mod jars themselves from Mods repository by name.</span>
+        </div>
+        <h3 data-zh="装载器不用先装原版">No vanilla install needed first</h3>
+        <p data-zh="在「加载器选择」里直接点 Fabric、Quilt、Forge 或 NeoForge 即可。启动器会先补齐缺少的原版元数据、核心 jar、库文件与资源索引，再生成可启动的加载器实例，不需要先手动装一遍原版。">Pick Fabric, Quilt, Forge or NeoForge directly on the loader page. The launcher first fills in any missing vanilla metadata, core jar, libraries and asset index, then builds the launch-ready loader instance — no manual vanilla install first.</p>
       </section>
 
       <section id="multiplayer">
