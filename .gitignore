@@ -46,3 +46,7 @@ promo/test-shots/
 # ---------- Promo capture workspaces (heavy, regenerable) ----------
 .promo-profile-backup/
 .record-state-backup/
+
+# ---------- Local version backups (large, environment-specific) ----------
+promo/versions/
+dist/

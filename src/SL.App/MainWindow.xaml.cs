@@ -266,7 +266,16 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            if (!WhatsNew.ShouldShow(AppServices.Settings.Current.LastSeenVersion))
+            var lastSeen = AppServices.Settings.Current.LastSeenVersion;
+
+            // 首次安装：只记录版本，不弹公告
+            if (WhatsNew.IsFirstInstall(lastSeen))
+            {
+                WhatsNew.MarkSeen();
+                return;
+            }
+
+            if (!WhatsNew.ShouldShow(lastSeen))
                 return;
 
             // Record it before showing: if the window is closed while the dialog is open, or the

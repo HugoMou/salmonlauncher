@@ -25,43 +25,50 @@ namespace SL.App;
 public static class WhatsNew
 {
     /// <summary>Version these notes describe; compared with the stored "last seen" version.</summary>
-    public const string Version = "2.0.17";
+    public const string Version = "2.0.18";
 
     public static IReadOnlyList<WhatsNewItem> Items { get; } =
     [
-        new("\uE790",
-            Loc.T("界面全面重构"),
-            Loc.T("启动面板改为卡片式布局：启动、账户、快捷入口与上手指南在一屏内全部可见，悬停与按下都有反馈。")),
-        new("\uE8D7",
-            Loc.T("云母材质与动效开关"),
-            Loc.T("「外观与设置」新增「界面动效」开关；云母材质默认开启，不喜欢可一键关闭。")),
-        new("\uE74E",
-            Loc.T("实例克隆与备份"),
-            Loc.T("「实例设置」新增克隆、导出备份与从备份恢复：做模组试验前先备份，出问题一键恢复。")),
         new("\uE960",
-            Loc.T("整合包仓库"),
-            Loc.T("资源里新增「整合包仓库」，直接按游戏版本检索 Modrinth 整合包。")),
-        new("\uE943",
-            Loc.T("Java 运行时自动检测"),
-            Loc.T("实例设置里可看到检测到的 Java 列表，缺失时一键从 Adoptium 下载对应版本。")),
-        new("\uE9D9",
-            Loc.T("模组依赖检查"),
-            Loc.T("「模组管理」新增「检查依赖」：静态读取 fabric.mod.json 与 mods.toml，提示缺失依赖与重复安装。")),
-        new("\uE8A5",
-            Loc.T("引导可跳过，协议已重写"),
-            Loc.T("首次启动向导加入欢迎区与「跳过引导」；用户协议与免责声明升级到 3.0，重新提示确认。")),
+            Loc.T("整合包一键导入并启动"),
+            Loc.T("在「整合包仓库」点下载后不再只是丢文件：启动器会读清单、必要时自动建对应实例并导入，完成后直接问你要不要立即开玩。")),
+        new("\uE8B9",
+            Loc.T("资源包与光影缩略图"),
+            Loc.T("资源包、光影与存档列表会直接显示包自带的 pack.png / icon.png，没有图片时回退到字形图标。")),
+        new("\uE74E",
+            Loc.T("备份恢复更稳"),
+            Loc.T("修复从 zip 恢复到全新实例时因目录不存在而报错的问题；临时目录不可写时会自动回退到数据目录。")),
+        new("\uE7BA",
+            Loc.T("可离线自检"),
+            Loc.T("仓库新增 31 项自检（Java 版本推断、模组依赖检查、实例 zip 往返），发版本前可一键验证核心逻辑。")),
+        new("\uE74C",
+            Loc.T("清理遗留产物"),
+            Loc.T("删除录制与调试阶段遗留的散落图片与临时脚本，仓库体积和查找成本都降下来了。")),
     ];
 
     /// <summary>
-    /// Whether the announcement should be shown for the running version.
-    /// An empty value means the user has never seen one, in which case it is shown once.
+    /// 是否需要弹出更新公告。
+    /// 只有「已经记录过一个旧版本」且与当前版本不同时才弹，
+    /// 即：升级后弹一次，之后永远不再弹；全新安装不弹（首次使用已有引导与条款）。
     /// </summary>
     public static bool ShouldShow(string lastSeenVersion)
-        => !string.Equals(lastSeenVersion, Version, StringComparison.OrdinalIgnoreCase);
+    {
+        if (string.IsNullOrWhiteSpace(lastSeenVersion))
+            return false;
 
-    /// <summary>Remember that this version's notes have been shown, so they never repeat.</summary>
+        return !string.Equals(lastSeenVersion.Trim(), Version, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// 记下当前版本已处理；之后同一版本不会再弹公告。
+    /// 首次安装也会写入，用于区分「首次使用」与「升级」。
+    /// </summary>
     public static void MarkSeen()
         => AppServices.Settings.Update(c => c.LastSeenVersion = Version);
+
+    /// <summary>当前版本是否尚未记录（即首次安装）。</summary>
+    public static bool IsFirstInstall(string lastSeenVersion)
+        => string.IsNullOrWhiteSpace(lastSeenVersion);
 
     /// <summary>Version whose notes the user has already seen (empty when none).</summary>
     public static string LastSeen => AppServices.Settings.Current.LastSeenVersion;

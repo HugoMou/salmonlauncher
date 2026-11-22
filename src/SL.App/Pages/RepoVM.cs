@@ -17,6 +17,7 @@ using System.Collections.ObjectModel;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using SL.Core.Instances;
+using SL.Core.Launch;
 using SL.Core.Logging;
 using SL.Core.Net;
 using SL.App.Download;
@@ -289,8 +290,175 @@ public sealed class RepoVM : VmBase, IRefreshable
         }
     }
 
+    /// <summary>
+    /// 整合包一键导入：下载 .mrpack → 读清单 → (可选)自动创建匹配实例 → 导入 → 提示立即启动。
+    /// </summary>
+    private async Task InstallModpackAsync(RepoRow row)
+    {
+        string? zipPath = null;
+        try
+        {
+            Status = string.Format(Loc.T("正在解析 {0} 的最新文件…"), row.Title);
+            var file = await Modrinth.LatestVersionFileAsync(row.Hit.Slug, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            if (file is null)
+            {
+                Status = string.Format(Loc.T("{0} 没有可用的整合包文件"), row.Title);
+                AppServices.Notify.Publish(NotifyKind.Warning, Status);
+                return;
+            }
+
+            var tempDir = Path.Combine(Path.GetTempPath(), "sl-modpack");
+            Directory.CreateDirectory(tempDir);
+            zipPath = Path.Combine(tempDir, file.FileName);
+
+            Status = string.Format(Loc.T("正在下载 {0}（{1}）…"), file.FileName, file.SizeText);
+            using (var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMinutes(20) })
+            {
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("SalmonLauncher/" + SL.Core.Boot.Runtime.AppVersion);
+                using var response = await http
+                    .GetAsync(file.Url, System.Net.Http.HttpCompletionOption.ResponseHeadersRead)
+                    .ConfigureAwait(true);
+                response.EnsureSuccessStatusCode();
+
+                await using var target = File.Create(zipPath);
+                await response.Content.CopyToAsync(target).ConfigureAwait(true);
+            }
+
+            ModpackManifest manifest;
+            try
+            {
+                manifest = ModpackImporter.Inspect(zipPath);
+            }
+            catch (Exception ex)
+            {
+                Status = Loc.T("读取整合包清单失败：") + ex.Message;
+                AppServices.Notify.Publish(NotifyKind.Error, Status);
+                return;
+            }
+
+            Status = string.Format(Loc.T("{0}：{1} 个模组 · {2} · {3}"),
+                manifest.Name, manifest.ModCount, manifest.GameVersion, manifest.Loader);
+            AppLog.Info("RepoPage",
+                $"整合包 {manifest.Name} 需要 {manifest.GameVersion}/{manifest.Loader}，模组 {manifest.ModCount} 个");
+
+            // 目标实例：版本不匹配时提供自动创建
+            var targetId = _targetInstance;
+            var mismatch = manifest.GameVersion.Length > 0
+                           && !string.Equals(_gameVersion, manifest.GameVersion, StringComparison.OrdinalIgnoreCase);
+
+            if (mismatch && manifest.NeedsLoader && manifest.GameVersion.Length > 0)
+            {
+                var create = await AppServices.Dialogs.ConfirmAsync(
+                    Loc.T("整合包需要其它版本"),
+                    string.Format(Loc.T("该整合包需要 {0} · {1}，与当前实例（{2} · {3}）不一致。\n\n选「创建并导入」会自动补齐原版、安装加载器并建立新实例。"),
+                        manifest.GameVersion, manifest.Loader, _gameVersion, _loader),
+                    MsgMark.Question,
+                    Loc.T("创建并导入"),
+                    Loc.T("导入到当前实例")).ConfigureAwait(true);
+
+                if (create)
+                {
+                    Status = Loc.T("正在补齐原版文件…");
+                    await VanillaInstaller.EnsureAsync(manifest.GameVersion, null, CancellationToken.None,
+                        text => _ui.TryEnqueue(() => Status = text)).ConfigureAwait(true);
+
+                    var vanillaJson = Path.Combine(SL.Core.Boot.Runtime.InstancesDir, manifest.GameVersion,
+                        "meta", manifest.GameVersion + ".json");
+                    var vanillaJar = Path.Combine(SL.Core.Boot.Runtime.InstancesDir, manifest.GameVersion,
+                        "versions", manifest.GameVersion + ".jar");
+
+                    var plan = await LoaderInstall.BuildPlanAsync(
+                        manifest.Loader,
+                        manifest.GameVersion,
+                        manifest.LoaderVersion.Length > 0 ? manifest.LoaderVersion : null,
+                        vanillaJson,
+                        vanillaJar,
+                        CancellationToken.None,
+                        text => _ui.TryEnqueue(() => Status = text)).ConfigureAwait(true);
+
+                    targetId = plan.InstanceId;
+                    AppLog.Info("RepoPage", "已创建实例 " + targetId);
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                await AppServices.Dialogs.AlertAsync(
+                    Loc.T("尚未安装实例"),
+                    Loc.T("请先安装一个版本，或让启动器按整合包要求自动创建实例。"),
+                    MsgMark.Info).ConfigureAwait(true);
+                return;
+            }
+
+            Status = Loc.T("正在导入整合包…");
+            var result = await ModpackImporter.ImportAsync(zipPath, targetId!,
+                text => _ui.TryEnqueue(() => Status = text), CancellationToken.None).ConfigureAwait(true);
+
+            var total = result.Imported + result.Downloaded;
+            AppLog.Info("RepoPage",
+                $"整合包 {manifest.Name} → {targetId}：解压 {result.Imported} / 下载 {result.Downloaded} / 跳过 {result.Skipped} / 失败 {result.Failed}");
+
+            AppServices.Notify.Publish(
+                result.Failed == 0 ? NotifyKind.Success : NotifyKind.Warning,
+                string.Format(Loc.T("导入完成：{0} 个文件，{1} 个失败"), total, result.Failed));
+
+            Status = string.Format(Loc.T("已导入到实例 {0}（{1} 个文件）"), targetId, total);
+
+            // 刷新实例列表并切到该实例
+            try
+            {
+                SL.App.Instances.InstanceContext.Refresh();
+                SL.App.Instances.InstanceContext.Select(targetId!);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Warn("RepoPage", "刷新实例列表失败：" + ex.Message);
+            }
+
+            var launchNow = await AppServices.Dialogs.ConfirmAsync(
+                Loc.T("导入完成"),
+                string.Format(Loc.T("整合包已导入到实例 {0}。\n\n要现在启动游戏吗？"), targetId),
+                MsgMark.Question,
+                Loc.T("立即启动"),
+                Loc.T("稍后")).ConfigureAwait(true);
+
+            if (launchNow)
+                AppServices.Nav.Navigate("launch.home");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("RepoPage", ex);
+            Status = Loc.T("导入整合包失败：") + ex.Message;
+            AppServices.Notify.Publish(NotifyKind.Error, Status);
+        }
+        finally
+        {
+            if (zipPath is not null)
+            {
+                try
+                {
+                    if (File.Exists(zipPath))
+                        File.Delete(zipPath);
+                }
+                catch
+                {
+                    // 临时文件清理失败不影响主流程
+                }
+            }
+        }
+    }
+
     internal async Task InstallAsync(RepoRow row)
     {
+        // 整合包不是单文件下载，而是整包导入
+        if (_category == ModrinthCategory.Modpacks)
+        {
+            await InstallModpackAsync(row).ConfigureAwait(true);
+            return;
+        }
+
         if (_targetInstance.Length == 0)
         {
             await AppServices.Dialogs.AlertAsync(Loc.T("尚未安装实例"),

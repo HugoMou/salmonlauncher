@@ -21,7 +21,23 @@ namespace SL.Data;
 /// </summary>
 public static class AppPaths
 {
-    public static string Root { get; } = Path.Combine(
+    /// <summary>可选的数据目录覆盖：设置 SL_DATA_DIR 环境变量后，设置/实例/日志都写到这里。</summary>
+    private static readonly string? Override = ResolveOverride();
+
+    private static string? ResolveOverride()
+    {
+        try
+        {
+            var value = Environment.GetEnvironmentVariable("SL_DATA_DIR");
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static string Root { get; } = Override ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "SalmonLauncher");
 

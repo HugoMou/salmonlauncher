@@ -348,6 +348,34 @@ public static class InstanceRegistry
         }
     }
 
+    /// <summary>临时工作根目录：优先 %TEMP%，不可写时回落到数据目录下的 tmp。</summary>
+    /// <summary>临时目录根：测试或受限环境下可覆盖（默认 %TEMP%）。</summary>
+    public static string? ScratchRootOverride { get; set; }
+
+    private static string ScratchRoot()
+    {
+        if (!string.IsNullOrWhiteSpace(ScratchRootOverride))
+        {
+            Directory.CreateDirectory(ScratchRootOverride!);
+            return ScratchRootOverride!;
+        }
+
+        try
+        {
+            var temp = Path.GetTempPath();
+            var probe = Path.Combine(temp, "sl-write-probe-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(probe);
+            Directory.Delete(probe, true);
+            return temp;
+        }
+        catch
+        {
+            var fallback = Path.Combine(Boot.Runtime.Root, "tmp");
+            Directory.CreateDirectory(fallback);
+            return fallback;
+        }
+    }
+
     private static void AddDirectoryToZip(ZipArchive zip, string sourceDir, string relativeRoot)
     {
         foreach (var dir in Directory.EnumerateDirectories(sourceDir, "*", SearchOption.AllDirectories))
@@ -372,7 +400,7 @@ public static class InstanceRegistry
         if (!File.Exists(zipPath))
             throw new FileNotFoundException(zipPath);
 
-        var extractDir = Path.Combine(Path.GetTempPath(), $"sl-extract-{Guid.NewGuid:N}");
+        var extractDir = Path.Combine(ScratchRoot(), "sl-extract-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(extractDir);
 
         try
@@ -432,16 +460,24 @@ public static class InstanceRegistry
             {
                 var src = Path.Combine(extractDir, dir);
                 var dst = Path.Combine(targetDir, dir);
-                if (Directory.Exists(src))
+                if (!Directory.Exists(src))
+                    continue;
+
+                // 目标目录可能还不存在（全新实例）：先清空再复制
+                if (Directory.Exists(dst))
                 {
-                    // Remove existing contents first for clean import
                     foreach (var f in Directory.GetFiles(dst, "*.*", SearchOption.AllDirectories))
+                    {
                         try { File.Delete(f); } catch { }
+                    }
+
                     foreach (var d in Directory.GetDirectories(dst, "*", SearchOption.AllDirectories))
+                    {
                         try { Directory.Delete(d, true); } catch { }
-                    // Copy all contents
-                    CopyDirectoryContents(src, dst);
+                    }
                 }
+
+                CopyDirectoryContents(src, dst);
             }
 
             // Copy matching version jar

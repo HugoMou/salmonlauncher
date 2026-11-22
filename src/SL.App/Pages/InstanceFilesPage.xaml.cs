@@ -17,6 +17,8 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using SL.Core.Instances;
 using SL.Core.Logging;
@@ -31,13 +33,15 @@ namespace SL.App.Pages;
 /// <summary>File row inside an instance (shared by resource packs / shaders / worlds).</summary>
 public sealed class InstanceFileRow
 {
-    public InstanceFileRow(string name, string detail, string glyph, string actionText, string path)
+    public InstanceFileRow(string name, string detail, string glyph, string actionText, string path,
+        ImageSource? icon = null)
     {
         Name = name;
         Detail = detail;
         Glyph = glyph;
         ActionText = actionText;
         Path = path;
+        Icon = icon;
     }
 
     public string Name { get; }
@@ -45,8 +49,18 @@ public sealed class InstanceFileRow
     public string Glyph { get; }
     public string ActionText { get; }
     public string Path { get; }
+
+    /// <summary>资源包 / 光影包 / 世界自带的缩略图；没有时为 null，界面回退到字形图标。</summary>
+    public ImageSource? Icon { get; }
+
     public Visibility ActionVisibility
         => ActionText.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility IconVisibility
+        => Icon is null ? Visibility.Collapsed : Visibility.Visible;
+
+    public Visibility GlyphVisibility
+        => Icon is null ? Visibility.Visible : Visibility.Collapsed;
 }
 
 /// <summary>Instance files page: shared by the resource pack / shader / world views; the category is determined by the route key.</summary>
@@ -122,7 +136,69 @@ public sealed partial class InstanceFilesPage : Page
             : string.Format(Loc.T("实例 {0} · 共 {1} 个存档"), InstanceContext.CurrentId, saves.Count);
     }
 
-    private void LoadFiles()
+    /// <summary>
+    /// 读取资源包 / 光影包 / 世界自带的缩略图：
+    /// 目录取 pack.png 或 icon.png，zip 取包内 pack.png。失败返回 null。
+    /// </summary>
+    private static async Task<ImageSource?> LoadPackThumbnailAsync(string path, bool isWorld)
+    {
+        try
+        {
+            byte[]? bytes = null;
+
+            if (System.IO.Directory.Exists(path))
+            {
+                foreach (var name in new[] { isWorld ? "icon.png" : "pack.png", "pack.png", "icon.png" })
+                {
+                    var candidate = System.IO.Path.Combine(path, name);
+                    if (System.IO.File.Exists(candidate))
+                    {
+                        bytes = await System.IO.File.ReadAllBytesAsync(candidate).ConfigureAwait(false);
+                        break;
+                    }
+                }
+            }
+            else if (System.IO.File.Exists(path))
+            {
+                using var archive = System.IO.Compression.ZipFile.OpenRead(path);
+                foreach (var name in new[] { "pack.png", "icon.png" })
+                {
+                    var entry = archive.Entries.FirstOrDefault(e =>
+                        e.FullName.Replace('\\', '/').Equals(name, StringComparison.OrdinalIgnoreCase));
+                    if (entry is null)
+                        continue;
+
+                    await using var stream = entry.Open();
+                    using var buffer = new MemoryStream();
+                    await stream.CopyToAsync(buffer).ConfigureAwait(false);
+                    bytes = buffer.ToArray();
+                    break;
+                }
+            }
+
+            if (bytes is null || bytes.Length == 0)
+                return null;
+
+            var bitmap = new BitmapImage();
+            using var ras = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+            using (var writer = new Windows.Storage.Streams.DataWriter(ras.GetOutputStreamAt(0)))
+            {
+                writer.WriteBytes(bytes);
+                await writer.StoreAsync().AsTask().ConfigureAwait(false);
+            }
+
+            await bitmap.SetSourceAsync(ras).AsTask().ConfigureAwait(false);
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn("InstanceFiles", "读取缩略图失败(" +
+                                         System.IO.Path.GetFileName(path) + "):" + ex.Message);
+            return null;
+        }
+    }
+
+    private async void LoadFiles()
     {
         var dir = System.IO.Path.Combine(InstanceRegistry.InstanceDirOf(InstanceContext.CurrentId), _subDir);
         var files = new List<System.IO.FileInfo>();
@@ -146,11 +222,14 @@ public sealed partial class InstanceFilesPage : Page
             var sizeText = file.Length >= 1 << 20
                 ? $"{file.Length / (1024.0 * 1024.0):F1} MB"
                 : $"{file.Length / 1024.0:F0} KB";
+
+            var icon = await LoadPackThumbnailAsync(file.FullName, _isSaves).ConfigureAwait(true);
             _rows.Add(new InstanceFileRow(file.Name,
                 $"{sizeText} · {file.LastWriteTime:yyyy-MM-dd HH:mm}",
                 _isSaves ? "\uE74E" : "\uE8F1",
                 Loc.T("删除"),
-                file.FullName));
+                file.FullName,
+                icon));
         }
 
         StatusText.Text = files.Count == 0

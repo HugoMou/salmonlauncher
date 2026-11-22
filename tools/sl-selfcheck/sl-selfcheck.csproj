@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SL.SelfCheck</RootNamespace>
+    <AssemblyName>sl-selfcheck</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SL.Core\SL.Core.csproj" />
+    <ProjectReference Include="..\..\src\SL.Data\SL.Data.csproj" />
+  </ItemGroup>
+</Project>

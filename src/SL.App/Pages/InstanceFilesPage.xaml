@@ -83,10 +83,20 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <Border Width="34" Height="34" CornerRadius="9" Background="{ThemeResource Brush.AccentSoft}">
-                                    <FontIcon Glyph="{Binding Glyph}" FontSize="15"
-                                              Foreground="{ThemeResource Brush.Accent}" />
-                                </Border>
+                                <Grid Width="48" Height="48">
+                                    <Border Width="48" Height="48" CornerRadius="10"
+                                            Background="{ThemeResource Brush.AccentSoft}"
+                                            Visibility="{Binding GlyphVisibility}">
+                                        <FontIcon Glyph="{Binding Glyph}" FontSize="17"
+                                                  Foreground="{ThemeResource Brush.Accent}" />
+                                    </Border>
+                                    <Border CornerRadius="10" Visibility="{Binding IconVisibility}">
+                                        <Image Source="{Binding Icon}"
+                                               Stretch="UniformToFill"
+                                               Width="48"
+                                               Height="48" />
+                                    </Border>
+                                </Grid>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                     <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold"
                                                TextTrimming="CharacterEllipsis"
