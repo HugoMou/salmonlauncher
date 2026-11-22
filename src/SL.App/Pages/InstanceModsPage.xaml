@@ -55,6 +55,7 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <Button Content="导入模组" Click="OnImport" />
+                    <Button Content="检查依赖" Click="OnCheckDependencies" />
                     <Button x:Name="ImportButton" Content="导入整合包" Click="OnImportPack" />
                     <Button Content="打开目录" Click="OnOpenDir" />
                 </StackPanel>

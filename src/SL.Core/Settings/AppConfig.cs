@@ -90,8 +90,11 @@ public sealed class AppConfig
     /// <summary>Instance selected by the user, shared by the launch panel and all instance pages</summary>
     public string ActiveInstanceId { get; set; } = "";
 
-    /// <summary>Use Windows 11 Mica window backdrop when available; false uses the normal palette background.</summary>
-    public bool UseMicaBackdrop { get; set; } = false;
+    /// <summary>Use Windows 11 Mica window backdrop when available; on by default for the modern look.</summary>
+    public bool UseMicaBackdrop { get; set; } = true;
+
+    /// <summary>Card / page transition animations (PCL-style micro interaction); on by default.</summary>
+    public bool EnableCardAnimation { get; set; } = true;
 }
 
 public interface ISettingsService

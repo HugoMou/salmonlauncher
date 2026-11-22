@@ -158,6 +158,18 @@
 
                             <!-- Page 1: Choose language -->
                             <StackPanel x:Name="PanelLang" Spacing="16">
+                                <StackPanel Spacing="6" Margin="0,0,0,6">
+                                    <TextBlock Text="欢迎使用 SalmonLauncher"
+                                               FontSize="29"
+                                               FontWeight="Bold"
+                                               Foreground="{ThemeResource Brush.Fg}"
+                                               TextWrapping="Wrap" />
+                                    <TextBlock Text="把复杂留给启动器，把时间留给游戏。下面几步，一分钟就能开玩。"
+                                               FontSize="13"
+                                               LineHeight="21"
+                                               Foreground="{ThemeResource Brush.FgDim}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="选择语言"
                                                FontSize="19"
@@ -446,9 +458,8 @@
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Center">
                             <HyperlinkButton x:Name="SkipBtn"
-                                             Content="跳过"
-                                             Click="OnNext"
-                                             Visibility="Collapsed"
+                                             Content="跳过引导"
+                                             Click="OnSkip"
                                              MinWidth="56"
                                              VerticalAlignment="Center" />
                             <Button x:Name="NextBtn"

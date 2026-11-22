@@ -110,6 +110,7 @@ public sealed partial class SettingsPage : Page
             .ToList();
 
         MicaToggle.IsOn = c.UseMicaBackdrop;
+        AnimToggle.IsOn = c.EnableCardAnimation;
         ConcurrencyBox.Value = c.TransferConcurrency;
         MirrorToggle.IsOn = c.ModrinthMirror;
         AutoUpdateToggle.IsOn = c.CheckLauncherUpdateOnStart;
@@ -223,6 +224,13 @@ public sealed partial class SettingsPage : Page
         if (_loading)
             return;
         AppServices.Settings.Update(c => c.UseMicaBackdrop = MicaToggle.IsOn);
+    }
+
+    private void OnAnimToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading)
+            return;
+        AppServices.Settings.Update(c => c.EnableCardAnimation = AnimToggle.IsOn);
     }
 
     private void OnMirrorToggled(object sender, RoutedEventArgs e)

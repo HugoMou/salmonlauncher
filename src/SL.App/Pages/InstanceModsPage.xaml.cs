@@ -419,6 +419,56 @@ public sealed partial class InstanceModsPage : Page
         InstanceContext.Select(plan.InstanceId);
     }
 
+    // ---------------------------------------------------------- 模组依赖检查
+
+    /// <summary>静态检查当前实例的模组依赖与重复安装。</summary>
+    private async void OnCheckDependencies(object sender, RoutedEventArgs e)
+    {
+        var instanceId = SL.App.Instances.InstanceContext.CurrentId;
+        if (string.IsNullOrWhiteSpace(instanceId))
+        {
+            await AppServices.Dialogs.AlertAsync("尚未选择实例",
+                "请先在「实例」里选中一个实例。", MsgMark.Info).ConfigureAwait(true);
+            return;
+        }
+
+        try
+        {
+            var modsDir = SL.Core.Instances.InstanceRegistry.ModsDirOf(instanceId);
+            var issues = await System.Threading.Tasks.Task.Run(
+                () => SL.Core.Instances.ModDependencyChecker.Check(modsDir)).ConfigureAwait(true);
+
+            var summary = SL.Core.Instances.ModDependencyChecker.Summarize(issues);
+
+            if (issues.Count == 0)
+            {
+                AppServices.Notify.Publish(NotifyKind.Success, summary);
+                await AppServices.Dialogs.AlertAsync("依赖检查", summary, MsgMark.Success).ConfigureAwait(true);
+                return;
+            }
+
+            var lines = issues.Take(12)
+                .Select(i => "· " + i.Message)
+                .ToList();
+
+            var body = summary + "\n\n" + string.Join("\n", lines);
+            if (issues.Count > 12)
+                body += "\n\u2026 共 " + issues.Count + " 条";
+
+            var hasError = issues.Any(i => i.Level == SL.Core.Instances.ModIssueLevel.Error);
+            AppServices.Notify.Publish(hasError ? NotifyKind.Warning : NotifyKind.Info, summary);
+
+            await AppServices.Dialogs.AlertAsync("依赖检查", body,
+                hasError ? MsgMark.Warning : MsgMark.Info).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("InstanceMods", ex);
+            await AppServices.Dialogs.AlertAsync("依赖检查失败", ex.Message, MsgMark.Error)
+                .ConfigureAwait(true);
+        }
+    }
+
     private void OnOpenDir(object sender, RoutedEventArgs e)
     {
         if (InstanceContext.CurrentId.Length == 0)

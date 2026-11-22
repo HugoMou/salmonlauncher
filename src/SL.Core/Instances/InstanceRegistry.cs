@@ -14,6 +14,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 using System.IO;
+using System.IO.Compression;
 
 namespace SL.Core.Instances;
 
@@ -286,6 +287,219 @@ public static class InstanceRegistry
         Directory.CreateDirectory(savesDir);
         System.IO.Compression.ZipFile.ExtractToDirectory(backupPath, savesDir, overwriteFiles: true);
         return parked;
+    }
+
+    /// <summary>
+    /// Export the entire instance (mods, config, saves, etc.) as a zip file.
+    /// Returns the zip file path, or null when the instance directory does not exist.
+    /// </summary>
+    public static string? ExportInstanceZip(string instanceId, bool includeMods = true, bool includeConfig = true, bool includeSaves = true)
+    {
+        var instanceDir = InstanceDirOf(instanceId);
+        if (!Directory.Exists(instanceDir))
+            return null;
+
+        var zipPath = Path.Combine(Path.GetTempPath(), $"salmon-instance-{instanceId}-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
+        var filesToInclude = new List<(string sourceDir, string relativeRoot)>();
+
+        if (includeMods)
+            filesToInclude.Add((Path.Combine(instanceDir, "mods"), "mods"));
+        if (includeConfig)
+            filesToInclude.Add((Path.Combine(instanceDir, "config"), "config"));
+        if (includeSaves)
+            filesToInclude.Add((Path.Combine(instanceDir, "saves"), "saves"));
+
+        // Always include the version metadata (shared, not copied per-file)
+        var metaDir = Path.Combine(instanceDir, "meta");
+        if (Directory.Exists(metaDir))
+            filesToInclude.Add((metaDir, "meta"));
+
+        try
+        {
+            using var zip = new ZipArchive(File.Create(zipPath), ZipArchiveMode.Create);
+
+            foreach (var entry in filesToInclude)
+            {
+                if (!Directory.Exists(entry.sourceDir)) continue;
+                AddDirectoryToZip(zip, entry.sourceDir, entry.relativeRoot);
+            }
+
+            // 附带与实例同名的 version jar
+            var versionsDir = Path.Combine(instanceDir, "versions");
+            if (Directory.Exists(versionsDir))
+            {
+                foreach (var jar in Directory.EnumerateFiles(versionsDir, "*.jar"))
+                {
+                    var jarName = Path.GetFileNameWithoutExtension(jar);
+                    if (string.Equals(jarName, instanceId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        zip.CreateEntryFromFile(jar, "versions/" + Path.GetFileName(jar));
+                        break;
+                    }
+                }
+            }
+
+            return zipPath;
+        }
+        catch (Exception)
+        {
+            try { File.Delete(zipPath); } catch { }
+            return null;
+        }
+    }
+
+    private static void AddDirectoryToZip(ZipArchive zip, string sourceDir, string relativeRoot)
+    {
+        foreach (var dir in Directory.EnumerateDirectories(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var relPath = dir.Substring(sourceDir.Length).TrimStart(Path.DirectorySeparatorChar);
+            var entryName = Path.Combine(relativeRoot, relPath).Replace('\\', '/');
+            zip.CreateEntry(entryName); // Empty entry, files will be added below
+        }
+
+        foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            var relPath = file.Substring(sourceDir.Length).TrimStart(Path.DirectorySeparatorChar);
+            var entryName = Path.Combine(relativeRoot, relPath).Replace('\\', '/');
+            zip.CreateEntryFromFile(file, entryName);
+        }
+    }
+
+    /// <summary>Import an instance zip, creating a new instance or updating an existing one.</summary>
+    /// <returns>The target instance id (new or existing).</returns>
+    public static string ImportInstanceZip(string zipPath, string? targetInstanceId = null)
+    {
+        if (!File.Exists(zipPath))
+            throw new FileNotFoundException(zipPath);
+
+        var extractDir = Path.Combine(Path.GetTempPath(), $"sl-extract-{Guid.NewGuid:N}");
+        Directory.CreateDirectory(extractDir);
+
+        try
+        {
+            System.IO.Compression.ZipFile.ExtractToDirectory(zipPath, extractDir);
+
+            // Read the instance metadata from the zip to determine the instance id
+            // Look for meta/instance.json or similar
+            var metaPath = Path.Combine(extractDir, "meta", "instance.json");
+            string instanceId;
+
+            if (File.Exists(metaPath))
+            {
+                var metaJson = File.ReadAllText(metaPath);
+                // 从 JSON 中读取 id / name 字段
+                string? metaId = null;
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(metaJson);
+                    var root = doc.RootElement;
+                    if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    {
+                        if (root.TryGetProperty("id", out var idEl) && idEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                            metaId = idEl.GetString();
+                        else if (root.TryGetProperty("name", out var nameEl) && nameEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                            metaId = nameEl.GetString();
+                    }
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    metaId = null;
+                }
+
+                instanceId = string.IsNullOrWhiteSpace(metaId)
+                    ? Path.GetFileNameWithoutExtension(zipPath)
+                    : metaId!;
+            }
+            else
+            {
+                instanceId = targetInstanceId ?? Path.GetFileNameWithoutExtension(zipPath);
+            }
+
+            // Determine target directory
+            var targetDir = InstanceDirOf(instanceId);
+            if (Directory.Exists(targetDir))
+            {
+                // If instance exists, we'll merge/modify; for now, use a derived name
+                var baseName = Path.GetFileNameWithoutExtension(zipPath);
+                instanceId = baseName;
+                targetDir = InstanceDirOf(instanceId);
+            }
+            Directory.CreateDirectory(targetDir);
+
+            // Copy mods, config, saves from extracted directory
+            var copyDirs = new[] { "mods", "config", "saves" };
+            foreach (var dir in copyDirs)
+            {
+                var src = Path.Combine(extractDir, dir);
+                var dst = Path.Combine(targetDir, dir);
+                if (Directory.Exists(src))
+                {
+                    // Remove existing contents first for clean import
+                    foreach (var f in Directory.GetFiles(dst, "*.*", SearchOption.AllDirectories))
+                        try { File.Delete(f); } catch { }
+                    foreach (var d in Directory.GetDirectories(dst, "*", SearchOption.AllDirectories))
+                        try { Directory.Delete(d, true); } catch { }
+                    // Copy all contents
+                    CopyDirectoryContents(src, dst);
+                }
+            }
+
+            // Copy matching version jar
+            var srcVersions = Path.Combine(extractDir, "versions");
+            var dstVersions = Path.Combine(targetDir, "versions");
+            if (Directory.Exists(srcVersions))
+            {
+                Directory.CreateDirectory(dstVersions);
+                foreach (var jar in Directory.EnumerateFiles(srcVersions, "*.jar"))
+                {
+                    var name = Path.GetFileName(jar);
+                    var dst = Path.Combine(dstVersions, name);
+                    File.Copy(jar, dst, overwrite: true);
+                }
+            }
+
+            return instanceId;
+        }
+        catch (Exception ex)
+        {
+            throw new IOException($"导入实例 zip 失败: {ex.Message}", ex);
+        }
+        finally
+        {
+            try { Directory.Delete(extractDir, true); } catch { }
+        }
+    }
+
+    private static void CopyDirectoryContents(string source, string target)
+    {
+        Directory.CreateDirectory(target);
+        foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+        {
+            var relPath = dir.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar);
+            var targetSub = Path.Combine(target, relPath);
+            Directory.CreateDirectory(targetSub);
+        }
+        foreach (var file in Directory.GetFiles(source, "*.*", SearchOption.AllDirectories))
+        {
+            var relPath = file.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar);
+            var targetFile = Path.Combine(target, relPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(targetFile)!);
+            File.Copy(file, targetFile, overwrite: true);
+        }
+    }
+
+    /// <summary>
+    /// Duplicate an instance to a new one with its own mods, saves and configuration, so a setup can be
+    /// tried out without touching the original. Also exports a zip of the new instance.
+    /// The version files and libraries are shared, not copied.
+    /// Returns the new instance id.
+    /// </summary>
+    public static string DuplicateInstanceWithZip(string sourceId, string? targetId = null, bool includeMods = true, bool includeConfig = true, bool includeSaves = true)
+    {
+        var newId = DuplicateInstance(sourceId, targetId);
+        var zipPath = ExportInstanceZip(newId, includeMods, includeConfig, includeSaves);
+        // Caller can retrieve zip if needed; zip is stored at Path.GetTempPath()
+        return newId;
     }
 
     /// <summary>

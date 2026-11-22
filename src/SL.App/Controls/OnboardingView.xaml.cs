@@ -401,6 +401,15 @@ public sealed partial class OnboardingView : UserControl
             ShowStep(_step - 1);
     }
 
+    /// <summary>跳过引导：标记完成并不再显示。</summary>
+    private void OnSkip(object sender, RoutedEventArgs e)
+    {
+        AppServices.Settings.Update(c => c.OnboardingCompleted = true);
+        AppLog.Info("Onboarding", "用户跳过引导");
+        Visibility = Visibility.Collapsed;
+        Completed?.Invoke();
+    }
+
     private void OnStart(object sender, RoutedEventArgs e)
     {
         AppServices.Settings.Update(c => c.OnboardingCompleted = true);

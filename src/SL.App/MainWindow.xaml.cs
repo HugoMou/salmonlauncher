@@ -124,9 +124,38 @@ public sealed partial class MainWindow : Window
         ThemeManager.ThemeChanged += () => DispatcherQueue.TryEnqueue(ApplyTheme);
         Loc.Changed += () => DispatcherQueue.TryEnqueue(OnLanguageChanged);
 
+        ApplyAnimationPreference();
+        AppServices.Settings.Changed += _ => DispatcherQueue.TryEnqueue(ApplyAnimationPreference);
         AppServices.Nav.Attach(NavFrame);
         SyncShell();
         ApplyTheme();
+    }
+
+    /// <summary>卡片动效总开关：关闭后页面切换不再播放转场动画。</summary>
+    private void ApplyAnimationPreference()
+    {
+        try
+        {
+            if (AppServices.Settings.Current.EnableCardAnimation)
+            {
+                if (NavFrame.ContentTransitions is null || NavFrame.ContentTransitions.Count == 0)
+                {
+                    var transitions = new Microsoft.UI.Xaml.Media.Animation.TransitionCollection
+                    {
+                        new Microsoft.UI.Xaml.Media.Animation.NavigationThemeTransition(),
+                    };
+                    NavFrame.ContentTransitions = transitions;
+                }
+            }
+            else
+            {
+                NavFrame.ContentTransitions = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLog.Warn("Shell", "应用动效设置失败:" + ex.Message);
+        }
     }
 
     // ---------------------------------------------------------- Window icon

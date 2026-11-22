@@ -23,11 +23,11 @@ using SL.Core.Boot;
 
 namespace SL.App.Pages;
 
-/// <summary>User agreement and disclaimer.</summary>
+/// <summary>用户协议与免责声明（条款版本 3.0）。</summary>
 public sealed partial class TermsPage : Page
 {
     /// <summary>Current agreement revision; bump when the text changes so users are asked to read it again.</summary>
-    public const string CurrentTermsVersion = "2.0";
+    public const string CurrentTermsVersion = "3.0";
 
     public TermsPage()
     {

@@ -129,6 +129,102 @@
                                Foreground="{ThemeResource Brush.FgFaint}" />
                 </StackPanel>
             </Border>
+
+            <!-- Java 运行时 -->
+            <Border Background="{ThemeResource Brush.Card}"
+                    BorderBrush="{ThemeResource Brush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="22">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE943;" FontSize="20" Foreground="{ThemeResource Brush.Accent}" />
+                        <TextBlock Text="Java 运行时" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="JavaSummaryText"
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource Brush.FgDim}" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="重新检测" Click="OnRescanJava" />
+                        <Button Content="下载推荐版本" Click="OnDownloadJava" />
+                    </StackPanel>
+
+                    <TextBlock Text="优先使用系统已安装的 Java；缺失时会从 Eclipse Adoptium(Temurin) 下载到数据目录，不修改系统环境变量。"
+                               FontSize="11.5"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource Brush.FgFaint}" />
+                </StackPanel>
+            </Border>
+
+            <!-- 克隆 · 备份 · 恢复 -->
+            <Border Background="{ThemeResource Brush.Card}"
+                    BorderBrush="{ThemeResource Brush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="22">
+                <StackPanel Spacing="14">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE8C8;" FontSize="20" Foreground="{ThemeResource Brush.Accent}" />
+                        <TextBlock Text="克隆 · 备份 · 恢复" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <Grid ColumnSpacing="14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="克隆实例" FontSize="12.5" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource Brush.Fg}" />
+                            <TextBlock Text="复制一份独立副本,方便试验模组而不影响原实例。"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgDim}" />
+                            <Button Content="创建副本"
+                                    Click="OnCloneInstance"
+                                    HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Spacing="7">
+                            <TextBlock Text="备份为压缩包" FontSize="12.5" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource Brush.Fg}" />
+                            <TextBlock Text="把模组、配置、存档与元数据打包成 zip 保存到本地。"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgDim}" />
+                            <CheckBox x:Name="IncludeSavesBox"
+                                      Content="包含存档"
+                                      IsChecked="True"
+                                      MinWidth="0" />
+                            <Button Content="导出备份"
+                                    Click="OnExportBackup"
+                                    HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Spacing="7">
+                            <TextBlock Text="从备份恢复" FontSize="12.5" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource Brush.Fg}" />
+                            <TextBlock Text="选择之前导出的 zip 恢复到当前实例;同名文件会被覆盖。"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgDim}" />
+                            <Button Content="选择备份文件"
+                                    Click="OnImportBackup"
+                                    HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="克隆会占用与源实例相近的磁盘空间;恢复会覆盖同名模组、配置与存档,恢复前建议先导出备份。"
+                               FontSize="11.5"
+                               TextWrapping="Wrap"
+                               Foreground="{ThemeResource Brush.FgFaint}" />
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Page>

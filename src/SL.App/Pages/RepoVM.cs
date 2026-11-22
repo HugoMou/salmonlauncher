@@ -247,6 +247,12 @@ public sealed class RepoVM : VmBase, IRefreshable
                 var facets = $"[[\"versions:{gameVersion}\"],[\"categories:{_loader}\"]]";
                 hits = await Modrinth.SearchByFacetsAsync(query, facets, sort, _browseOffset, CancellationToken.None).ConfigureAwait(true);
             }
+            else if (_category == ModrinthCategory.Modpacks)
+            {
+                // 整合包只按游戏版本筛选：加载器由整合包自己声明
+                var facets = $"[[\"project_type:modpack\"],[\"versions:{gameVersion}\"]]";
+                hits = await Modrinth.SearchByFacetsAsync(query, facets, sort, _browseOffset, CancellationToken.None).ConfigureAwait(true);
+            }
             else
             {
                 var type = _category == ModrinthCategory.Shaders ? "shader" : "resourcepack";

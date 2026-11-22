@@ -204,7 +204,7 @@
                         <TextBlock Text="窗口背景" VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgDim}" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                             <TextBlock Text="云母材质 (Mica)" Foreground="{ThemeResource Brush.Fg}" />
-                            <TextBlock Text="Windows 11 可选半透明云母背景；默认关闭，使用普通配色背景。套用壁纸时以壁纸为准。"
+                            <TextBlock Text="Windows 11 半透明云母背景，默认开启；关闭后使用不透明配色背景。套用壁纸时以壁纸为准。"
                                        FontSize="11.5"
                                        TextWrapping="Wrap"
                                        Foreground="{ThemeResource Brush.FgFaint}" />
@@ -214,6 +214,28 @@
                                       OnContent="开"
                                       OffContent="关"
                                       Toggled="OnMicaToggled" />
+                    </Grid>
+
+                    <!-- 卡片动画 -->
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="132" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="界面动效" VerticalAlignment="Center" Foreground="{ThemeResource Brush.FgDim}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="卡片动效与页面转场" Foreground="{ThemeResource Brush.Fg}" />
+                            <TextBlock Text="卡片悬停反馈与页面切换动画，默认开启；关闭后界面切换更直接。"
+                                       FontSize="11.5"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource Brush.FgFaint}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="AnimToggle"
+                                      Grid.Column="2"
+                                      OnContent="开"
+                                      OffContent="关"
+                                      Toggled="OnAnimToggled" />
                     </Grid>
 
                     <!-- Color schemes: skinnable cards -->

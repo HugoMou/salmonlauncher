@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <!--
   SalmonLauncher (SL) — a Minecraft Java edition launcher
@@ -25,11 +25,13 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled"
                   HorizontalScrollMode="Disabled">
-        <StackPanel Margin="36,28,36,36" Spacing="16" MaxWidth="860" HorizontalAlignment="Left">
+        <StackPanel Margin="36,28,36,36" Spacing="16" MaxWidth="880" HorizontalAlignment="Left">
+
             <TextBlock Text="用户协议与免责声明"
                        Style="{ThemeResource TitleLargeTextBlockStyle}"
                        Foreground="{ThemeResource Brush.Fg}" />
-            <Grid ColumnSpacing="8" Margin="0,-12,0,4">
+
+            <Grid ColumnSpacing="8" Margin="0,-10,0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -46,37 +48,41 @@
                            VerticalAlignment="Center"
                            Foreground="{ThemeResource Brush.FgDim}"
                            TextWrapping="Wrap"
-                           Text="最近更新 2026 年 11 月 · 条款版本 2.0 · 使用本软件即表示你已阅读并接受以下全部条款。" />
+                           Text="条款版本 3.0 · 最近更新 2026 年 11 月 · 安装或使用本软件即表示你已阅读并接受以下全部条款。" />
             </Grid>
 
-            <!-- Key points at a glance -->
+            <!-- 要点速览 -->
             <Border Background="{ThemeResource Brush.Card}"
                     BorderBrush="{ThemeResource Brush.Border}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="12"
                     Padding="22">
-                <StackPanel Spacing="10">
+                <StackPanel Spacing="9">
                     <TextBlock Text="要点速览" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
-                               Text="· 本软件是免费的第三方工具,与 Mojang Studios、Microsoft 无隶属或授权关系。" />
+                               Text="· 本软件是免费、开源的第三方工具,与 Mojang Studios、Microsoft 无隶属关系,也未获其授权或背书。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
-                               Text="· 不含统计、埋点与广告;设置、账户、日志与存档只保存在本机。" />
+                               Text="· 不含统计、埋点与广告;设置、账户令牌、日志、实例与存档只保存在本机,不提供云同步。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
-                               Text="· 游戏文件从官方源与公开镜像下载,本软件不内置、不分发游戏本体。" />
+                               Text="· 游戏文件从官方源与公开镜像下载;本软件不内置、不分发、不修改游戏本体。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
-                               Text="· 更新只替换程序文件,设置、账户、实例与存档不会被删除;更新包来自项目 GitHub 发布页并校验 SHA-256。" />
+                               Text="· 安装实例、导入整合包、还原备份都会写入磁盘;重要数据请先自行备份,操作前请确认目标目录。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
-                               Text="· 安装包内含以 GPL-3.0 发布的第三方程序 Campfire;其版权归原作者,启动器未作修改。" />
+                               Text="· 自动下载的 Java 运行时来自 Eclipse Adoptium(Temurin),其在你的数据目录内独立运行,适用其自身许可。" />
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
-                               Text="· 软件按「现状」提供,重要操作前请自行备份存档与实例。" />
+                               Text="· 更新只替换程序文件;更新包来自本项目 GitHub 发布页并校验 SHA-256,校验不通过不会安装。" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}"
+                               Text="· 安装包内含以 GPL-3.0 发布的第三方联机程序 Campfire,版权归原作者,本软件按原样分发。" />
+                    <TextBlock Style="{ThemeResource Style.TermsBody}"
+                               Text="· 软件按「现状」提供,不对存档损坏、账户异常或间接损失承担赔偿;请在重要操作前备份。" />
                 </StackPanel>
             </Border>
 
-            <!-- Consent status -->
+            <!-- 同意状态 -->
             <Border Background="{ThemeResource Brush.AccentSoft}"
                     BorderBrush="{ThemeResource Brush.Border}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="12"
                     Padding="18">
                 <Grid ColumnSpacing="14">
                     <Grid.ColumnDefinitions>
@@ -106,168 +112,200 @@
             <Border Background="{ThemeResource Brush.Card}"
                     BorderBrush="{ThemeResource Brush.Border}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="12"
                     Padding="24">
                 <StackPanel Spacing="18">
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="一、总则与适用范围" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第一条　定义与适用范围" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. SalmonLauncher(以下简称「本软件」)是一款用于管理、安装与启动 Minecraft 的第三方桌面工具。本协议是你与本软件作者之间关于使用本软件的约定。若你不同意其中任何条款,请停止使用并删除本软件。" />
+                                   Text="1. SalmonLauncher(以下简称「本软件」)是一款免费、开源的 Minecraft Java 版第三方启动与管理工具,提供版本安装、实例管理、内容下载、账户管理、联机、备份还原与崩溃诊断等功能。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 本协议适用于启动器本体及其提供的全部功能,包括版本安装、实例管理、内容下载、账户管理、联机、主题与崩溃诊断。游戏本体不在本协议范围内,其使用须遵守 Mojang Studios 的最终用户许可协议。" />
+                                   Text="2. 本协议是你与本软件作者(以下简称「作者」)之间就使用本软件达成的完整约定,取代此前关于同一事项的任何口头或书面说明。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 本协议自你首次安装或首次启动本软件之日起生效;当前条款版本 2.0,最近更新于 2026 年 11 月。" />
+                                   Text="3. 游戏本体、游戏资源与账户体系由 Mojang Studios 与 Microsoft 提供,不在本协议范围内,其使用应遵守 Minecraft 最终用户许可协议与微软服务协议。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 本协议自你首次安装或首次运行本软件之日起生效。若你不同意其中任何内容,请立即停止使用并删除本软件及其数据目录。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="二、账号与凭据" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第二条　许可与开源" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 微软账户登录由微软官方 OAuth 页面完成,本软件不会接触也不保存你的密码,仅在本地保存登录后获得的访问令牌与刷新令牌。" />
+                                   Text="1. 本软件以 GNU General Public License 第 3 版或其更新版本(GPL-3.0-or-later)发布。你可以自由运行、研究、修改与再分发本软件,包括用于商业目的的再分发,但须遵守 GPL 的相应条款。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 所有账户信息与令牌都保存在本机数据目录中,不会上传到任何服务器。你可以随时在「外观与设置」中删除账户,或直接删除数据目录。" />
+                                   Text="2. 再分发时须保留版权声明与许可声明,并就你分发的二进制提供完整对应的源代码,或提供获取该源代码的书面承诺。许可证全文见项目根目录 LICENSE 文件。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 离线账户仅用于本地游戏,不具备正版身份,无法进入开启了正版验证的服务器。" />
+                                   Text="3. 本软件使用的开源组件各自遵循其原有许可:.NET 与 Windows App SDK(WinUI 3)为 MIT,Tomlyn、CommunityToolkit 等项目按其声明许可使用。组件清单与许可摘要见 THIRD-PARTY-NOTICES.md。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 令牌仅用于向 Mojang / Microsoft 请求游戏档案与下载权限,不会用于其它用途,也不会被本软件转发给第三方。" />
+                                   Text="4. 除 GPL 明确授予的权利外,作者保留本软件名称、标识与自绘壁纸的署名权;Minecraft 的名称、纹理与相关资源归 Mojang Studios 所有,本软件不主张任何权利。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="三、游戏文件与数据" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第三条　账户与凭据" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 游戏本体、运行库与资源文件均从 Mojang 官方源或其公开镜像下载,本软件不分发、不修改、不内置任何 Minecraft 游戏文件。" />
+                                   Text="1. 微软账户登录在微软官方授权页面上完成,本软件不会接触、不会保存你的密码,仅在本地保存登录后取得的访问令牌与刷新令牌。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 模组、光影与资源包来自 Modrinth 等公开平台,其版权与许可归各自作者所有,请遵守对应项目的授权条款。" />
+                                   Text="2. 令牌仅用于向 Mojang / Microsoft 请求游戏档案、皮肤与下载授权,不用于其它目的,也不会被转发给任何第三方。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 实例、存档、日志与皮肤都保存在本机数据目录,卸载本软件不会自动删除,请自行备份。" />
+                                   Text="3. 全部账户数据保存在本机数据目录。你可以随时在「外观与设置」中移除账户,或直接删除数据目录以彻底清除。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 离线账户只用于本地游戏,不具备正版身份,无法进入开启正版验证的服务器;使用离线账户产生的后果由你自行承担。" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="第四条　游戏文件、实例与内容" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="1. 游戏本体、运行库与资源文件均从 Mojang 官方源或其公开镜像下载;本软件不内置、不分发、不修改任何 Minecraft 游戏文件。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="2. 模组、整合包、光影与资源包来自 Modrinth、CurseForge 等公开平台,其版权与许可归各自作者所有,你应遵守对应项目的授权条款。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="3. 实例、存档、日志与皮肤保存在本机数据目录。卸载本软件不会自动删除这些数据,请自行备份。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
                                    Text="4. 数据目录默认位于 %APPDATA%\SalmonLauncher,可在「关于」页一键打开;更换电脑时复制整个目录即可迁移设置与实例。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="四、使用规范" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第五条　实例克隆、备份与恢复" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 你应当拥有你所使用的 Minecraft 账户,并通过正规渠道获取游戏。" />
+                                   Text="1. 克隆会在实例目录下新建一份独立副本,占用与源实例相近的磁盘空间;克隆不含已下载的游戏本体缓存,首次启动可能触发补全。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 不得利用本软件绕过正版验证、发布破解内容、传播恶意文件,或从事任何违反当地法律法规的行为。" />
+                                   Text="2. 备份会把实例的模组、配置、存档与元数据打包为 zip 文件,保存在你指定的位置。备份是完整快照,不包含增量差异。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 联机功能由随附的第三方程序 Campfire 提供,启动器本身不参与联机通信;请勿将其用于未经授权的入侵或流量攻击。" />
+                                   Text="3. 恢复到已有实例时会覆盖同名的模组、配置与存档文件;覆盖后原文件不可通过本软件撤销,请在恢复前自行确认或另存备份。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 通过本软件下载的模组、光影与资源包来自第三方,其内容与安全性由你自行判断;作者不对第三方内容造成的损失负责。" />
+                                   Text="4. 导入来自他人的整合包或实例压缩包时,其中可能包含任意脚本与配置文件。你应自行判断来源是否可信,因导入不可信内容造成的损失由你自行承担。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="五、第三方服务" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第六条　Java 运行时" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 本软件会访问 Mojang 版本元数据、BMCLAPI 镜像、Modrinth 接口、GitHub 与 Eclipse Temurin 等第三方服务。这些服务由其运营方独立提供,并适用各自的条款与隐私政策,本软件不对其可用性与内容承担责任。" />
+                                   Text="1. 本软件会优先使用你在系统中已安装的 Java 运行时;缺省时可按需从 Eclipse Adoptium(Temurin)下载对应的 JRE 到本机数据目录。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 第三方服务的域名、接口与返回内容可能随时调整,可能导致安装或更新暂时失败;本软件会尽力适配,但不作保证。" />
+                                   Text="2. 下载的运行时由其发行方提供并适用其自身许可(Temurin 采用 GPLv2 + Classpath Exception),本软件不对该运行时的安全性、兼容性与可用性作出保证。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 因第三方服务中断、限流或校验失败导致的下载失败,你可以稍后重试,或在「外观与设置」中切换下载源。" />
+                                   Text="3. 自动下载需要访问 api.adoptium.net 与 GitHub Releases;若网络不可达,你可以手动安装 Java 并在设置中指定路径。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 本软件不会修改系统级 Java 配置,也不会写入系统环境变量,下载的运行时仅作用于本软件启动的游戏进程。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="六、隐私与本地数据" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第七条　模组依赖检查" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 本软件不含任何统计、埋点或广告组件,不会收集你的设备信息、游戏行为或个人信息,也不会向你推送商业内容。" />
+                                   Text="1. 依赖检查依据模组自带的元数据(fabric.mod.json、mods.toml、mcmod.info)进行静态分析,只读取文件内容,不加载、不执行任何模组代码。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 设置、账户令牌、日志、实例与存档都只保存在本机数据目录,不会上传到作者或任何第三方服务器;本软件不提供云同步。" />
+                                   Text="2. 检查结果为辅助提示,不能替代实际的启动验证;元数据缺失、版本约束语法差异或动态依赖都可能造成漏报与误报。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 日志文件仅在你主动分享时才会被读取,内容可能包含版本号、Java 路径与游戏输出;分享前请自行检查是否含有敏感信息。" />
+                                   Text="3. 因依赖冲突、版本不匹配或模组自身缺陷导致的崩溃与存档损坏,由你自行判断与承担,作者不承担连带责任。" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="第八条　使用规范" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 联机由随附的 Campfire 独立完成,其连接数据由 Campfire 及其服务端处理;启动器不读取、不转发也不记录任何联机内容。" />
+                                   Text="1. 你应当通过正规渠道获取你所使用的 Minecraft 账户与游戏。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="2. 不得利用本软件绕过正版验证、传播破解内容或恶意文件,或从事任何违反你所在地法律法规的行为。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="3. 联机功能由随附的第三方程序 Campfire 提供,本软件不参与联机通信;请勿将其用于未经授权的入侵、扫描或流量攻击。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 通过本软件取得的第三方内容,其内容合法性与安全性由你自行判断;作者不对第三方内容造成的损失负责。" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="第九条　第三方服务" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="1. 本软件会访问 Mojang 版本元数据、BMCLAPI 镜像、Modrinth 接口、GitHub 与 Eclipse Adoptium 等第三方服务。这些服务由各自运营方独立提供,适用其自身条款与隐私政策。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="2. 第三方服务的域名、接口与返回格式可能随时调整,可能导致安装、搜索或更新暂时失败;本软件会尽力适配,但不作保证。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="3. 因第三方服务中断、限流或校验失败导致的失败,你可以稍后重试,或在「外观与设置」中切换下载源与镜像。" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="第十条　隐私与本地数据" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="1. 本软件不含任何统计、埋点或广告组件,不收集设备信息、游戏行为或个人信息,也不会推送商业内容。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="2. 设置、令牌、日志、实例与存档只保存在本机数据目录,不上传至作者或任何第三方服务器。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="3. 日志仅在你主动查看或分享时才会被读取,内容可能包含版本号、Java 路径与游戏输出;分享前请自行检查是否含敏感信息。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 联机由 Campfire 独立完成,其连接数据由 Campfire 与其服务端处理;本软件不读取、不转发、不记录联机内容。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
                                    Text="5. 皮肤与材质只在本机缓存,用于界面与游戏显示,不用于身份识别、追踪或用户画像。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="七、未成年人使用" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第十一条　更新与升级" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 未满 18 周岁的用户应在监护人指导下使用本软件,并由监护人阅读并同意本协议。" />
+                                   Text="1. 新版本从本项目 GitHub 发布页获取,并使用发布页公布的 SHA-256 校验;校验不通过时不会执行安装。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 本软件不含内购、广告或社交内容,但仍建议监护人关注孩子的游戏时间与下载内容。" />
+                                   Text="2. 更新由你主动确认后才会下载与安装;「启动时检查更新」仅作版本提示,不会在后台静默下载或安装。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="3. 安装程序只替换程序目录内的文件;设置、账户、实例、存档、模组与日志位于独立的数据目录,升级不会删除它们,但仍建议在重大版本升级前备份存档。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 若你自行修改过程序目录中的文件,更新可能覆盖这些改动;需要长期保留的修改请另存副本或自行编译分发。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="八、开源组件与许可" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第十二条　第三方组件与版权" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 本软件基于 .NET 与 Windows App SDK(WinUI 3)等开源框架构建,相关组件遵循其各自的开源许可。" />
+                                   Text="1. 安装包内含第三方联机程序 Campfire,以 GPL-3.0 发布,版权归其原作者;本软件按原样分发,未作修改、未重新打包。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 启动器内置的壁纸与图标由本软件自行绘制,可随软件一起分发;Minecraft 的名称、纹理与相关资源归 Mojang Studios 所有。" />
+                                   Text="2. Campfire 的许可证全文、版本号、SHA-256 与源码获取方式随安装包附带于 campfire 目录;再分发时不得删除这些文件。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 本软件以 GNU General Public License(GPL)第 3 版或其更新版本许可发布;你可以自由运行、研究、修改与再分发本软件(包括收费分发),但须遵守 GPL 条款。" />
+                                   Text="3. Campfire 由你自行启动使用,其连接、更新与数据处理行为适用其自身许可与隐私说明,本软件不对其网络行为承担连带责任。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 再分发时须保留版权声明与许可声明,并向接收者提供完整对应的源代码;许可证全文见项目根目录的 LICENSE 文件与 https://www.gnu.org/licenses/gpl-3.0.html。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="5. 安装包内附带第三方程序 Campfire,它以 GPL-3.0(不含「或更高版本」条款)发布。请勿单独删除其许可证与源码获取说明;含该组件的完整安装包整体按 GPL-3.0 分发。相关版本、校验值与源码位置见 THIRD-PARTY-NOTICES.md。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="6. Copyright (C) 2026 Hugo Mou. SalmonLauncher 及其源代码的版权归作者所有,保留所有权利。" />
+                                   Text="4. 界面框架 .NET 与 Windows App SDK 遵循各自的开源许可;模组、光影与资源包版权归各自作者所有。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="九、软件更新与升级" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第十三条　免责声明" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 本软件可从项目的 GitHub 发布页检查并下载新版本。更新包仅从该发布页获取,并使用发布页公布的 SHA-256 进行校验;校验不通过时不会执行安装。" />
+                                   Text="1. 本软件为第三方免费工具,与 Mojang Studios、Microsoft 无任何隶属或授权关系;Minecraft 是 Mojang Studios 的商标。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 更新由你主动确认后才会下载与安装;「启动时检查更新」只做版本提示,不会在后台静默下载或安装。" />
+                                   Text="2. 软件按「现状」与「现有」提供,不附带任何明示或默示担保,包括但不限于适销性、特定用途适用性与不侵权担保。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 安装程序只替换程序目录中的文件。设置、账户、实例、存档、模组与日志保存在独立的数据目录,升级不会删除它们;但仍建议你在重大版本升级前自行备份存档。" />
+                                   Text="3. 在适用法律允许的最大范围内,作者不对下载失败、存档损坏、实例数据丢失、账户异常、封禁或任何间接、附带、惩罚性损失承担赔偿责任。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 若你自行修改过程序目录中的文件,更新可能覆盖这些改动;需要长期保留的修改请另存副本。" />
+                                   Text="4. 本软件不承担因第三方服务中断、网络波动、系统更新、杀毒软件拦截或磁盘故障导致的功能异常与数据损失。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="5. 本版本不提供便携版。请使用官方安装包升级,不要混用其它来源的安装包覆盖现有程序目录。" />
-                    </StackPanel>
-
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="十、第三方组件与版权" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 安装包内含第三方程序 Campfire,用于联机功能。它以 GPL-3.0(不含「或更高版本」条款)发布,版权归其原作者所有;本软件按原样分发,未作修改、未重新打包。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. Campfire 的许可证全文、版本号、SHA-256 与源码获取方式随安装包附带于 campfire 目录;THIRD-PARTY-NOTICES.md 汇总了全部第三方组件。请勿在再分发时删除这些文件。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. Campfire 由你自行启动使用,其连接、更新与数据处理行为适用其自身的许可与隐私说明;本软件不对其网络行为承担连带责任。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 界面框架 .NET 与 Windows App SDK 遵循各自的开源许可;模组、光影与资源包来自 Modrinth 等平台,版权归各自作者所有,请遵守其授权条款。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="5. 启动器自行绘制的壁纸与图标可随软件一并分发。Minecraft 的名称、纹理与相关资源归 Mojang Studios 所有,本软件不主张任何权利。" />
-                    </StackPanel>
-
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="十一、免责声明" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 本软件为第三方免费工具,与 Mojang Studios、Microsoft 无任何隶属或授权关系,Minecraft 是 Mojang Studios 的商标。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 软件按「现状」提供,作者不对下载失败、存档损坏、账户异常或任何间接损失作出担保与赔偿;请在重要操作前自行备份存档。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 本软件不承担因第三方服务中断、网络波动、系统更新或磁盘故障导致的功能异常与数据损失。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="4. 因你违反本协议或当地法律法规而产生的任何后果,由你自行承担。" />
-                        <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="5. 软件更新依赖 GitHub 及其镜像的可用性,可能出现检查失败、下载中断或镜像不可达;这不构成作者违约,可稍后重试或手动从发布页下载安装包。" />
+                                   Text="5. 软件更新依赖 GitHub 及其镜像的可用性,可能出现检查失败、下载中断或镜像不可达;这不构成违约,你可稍后重试或手动下载安装包。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
                                    Text="6. 安装包未包含商业代码签名证书,首次运行或升级时可能出现 SmartScreen 提示;请确认来源为本项目发布页后再继续。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="7. 联机功能涉及第三方程序与网络环境,作者不对连接质量、数据经过的第三方服务器或因此产生的纠纷负责。" />
+                                   Text="7. 联机功能涉及第三方程序与网络环境,作者不对连接质量、数据经过的第三方服务器或由此产生的纠纷负责。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="8. 因你违反本协议或当地法律法规而产生的任何后果,由你自行承担。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="十二、协议变更与终止" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第十四条　未成年人使用" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 本协议可能随功能演进更新,更新后的条款随新版本一同发布,你可以在本页随时回顾最新版本。" />
+                                   Text="1. 未满 18 周岁的用户应在监护人指导下使用本软件,并由监护人阅读并同意本协议。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="2. 本软件不含内购、广告或社交内容,但仍建议监护人关注游戏时间与下载内容。" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="第十五条　协议变更与终止" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="1. 本协议可能随功能演进更新,更新后的条款随新版本发布,你可随时在本页回顾最新版本。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
                                    Text="2. 条款更新后你若继续使用本软件,视为接受更新内容;若不接受,请停止使用并删除本软件。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 你可以随时删除数据目录来停止使用本软件,本协议随之终止;已下载的游戏与实例请先行备份。" />
+                                   Text="3. 你可以随时删除数据目录以停止使用本软件,本协议随之终止;已下载的游戏与实例请先行备份。" />
+                        <TextBlock Style="{ThemeResource Style.TermsBody}"
+                                   Text="4. 本协议部分条款被认定无效或不可执行时,其余条款仍然有效,并以最接近原意的条款替代。" />
                     </StackPanel>
 
                     <StackPanel Spacing="6">
-                        <TextBlock Text="十三、联系方式与反馈" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
+                        <TextBlock Text="第十六条　联系方式与反馈" FontWeight="SemiBold" Foreground="{ThemeResource Brush.Fg}" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="1. 遇到问题、发现漏洞或对本协议有疑问,可通过你获取本软件的项目仓库 Issue 或发布渠道反馈。" />
+                                   Text="1. 遇到问题、发现漏洞或对本协议有疑问,可通过项目仓库的 Issue 或发布渠道反馈。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="2. 反馈时请附上版本号、系统版本与相关日志尾部,以便更快定位问题;请勿在公开反馈中粘贴账户令牌。" />
+                                   Text="2. 反馈时请附上版本号、系统版本与相关日志尾部;请勿在公开反馈中粘贴账户令牌。" />
                         <TextBlock Style="{ThemeResource Style.TermsBody}"
-                                   Text="3. 项目仓库：https://github.com/HugoMou/salmonlauncher · 发布页：https://github.com/HugoMou/salmonlauncher/releases" />
+                                   Text="3. 项目仓库:https://github.com/HugoMou/salmonlauncher · 发布页:https://github.com/HugoMou/salmonlauncher/releases" />
                     </StackPanel>
 
                     <TextBlock Style="{ThemeResource Style.TermsBody}"
