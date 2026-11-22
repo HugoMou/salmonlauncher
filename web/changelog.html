@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title data-zh-title="更新日志 — SalmonLauncher">Changelog — SalmonLauncher</title>
-<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.16 整合包一键导入、加载器免装原版，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.16: one-click modpack import and loaders without a manual vanilla install, plus the 2.0 series feature changes and earlier versions.">
+<meta name="description" data-zh-content="SalmonLauncher 版本更新日志：2.0.17 界面全面重构、实例克隆备份、整合包仓库与协议 3.0，以及 2.0 系列的功能变更与历史版本。" content="SalmonLauncher release notes for 2.0.17: a rebuilt interface, instance clone/backup, a modpack repository and terms 3.0, plus the 2.0 series feature changes and earlier versions.">
 <meta name="theme-color" content="#0B0D10">
 <link rel="icon" href="assets/img/favicon.ico">
 <script>try{if(localStorage.getItem("sl-theme")==="light")document.documentElement.dataset.theme="light"}catch(e){}</script>
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SalmonLauncher">
 <meta property="og:title" content="Changelog — SalmonLauncher">
-<meta property="og:description" content="SalmonLauncher release notes for 2.0.16: one-click modpack import and loaders without a manual vanilla install, plus the 2.0 series feature changes and earlier versions.">
+<meta property="og:description" content="SalmonLauncher release notes for 2.0.17: a rebuilt interface, instance clone/backup, a modpack repository and terms 3.0, plus the 2.0 series feature changes and earlier versions.">
 <meta property="og:url" content="https://sl.hugomou.com/changelog.html">
 <meta property="og:image" content="https://sl.hugomou.com/assets/img/og.png">
 <meta property="og:image:width" content="1200">
@@ -25,7 +25,7 @@
 <meta property="og:locale:alternate" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Changelog — SalmonLauncher">
-<meta name="twitter:description" content="SalmonLauncher release notes for 2.0.16: one-click modpack import and loaders without a manual vanilla install, plus the 2.0 series feature changes and earlier versions.">
+<meta name="twitter:description" content="SalmonLauncher release notes for 2.0.17: a rebuilt interface, instance clone/backup, a modpack repository and terms 3.0, plus the 2.0 series feature changes and earlier versions.">
 <meta name="twitter:image" content="https://sl.hugomou.com/assets/img/og.png">
 </head>
 <body>
@@ -60,7 +60,7 @@
         <button data-set-lang="zh-hant" aria-pressed="false">繁</button>
         <button data-set-lang="ja" aria-pressed="false">日</button>
       </div>
-      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.16">Get 2.0.16</a>
+      <a class="btn btn-primary btn-sm" href="download.html" data-zh="下载 2.0.17">Get 2.0.17</a>
       <button class="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -83,7 +83,7 @@
     </div>
     <div class="phead-aside">
       <div><b>SL</b> / CHANGELOG</div>
-      <div>LATEST v2.0.16</div>
+      <div>LATEST v2.0.17</div>
     </div>
   </section>
 
@@ -91,8 +91,26 @@
     <div class="log">
       <article class="entry reveal">
         <div class="entry-head">
-          <h2>v2.0.16</h2>
+          <h2>v2.0.17</h2>
           <span class="entry-tag" data-zh="最新">Latest</span>
+          <time datetime="2026-11-22">2026-11-22</time>
+        </div>
+        <p class="lede" data-zh="界面全面重构，新增实例克隆备份、整合包仓库、Java 检测与模组依赖检查。">A rebuilt interface, plus instance clone/backup, a modpack repository, Java detection and mod dependency checks.</p>
+        <ul>
+          <li data-zh="启动面板改为卡片式布局：启动卡、账户卡、四个快捷入口与上手指南在一屏内全部可见，不再需要滚动查找。">The home page is now card-based: launch card, account card, four shortcuts and a getting-started guide all fit on one screen.</li>
+          <li data-zh="卡片悬停与按下都有统一反馈；云母材质（Mica）默认开启，「外观与设置」新增「界面动效」开关，可一键关闭页面转场与卡片动效。">Cards give consistent hover and press feedback. Mica is on by default, and Appearance &amp; settings gained an interface animation switch that turns off page transitions and card motion.</li>
+          <li data-zh="首次启动向导加入欢迎区与「跳过引导」；跳过后不再显示。">The first-run wizard opens with a welcome panel and a skip button; skipping means it never shows again.</li>
+          <li data-zh="「实例设置」新增克隆、导出备份与从备份恢复：导出会把模组、配置、存档与元数据打包成 zip，恢复时覆盖同名文件。">Instance settings gained clone, export backup and restore from backup: export packs mods, config, saves and metadata into a zip, and restore overwrites files with the same name.</li>
+          <li data-zh="「资源」新增整合包仓库，按游戏版本检索 Modrinth 整合包。">Resources gained a modpack repository that searches Modrinth modpacks by game version.</li>
+          <li data-zh="「实例设置」显示检测到的 Java 运行时列表，缺失时可一键从 Eclipse Adoptium（Temurin）下载对应版本到数据目录，不修改系统环境变量。">Instance settings lists detected Java runtimes; when one is missing it can be fetched from Eclipse Adoptium (Temurin) into the data folder without touching system environment variables.</li>
+          <li data-zh="「模组管理」新增「检查依赖」：静态读取 fabric.mod.json、mods.toml 与 mcmod.info，提示缺失依赖与重复安装，不加载也不执行模组代码。">Mods gained a dependency check: it reads fabric.mod.json, mods.toml and mcmod.info statically to report missing dependencies and duplicate installs, without loading or running mod code.</li>
+          <li data-zh="用户协议与免责声明升级到 3.0：补充实例备份、Java 运行时、模组依赖检查与开源许可等条款，版本变更后会重新提示确认。">The user agreement and disclaimer moved to 3.0, covering instance backups, the Java runtime, dependency checks and open-source licensing; a version change prompts for confirmation again.</li>
+        </ul>
+      </article>
+
+      <article class="entry reveal">
+        <div class="entry-head">
+          <h2>v2.0.16</h2>
           <time datetime="2026-11-21">2026-11-21</time>
         </div>
         <p class="lede" data-zh="整合包一键导入，加载器不用先装原版。">Import modpacks in one click, and loaders no longer need a manual vanilla install first.</p>
